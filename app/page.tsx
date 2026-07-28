@@ -2,32 +2,69 @@
 
 import { useState } from "react";
 import { ScreenContainer } from "@/components/layout/screen-container";
-import { GuideCard } from "@/components/ui/guide-card";
+import {
+  ConversationScreen,
+  GuideIntroductionScreen,
+  GuideSelectionScreen,
+  ProductComparisonScreen,
+  ProductDetailScreen,
+  ProductExplorerScreen,
+  SessionEndScreen,
+} from "@/components/screens/journey-screens";
 import { PrimaryButton } from "@/components/ui/primary-button";
+import {
+  ConversationEntry,
+  GuideId,
+  JourneyScreen,
+  ProductId,
+  getPreparedResponse,
+  products,
+} from "@/lib/experience-data";
 
 const languages = ["English", "中文", "Русский", "Español"] as const;
-const guides = [
-  {
-    initial: "E",
-    name: "Emily",
-    role: "Wellness Specialist",
-    focusAreas: ["Daily use", "Recovery", "Lifestyle"],
-  },
-  {
-    initial: "D",
-    name: "Daniel",
-    role: "Technology Specialist",
-    focusAreas: [
-      "Hydrogen technology",
-      "Engineering",
-      "Product comparisons",
-    ],
-  },
-] as const;
 
 export default function Home() {
-  const [screen, setScreen] = useState<"idle" | "language" | "guide">("idle");
-  const [selectedGuide, setSelectedGuide] = useState<string | null>(null);
+  const [screen, setScreen] = useState<JourneyScreen>("idle");
+  const [, setSelectedLanguage] = useState<string | null>(null);
+  const [selectedGuide, setSelectedGuide] = useState<GuideId | null>(null);
+  const [selectedProduct, setSelectedProduct] =
+    useState<ProductId>("everyday");
+  const [history, setHistory] = useState<ConversationEntry[]>([]);
+
+  function askQuestion(question: string) {
+    setHistory((entries) => [
+      ...entries,
+      {
+        id: Date.now(),
+        question,
+        response: getPreparedResponse(question),
+      },
+    ]);
+  }
+
+  function openProduct(product: ProductId) {
+    setSelectedProduct(product);
+    setScreen("product-detail");
+  }
+
+  function askAboutProduct() {
+    const product = products[selectedProduct];
+    askQuestion(`Tell me about ${product.name}`);
+    setScreen("conversation");
+  }
+
+  function askAboutComparison() {
+    askQuestion("Compare the two bottles");
+    setScreen("conversation");
+  }
+
+  function restartSession() {
+    setSelectedLanguage(null);
+    setSelectedGuide(null);
+    setSelectedProduct("everyday");
+    setHistory([]);
+    setScreen("idle");
+  }
 
   return (
     <main>
@@ -64,7 +101,10 @@ export default function Home() {
                     className="language-option"
                     type="button"
                     key={language}
-                    onClick={() => setScreen("guide")}
+                    onClick={() => {
+                      setSelectedLanguage(language);
+                      setScreen("guide");
+                    }}
                     lang={
                       language === "中文"
                         ? "zh"
@@ -81,46 +121,57 @@ export default function Home() {
               </div>
             </div>
           </section>
+        ) : screen === "guide" ? (
+          <GuideSelectionScreen
+            selectedGuide={selectedGuide}
+            onSelect={setSelectedGuide}
+            onBack={() => setScreen("language")}
+            onContinue={() => setScreen("introduction")}
+          />
+        ) : screen === "introduction" && selectedGuide ? (
+          <GuideIntroductionScreen
+            guideId={selectedGuide}
+            onBack={() => setScreen("guide")}
+            onBegin={() => setScreen("conversation")}
+          />
+        ) : screen === "conversation" && selectedGuide ? (
+          <ConversationScreen
+            guideId={selectedGuide}
+            history={history}
+            onAsk={askQuestion}
+            onProducts={() => setScreen("products")}
+            onEnd={() => setScreen("end")}
+          />
+        ) : screen === "products" ? (
+          <ProductExplorerScreen
+            onOpenProduct={openProduct}
+            onCompare={() => setScreen("comparison")}
+            onBack={() => setScreen("conversation")}
+          />
+        ) : screen === "product-detail" ? (
+          <ProductDetailScreen
+            productId={selectedProduct}
+            onBack={() => setScreen("products")}
+            onCompare={() => setScreen("comparison")}
+            onAskGuide={askAboutProduct}
+          />
+        ) : screen === "comparison" ? (
+          <ProductComparisonScreen
+            onAsk={askAboutComparison}
+            onBack={() => setScreen("products")}
+          />
+        ) : screen === "end" ? (
+          <SessionEndScreen
+            onRestart={restartSession}
+            onReturn={() => setScreen("conversation")}
+          />
         ) : (
-          <section
-            className="screen-content guide-content"
-            aria-labelledby="guide-heading"
-          >
-            <button
-              className="back-action"
-              type="button"
-              onClick={() => setScreen("language")}
-            >
-              Back
-            </button>
-
-            <header className="guide-header">
-              <h1 id="guide-heading">Meet your guide</h1>
-              <p>
-                Choose the specialist who will introduce you to hydrogen
-                technology.
-              </p>
-            </header>
-
-            <div
-              className="guide-grid"
-              role="group"
-              aria-label="Product specialists"
-            >
-              {guides.map((guide) => (
-                <GuideCard
-                  {...guide}
-                  key={guide.name}
-                  selected={selectedGuide === guide.name}
-                  onSelect={() => setSelectedGuide(guide.name)}
-                />
-              ))}
-            </div>
-
-            <div className="guide-action">
-              <PrimaryButton disabled={!selectedGuide}>Continue</PrimaryButton>
-            </div>
-          </section>
+          <GuideSelectionScreen
+            selectedGuide={selectedGuide}
+            onSelect={setSelectedGuide}
+            onBack={() => setScreen("language")}
+            onContinue={() => setScreen("introduction")}
+          />
         )}
       </ScreenContainer>
     </main>
