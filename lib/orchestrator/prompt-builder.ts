@@ -13,6 +13,26 @@ export type BuildPromptInput = {
   supplementalContext?: readonly PromptContextFragment[];
 };
 
+function createSessionSummary(context: OrchestratorContext) {
+  const session = context.session;
+  const product =
+    session.activeProduct === "advanced"
+      ? "Advanced Bottle"
+      : session.activeProduct === "everyday"
+        ? "Everyday Bottle"
+        : session.activeProduct === "both"
+          ? "both bottles"
+          : "none";
+
+  return [
+    `Active product: ${product}`,
+    `Active topic: ${session.activeTopic ?? "none"}`,
+    `Last discussed feature: ${session.lastDiscussedFeature ?? "none"}`,
+    `Previous visitor question: ${session.previousQuestion ?? "none"}`,
+    `Previous guide answer: ${session.previousAnswer ?? "none"}`,
+  ].join("\n");
+}
+
 function createResponseDirectives(context: OrchestratorContext) {
   const strategy = context.responseStrategy;
 
@@ -60,6 +80,17 @@ export class PromptBuilder {
         sessionId: context.session.sessionId,
         conversationStage: context.session.currentConversationStage,
         visitorIntent: context.session.currentIntent,
+        activeProduct: context.session.activeProduct ?? null,
+        activeTopic: context.session.activeTopic ?? null,
+        lastDiscussedFeature:
+          context.session.lastDiscussedFeature ?? null,
+        previousQuestion: context.session.previousQuestion ?? null,
+        previousAnswer: context.session.previousAnswer ?? null,
+        resolvedQuestion: context.session.resolvedQuestion ?? null,
+        referenceResolution: context.session.referenceResolution
+          ? { ...context.session.referenceResolution }
+          : null,
+        summary: createSessionSummary(context),
         language: context.session.language,
         discussedTopics: [...context.session.discussedTopics],
         viewedProducts: [...context.session.viewedProducts],
@@ -111,12 +142,31 @@ export class PromptBuilder {
             ...VISITOR_ANSWER_RULES,
           ]
         : [];
+    const referenceResolution = prompt.sessionContext.referenceResolution;
+    const conversationContext = [
+      "CURRENT SESSION CONTEXT",
+      "<session-context>",
+      prompt.sessionContext.summary,
+      `Current intent: ${prompt.sessionContext.visitorIntent ?? "UNKNOWN"}`,
+      `Current stage: ${prompt.sessionContext.conversationStage}`,
+      `Resolved question: ${prompt.sessionContext.resolvedQuestion ?? prompt.userMessage}`,
+      referenceResolution
+        ? `Reference resolution: "${referenceResolution.reference}" → ${
+            referenceResolution.resolvedTo ?? "ambiguous"
+          }`
+        : "Reference resolution: no contextual reference detected",
+      "</session-context>",
+      "SESSION CONTEXT RULES",
+      "- Use session context only to understand the current question and maintain continuity.",
+      "- Never mention session state, resolution notes, stored history or internal context to the visitor.",
+      "- If the reference resolution is marked ambiguous, ask one short clarification instead of guessing.",
+      "- Prefer the resolved context when interpreting pronouns, but never let it override the visitor's explicit words.",
+    ];
 
     return [
       "Construct the response using the following conversation direction.",
       ...prompt.responseDirectives,
-      `Current stage: ${prompt.sessionContext.conversationStage}`,
-      `Current intent: ${prompt.sessionContext.visitorIntent ?? "UNKNOWN"}`,
+      ...conversationContext,
       ...grounding,
       ...supplementalContext,
       `Visitor message: ${prompt.userMessage}`,

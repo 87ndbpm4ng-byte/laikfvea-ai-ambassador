@@ -9,6 +9,26 @@ export type SessionId = string;
 
 export type SessionStatus = "active" | "ended";
 
+export type ActiveSessionProduct = ProductId | "both";
+
+export type ConversationTopic =
+  | "battery"
+  | "charging"
+  | "cleaning"
+  | "comparison"
+  | "hydrogen-inhalation"
+  | "hydrogen-water"
+  | "maintenance"
+  | "mineralisation"
+  | "product-selection"
+  | "setup";
+
+export type SessionReferenceResolution = {
+  reference: string;
+  resolvedTo: string | null;
+  ambiguous: boolean;
+};
+
 export type ResetReason =
   | "VISITOR_LEFT"
   | "IDLE_TIMEOUT"
@@ -23,6 +43,14 @@ export type VisitorSession = {
   status: SessionStatus;
   currentConversationStage: ConversationStageId;
   currentIntent: VisitorIntentId | null;
+  activeProduct?: ActiveSessionProduct | null;
+  activeTopic?: ConversationTopic | null;
+  lastDiscussedFeature?: string | null;
+  previousQuestion?: string | null;
+  previousAnswer?: string | null;
+  resolvedQuestion?: string | null;
+  referenceResolution?: SessionReferenceResolution | null;
+  comparisonProducts?: readonly ProductId[];
   language: string | null;
   discussedTopics: readonly string[];
   viewedProducts: readonly ProductId[];

@@ -19,6 +19,10 @@ function cloneSession(session: VisitorSession): VisitorSession {
     viewedProducts: [...session.viewedProducts],
     questionsAsked: [...session.questionsAsked],
     visitorGoals: [...session.visitorGoals],
+    comparisonProducts: [...(session.comparisonProducts ?? [])],
+    referenceResolution: session.referenceResolution
+      ? { ...session.referenceResolution }
+      : null,
     conversationHistory: session.conversationHistory.map((entry) => ({
       ...entry,
     })),

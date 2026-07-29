@@ -7,6 +7,11 @@ import type {
   RetrievalResult,
 } from "@/lib/retrieval/retrieval-types";
 import type { RetrievalDiagnostics } from "@/lib/retrieval/retrieval-diagnostics";
+import type {
+  ActiveSessionProduct,
+  ConversationTopic,
+  SessionReferenceResolution,
+} from "@/lib/session/session-types";
 
 export type OrchestratorMetadata = {
   requestId: string;
@@ -28,6 +33,14 @@ export type OrchestratorPrompt = {
     sessionId: string;
     conversationStage: string;
     visitorIntent: string | null;
+    activeProduct: ActiveSessionProduct | null;
+    activeTopic: ConversationTopic | null;
+    lastDiscussedFeature: string | null;
+    previousQuestion: string | null;
+    previousAnswer: string | null;
+    resolvedQuestion: string | null;
+    referenceResolution: SessionReferenceResolution | null;
+    summary: string;
     language: string | null;
     discussedTopics: readonly string[];
     viewedProducts: readonly string[];

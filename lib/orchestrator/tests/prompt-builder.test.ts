@@ -70,3 +70,18 @@ test("comparison instructions forbid filling an unsupported product side", () =>
     /say when the approved context does not support one side/i,
   );
 });
+
+test("prompt builder source includes private session context and ambiguity rules", async () => {
+  const promptBuilder = await readFile(
+    path.join(process.cwd(), "lib/orchestrator/prompt-builder.ts"),
+    "utf8",
+  );
+
+  assert.match(promptBuilder, /CURRENT SESSION CONTEXT/);
+  assert.match(promptBuilder, /Active product:/);
+  assert.match(promptBuilder, /Active topic:/);
+  assert.match(promptBuilder, /Previous visitor question:/);
+  assert.match(promptBuilder, /Previous guide answer:/);
+  assert.match(promptBuilder, /reference resolution is marked ambiguous/i);
+  assert.match(promptBuilder, /Never mention session state/i);
+});

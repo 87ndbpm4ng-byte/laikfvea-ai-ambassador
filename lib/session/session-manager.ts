@@ -2,6 +2,10 @@ import {
   appendConversationEntry,
   createConversationEntry,
 } from "@/lib/session/conversation-history";
+import {
+  inferProductFromAssistantAnswer,
+  resolveConversationFocus,
+} from "@/lib/session/conversation-context";
 import type {
   SessionEvent,
   SessionEventSink,
@@ -72,6 +76,14 @@ export class SessionManager {
       status: "active",
       currentConversationStage: input.initialStage ?? "WELCOME",
       currentIntent: input.initialIntent ?? null,
+      activeProduct: null,
+      activeTopic: null,
+      lastDiscussedFeature: null,
+      previousQuestion: null,
+      previousAnswer: null,
+      resolvedQuestion: null,
+      referenceResolution: null,
+      comparisonProducts: [],
       language: input.language?.trim() || null,
       discussedTopics: [],
       viewedProducts: [],
@@ -129,8 +141,25 @@ export class SessionManager {
     input: RecordMessageInput,
   ) {
     const session = this.requireActiveSession(sessionId);
-    const updatedSession = this.recordMessage(session, "visitor", input);
     const question = input.content.trim();
+    const focus = resolveConversationFocus(question, session);
+    const focusedSession: VisitorSession = {
+      ...session,
+      ...focus,
+      previousQuestion: question || session.previousQuestion,
+      discussedTopics: focus.activeTopic
+        ? addUniqueValue(session.discussedTopics, focus.activeTopic)
+        : session.discussedTopics,
+      viewedProducts:
+        focus.activeProduct && focus.activeProduct !== "both"
+          ? addUniqueValue(session.viewedProducts, focus.activeProduct)
+          : session.viewedProducts,
+    };
+    const updatedSession = this.recordMessage(
+      focusedSession,
+      "visitor",
+      input,
+    );
     const sessionWithQuestion: VisitorSession = {
       ...updatedSession,
       questionsAsked: question
@@ -140,6 +169,23 @@ export class SessionManager {
 
     const persistedSession = this.persist(sessionWithQuestion);
     const message = persistedSession.conversationHistory.at(-1);
+
+    if (session.currentIntent !== persistedSession.currentIntent) {
+      this.emit("INTENT_CHANGED", persistedSession, {
+        previousIntent: session.currentIntent,
+        nextIntent: persistedSession.currentIntent,
+      });
+    }
+
+    if (
+      session.currentConversationStage !==
+      persistedSession.currentConversationStage
+    ) {
+      this.emit("STAGE_CHANGED", persistedSession, {
+        previousStage: session.currentConversationStage,
+        nextStage: persistedSession.currentConversationStage,
+      });
+    }
 
     if (message) {
       this.emit("MESSAGE_RECEIVED", persistedSession, {
@@ -157,9 +203,17 @@ export class SessionManager {
     input: RecordMessageInput,
   ) {
     const session = this.requireActiveSession(sessionId);
-    const updatedSession = this.persist(
-      this.recordMessage(session, "assistant", input),
-    );
+    const answer = input.content.trim();
+    const mentionedProduct = inferProductFromAssistantAnswer(answer);
+    const updatedSession = this.persist({
+      ...this.recordMessage(session, "assistant", input),
+      activeProduct: mentionedProduct ?? session.activeProduct,
+      viewedProducts:
+        mentionedProduct && mentionedProduct !== "both"
+          ? addUniqueValue(session.viewedProducts, mentionedProduct)
+          : session.viewedProducts,
+      previousAnswer: answer || session.previousAnswer,
+    });
     const message = updatedSession.conversationHistory.at(-1);
 
     if (message) {
@@ -196,6 +250,7 @@ export class SessionManager {
     const session = this.requireActiveSession(sessionId);
     const updatedSession = this.persist({
       ...session,
+      activeProduct: productId,
       viewedProducts: addUniqueValue(session.viewedProducts, productId),
       lastInteraction: this.now(),
     });

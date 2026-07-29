@@ -155,11 +155,13 @@ export class OrchestratorPipeline {
         experience,
       });
       const responseStrategy = this.createStrategy(responseContext);
+      const retrievalMessage =
+        activeSession.resolvedQuestion?.trim() || message;
       const retrievalQuery = createRetrievalQuery({
-        message,
+        message: retrievalMessage,
         session: activeSession,
       });
-      const retrievalResult = shouldRunRetrieval(message)
+      const retrievalResult = shouldRunRetrieval(retrievalMessage)
         ? await this.retrieval.search(retrievalQuery)
         : createSkippedRetrievalResult(retrievalQuery);
       const context = createOrchestratorContext({
