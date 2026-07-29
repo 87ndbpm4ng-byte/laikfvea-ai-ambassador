@@ -9,6 +9,8 @@ import type { GuideId } from "@/types/guide";
 type AudioPlayback = {
   src: string;
   currentTime: number;
+  preload?: string;
+  style?: { display: string };
   onplay: (() => void) | null;
   onended: (() => void) | null;
   onerror: (() => void) | null;
@@ -20,6 +22,7 @@ type AudioPlayback = {
   pause(): void;
   load?(): void;
   removeAttribute?(name: string): void;
+  setAttribute?(name: string, value: string): void;
 };
 
 type OpenAISpeechSynthesisOptions = {
@@ -31,8 +34,7 @@ type OpenAISpeechSynthesisOptions = {
   language?: () => string | undefined;
 };
 
-const SILENT_AUDIO_SOURCE =
-  "data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA";
+const ACTIVATION_AUDIO_SOURCE = "/voice-session-activation.mp3";
 
 const OUTPUT_ERROR: VoiceError = {
   code: "synthesis-unavailable",
@@ -44,6 +46,12 @@ function isPlaybackBlocked(error: unknown) {
   return error instanceof Error && error.name === "NotAllowedError";
 }
 
+function createSessionId() {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `voice-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 export class OpenAISpeechSynthesisProvider
   implements SpeechSynthesisProvider
 {
@@ -53,19 +61,34 @@ export class OpenAISpeechSynthesisProvider
   private readonly createObjectURL: (blob: Blob) => string;
   private readonly revokeObjectURL: (url: string) => void;
   private readonly language: () => string | undefined;
+  private readonly audioSessionId = createSessionId();
   private audio: AudioPlayback | null = null;
   private activeObjectURL: string | null = null;
   private activeRequest: AbortController | null = null;
   private activeCallbacks: SpeechSynthesisCallbacks | null = null;
   private requestSequence = 0;
-  private unlocked = false;
+  private activated = false;
 
   constructor(options: OpenAISpeechSynthesisOptions = {}) {
     this.fallback =
       options.fallback ?? new BrowserSpeechSynthesisProvider();
-    this.fetcher = options.fetcher ?? fetch;
+    this.fetcher =
+      options.fetcher ?? ((input, init) => globalThis.fetch(input, init));
     this.createAudio =
-      options.createAudio ?? (() => new Audio() as AudioPlayback);
+      options.createAudio ??
+      (() => {
+        const audio = new Audio() as AudioPlayback;
+        audio.preload = "auto";
+        audio.setAttribute?.("aria-hidden", "true");
+        audio.setAttribute?.("data-voice-session-id", this.audioSessionId);
+
+        if (audio.style) {
+          audio.style.display = "none";
+        }
+
+        document.body.appendChild(audio as HTMLAudioElement);
+        return audio;
+      });
     this.createObjectURL =
       options.createObjectURL ?? ((blob) => URL.createObjectURL(blob));
     this.revokeObjectURL =
@@ -86,25 +109,36 @@ export class OpenAISpeechSynthesisProvider
     );
   }
 
-  async unlock() {
-    if (this.unlocked) {
+  get isActivated() {
+    return this.activated;
+  }
+
+  async activate() {
+    if (this.activated) {
       return true;
     }
 
     const audio = this.getAudio();
 
     try {
-      audio.src = SILENT_AUDIO_SOURCE;
+      audio.src = ACTIVATION_AUDIO_SOURCE;
       audio.load?.();
-      await audio.play();
+      const playPromise = audio.play();
+
+      if (process.env.NODE_ENV === "development") {
+        console.info("[voice-output] Activating persistent audio session.", {
+          audioSessionId: this.audioSessionId,
+          sameElement: audio === this.audio,
+        });
+      }
+
+      await playPromise;
       audio.pause();
       audio.currentTime = 0;
-      audio.removeAttribute?.("src");
-      audio.load?.();
-      this.unlocked = true;
+      this.activated = true;
       return true;
     } catch (error) {
-      console.warn("[voice-output] Audio unlock was blocked.", {
+      console.warn("[voice-output] Audio session activation was blocked.", {
         name: error instanceof Error ? error.name : "UnknownError",
       });
       return false;
@@ -119,6 +153,11 @@ export class OpenAISpeechSynthesisProvider
     const normalizedText = text.trim();
 
     if (!normalizedText) {
+      return;
+    }
+
+    if (!this.activated) {
+      callbacks.onActivationRequired?.();
       return;
     }
 
@@ -168,6 +207,16 @@ export class OpenAISpeechSynthesisProvider
     this.fallback.stop();
   }
 
+  reset() {
+    this.stop();
+    this.activated = false;
+
+    if (this.audio) {
+      this.audio.removeAttribute?.("src");
+      this.audio.load?.();
+    }
+  }
+
   private getAudio() {
     if (!this.audio) {
       this.audio = this.createAudio();
@@ -211,6 +260,8 @@ export class OpenAISpeechSynthesisProvider
       const objectURL = this.createObjectURL(blob);
       this.activeObjectURL = objectURL;
       this.activeCallbacks = callbacks;
+      audio.pause();
+      audio.currentTime = 0;
       audio.src = objectURL;
       this.configureAudioHandlers(
         audio,
@@ -220,14 +271,28 @@ export class OpenAISpeechSynthesisProvider
       );
       audio.load?.();
 
+      if (guideId === "daniel" && process.env.NODE_ENV === "development") {
+        console.info("[voice-output] Daniel persistent audio playback.", {
+          audioSessionId: this.audioSessionId,
+          sameElement: audio === this.audio,
+          audioSessionActivated: this.activated,
+        });
+      }
+
       try {
         await audio.play();
       } catch (error) {
         if (isPlaybackBlocked(error)) {
-          console.warn("[voice-output] Guide speech requires a direct tap.", {
-            guideId,
-            provider: serverProvider,
-          });
+          console.error(
+            "[voice-output] Activated audio session was unexpectedly blocked.",
+            {
+              audioSessionId: this.audioSessionId,
+              sameElement: audio === this.audio,
+              audioSessionActivated: this.activated,
+              guideId,
+              provider: serverProvider,
+            },
+          );
           callbacks.onPlaybackBlocked?.();
           return;
         }

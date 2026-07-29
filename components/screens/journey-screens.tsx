@@ -11,6 +11,7 @@ import {
   products,
 } from "@/lib/data/products";
 import { suggestedQuestions } from "@/lib/data/suggested-questions";
+import type { SpeechSynthesisProvider } from "@/lib/voice/voice-types";
 import type {
   ConversationMessage,
   SuggestedQuestion,
@@ -111,6 +112,7 @@ type ConversationScreenProps = {
   onAskText: (question: string) => Promise<boolean>;
   onProducts: () => void;
   onEnd: () => void;
+  synthesisProvider?: SpeechSynthesisProvider;
 };
 
 type ConversationTurn = {
@@ -142,6 +144,7 @@ export function ConversationScreen({
   onAskText,
   onProducts,
   onEnd,
+  synthesisProvider,
 }: ConversationScreenProps) {
   const guide = guides[guideId];
   const [draft, setDraft] = useState("");
@@ -151,6 +154,7 @@ export function ConversationScreen({
     messages,
     isConversationLoading: isLoading,
     submitTranscript: onAskText,
+    synthesisProvider,
   });
 
   async function submitQuestion(event: FormEvent<HTMLFormElement>) {
@@ -269,6 +273,8 @@ export function ConversationScreen({
         outputState={voice.outputState}
         playbackProvider={voice.playbackProvider}
         playbackBlocked={voice.isPlaybackBlocked}
+        audioSessionActivated={voice.isAudioSessionActivated}
+        activationFailed={voice.activationFailed}
         guideName={guide.name}
         transcript={voice.transcript}
         error={voice.error}
@@ -276,6 +282,7 @@ export function ConversationScreen({
         synthesisSupported={voice.isSynthesisSupported}
         disabled={isLoading}
         onEnabledChange={voice.setEnabled}
+        onActivateAudioSession={voice.activateAudioSession}
         onStartListening={voice.startListening}
         onStopListening={voice.stopListening}
         onStopSpeaking={voice.stopSpeaking}

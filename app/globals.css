@@ -660,6 +660,45 @@ h1 {
   cursor: pointer;
 }
 
+.voice-session-activation {
+  display: grid;
+  justify-items: start;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.voice-session-activation p {
+  margin: 0;
+  color: #667178;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.voice-session-start {
+  min-height: 3.75rem;
+  padding: 0.9rem 1.25rem;
+  border: 0;
+  border-radius: 1rem;
+  background: #111;
+  color: #fff;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.voice-session-start:hover {
+  background: #202020;
+}
+
+.voice-session-start:active {
+  transform: scale(0.985);
+}
+
+.voice-session-start:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
 .voice-retry:hover {
   background: #f5f9fa;
 }

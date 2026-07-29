@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ScreenContainer } from "@/components/layout/screen-container";
 import {
   ConversationScreen,
@@ -16,6 +16,7 @@ import { useConversation } from "@/hooks/use-conversation";
 import { guides } from "@/lib/data/guides";
 import { products } from "@/lib/data/products";
 import { getSuggestedQuestion } from "@/lib/data/suggested-questions";
+import { OpenAISpeechSynthesisProvider } from "@/lib/voice/openai-speech-synthesis";
 import type { JourneyScreen } from "@/types/conversation";
 import type { GuideId } from "@/types/guide";
 import type { ProductId } from "@/types/product";
@@ -30,6 +31,10 @@ export default function Home() {
     useState<ProductId>("everyday");
   const selectedGuide = selectedGuideId ? guides[selectedGuideId] : null;
   const conversation = useConversation(selectedGuide, selectedLanguage);
+  const speechSynthesis = useMemo(
+    () => new OpenAISpeechSynthesisProvider(),
+    [],
+  );
 
   function openProduct(product: ProductId) {
     setSelectedProduct(product);
@@ -56,11 +61,17 @@ export default function Home() {
   }
 
   function restartSession() {
+    speechSynthesis.reset();
     setSelectedLanguage(null);
     setSelectedGuideId(null);
     setSelectedProduct("everyday");
     conversation.clearHistory();
     setScreen("idle");
+  }
+
+  function endSession() {
+    speechSynthesis.reset();
+    setScreen("end");
   }
 
   return (
@@ -139,7 +150,8 @@ export default function Home() {
             onAskSuggested={conversation.submitSuggestedQuestion}
             onAskText={conversation.submitText}
             onProducts={() => setScreen("products")}
-            onEnd={() => setScreen("end")}
+            onEnd={endSession}
+            synthesisProvider={speechSynthesis}
           />
         ) : screen === "products" ? (
           <ProductExplorerScreen

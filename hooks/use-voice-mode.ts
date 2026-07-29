@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BrowserSpeechRecognitionProvider } from "@/lib/voice/browser-speech-recognition";
-import { unlockVoiceOutput } from "@/lib/voice/audio-unlock";
+import { activateVoiceSession } from "@/lib/voice/audio-session";
 import { OpenAISpeechSynthesisProvider } from "@/lib/voice/openai-speech-synthesis";
 import type {
   SpeechRecognitionProvider,
@@ -46,6 +46,10 @@ export function useVoiceMode({
   const [playbackProvider, setPlaybackProvider] =
     useState<SpeechPlaybackProvider | null>(null);
   const [isPlaybackBlocked, setIsPlaybackBlocked] = useState(false);
+  const [isAudioSessionActivated, setIsAudioSessionActivated] = useState(
+    () => synthesis.isActivated ?? false,
+  );
+  const [activationFailed, setActivationFailed] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [error, setError] = useState<VoiceError | null>(null);
   const submittedTranscriptRef = useRef(false);
@@ -67,13 +71,30 @@ export function useVoiceMode({
       setTranscript("");
 
       if (!enabled) {
-        stopAll();
+        recognition.abort();
+        synthesis.reset?.();
+        setInputState("idle");
+        setOutputState("idle");
+        setPlaybackProvider(null);
+        setIsPlaybackBlocked(false);
+        setIsAudioSessionActivated(false);
+        setActivationFailed(false);
       } else {
-        void unlockVoiceOutput(synthesis);
+        setIsAudioSessionActivated(synthesis.isActivated ?? false);
       }
     },
-    [stopAll, synthesis],
+    [recognition, synthesis],
   );
+
+  const activateAudioSession = useCallback(() => {
+    const activation = activateVoiceSession(synthesis);
+
+    void activation.then((activated) => {
+      setIsAudioSessionActivated(activated);
+      setActivationFailed(!activated);
+      setError(null);
+    });
+  }, [synthesis]);
 
   const handleError = useCallback((voiceError: VoiceError) => {
     setError(voiceError);
@@ -86,12 +107,15 @@ export function useVoiceMode({
   }, []);
 
   const startListening = useCallback(() => {
-    if (!isEnabled || isConversationLoading) {
+    if (
+      !isEnabled ||
+      !isAudioSessionActivated ||
+      isConversationLoading
+    ) {
       return;
     }
 
     synthesis.stop();
-    void unlockVoiceOutput(synthesis);
     setOutputState("idle");
     setPlaybackProvider(null);
     setIsPlaybackBlocked(false);
@@ -126,6 +150,7 @@ export function useVoiceMode({
   }, [
     handleError,
     isConversationLoading,
+    isAudioSessionActivated,
     isEnabled,
     recognition,
     submitTranscript,
@@ -137,7 +162,7 @@ export function useVoiceMode({
   }, [recognition]);
 
   useEffect(() => {
-    if (!isEnabled) {
+    if (!isEnabled || !isAudioSessionActivated) {
       return;
     }
 
@@ -155,6 +180,10 @@ export function useVoiceMode({
     lastSpokenMessageRef.current = latestGuideMessage.id;
     synthesis.speak(latestGuideMessage.content, guideId, {
       onProvider: setPlaybackProvider,
+      onActivationRequired: () => {
+        setIsAudioSessionActivated(false);
+        setActivationFailed(true);
+      },
       onPlaybackBlocked: () => {
         setIsPlaybackBlocked(true);
         setOutputState("idle");
@@ -167,7 +196,14 @@ export function useVoiceMode({
       onEnd: () => setOutputState("idle"),
       onError: handleError,
     });
-  }, [guideId, handleError, isEnabled, messages, synthesis]);
+  }, [
+    guideId,
+    handleError,
+    isAudioSessionActivated,
+    isEnabled,
+    messages,
+    synthesis,
+  ]);
 
   useEffect(() => {
     function handleEscape(event: globalThis.KeyboardEvent) {
@@ -192,9 +228,12 @@ export function useVoiceMode({
     outputState,
     playbackProvider,
     isPlaybackBlocked,
+    isAudioSessionActivated,
+    activationFailed,
     transcript,
     error,
     setEnabled,
+    activateAudioSession,
     startListening,
     stopListening,
     retryPlayback: async () => {

@@ -13,6 +13,8 @@ type VoiceControlsProps = {
   outputState: VoiceOutputState;
   playbackProvider: SpeechPlaybackProvider | null;
   playbackBlocked: boolean;
+  audioSessionActivated: boolean;
+  activationFailed: boolean;
   guideName: string;
   transcript: string;
   error: VoiceError | null;
@@ -20,6 +22,7 @@ type VoiceControlsProps = {
   synthesisSupported: boolean;
   disabled: boolean;
   onEnabledChange: (enabled: boolean) => void;
+  onActivateAudioSession: () => void;
   onStartListening: () => void;
   onStopListening: () => void;
   onStopSpeaking: () => void;
@@ -32,6 +35,8 @@ export function VoiceControls({
   outputState,
   playbackProvider,
   playbackBlocked,
+  audioSessionActivated,
+  activationFailed,
   guideName,
   transcript,
   error,
@@ -39,6 +44,7 @@ export function VoiceControls({
   synthesisSupported,
   disabled,
   onEnabledChange,
+  onActivateAudioSession,
   onStartListening,
   onStopListening,
   onStopSpeaking,
@@ -47,13 +53,15 @@ export function VoiceControls({
   const isListening = inputState === "listening";
   const isProcessing = inputState === "processing";
   const isSpeaking = outputState === "speaking";
-  const status = isListening
-    ? "Listening"
-    : isProcessing
-      ? "Preparing your answer"
-      : isSpeaking
-        ? "Speaking"
-        : "Voice ready";
+  const status = !audioSessionActivated
+    ? "Voice setup"
+    : isListening
+      ? "Listening"
+      : isProcessing
+        ? "Preparing your answer"
+        : isSpeaking
+          ? "Speaking"
+          : "Voice ready";
 
   return (
     <div className="voice-panel">
@@ -79,11 +87,31 @@ export function VoiceControls({
 
       {enabled ? (
         <>
+          {!audioSessionActivated ? (
+            <div className="voice-session-activation">
+              <button
+                className="voice-session-start"
+                type="button"
+                onClick={onActivateAudioSession}
+              >
+                Start voice conversation
+              </button>
+              <p role={activationFailed ? "alert" : "status"}>
+                Tap Start voice conversation to enable audio.
+              </p>
+            </div>
+          ) : null}
+
           <div className="voice-interaction">
             <button
               className="voice-microphone"
               type="button"
-              disabled={disabled || isProcessing || !recognitionSupported}
+              disabled={
+                disabled ||
+                isProcessing ||
+                !recognitionSupported ||
+                !audioSessionActivated
+              }
               aria-pressed={isListening}
               aria-label={
                 isListening
@@ -145,7 +173,7 @@ export function VoiceControls({
               type="button"
               onClick={onRetryPlayback}
             >
-              Tap to hear Daniel
+              Play response
             </button>
           ) : !recognitionSupported ? (
             <p className="voice-message" role="status">

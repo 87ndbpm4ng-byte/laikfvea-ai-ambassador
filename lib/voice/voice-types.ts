@@ -23,6 +23,7 @@ export type VoiceError = {
 
 export type SpeechSynthesisCallbacks = {
   onProvider?: (provider: SpeechPlaybackProvider) => void;
+  onActivationRequired?: () => void;
   onPlaybackBlocked?: () => void;
   onStart: () => void;
   onEnd: () => void;
@@ -45,12 +46,14 @@ export interface SpeechRecognitionProvider {
 
 export interface SpeechSynthesisProvider {
   readonly isSupported: boolean;
+  readonly isActivated?: boolean;
   speak(
     text: string,
     guideId: GuideId,
     callbacks: SpeechSynthesisCallbacks,
   ): void;
-  unlock?(): Promise<boolean>;
+  activate?(): Promise<boolean>;
   retry?(): Promise<boolean>;
+  reset?(): void;
   stop(): void;
 }
