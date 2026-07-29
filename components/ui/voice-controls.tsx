@@ -128,7 +128,9 @@ export function VoiceControls({
             ) : null}
           </div>
 
-          {guideName === "Daniel" && playbackProvider ? (
+          {guideName === "Daniel" &&
+          outputState === "speaking" &&
+          playbackProvider ? (
             <p className="voice-provider-badge" role="status">
               Daniel voice:{" "}
               {playbackProvider === "elevenlabs"

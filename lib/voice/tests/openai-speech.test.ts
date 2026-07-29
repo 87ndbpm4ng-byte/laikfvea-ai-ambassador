@@ -248,8 +248,9 @@ test("plays generated audio and cleans up its object URL", async () => {
   assert.equal(fallback.spoken.length, 0);
 });
 
-test("API failure automatically uses browser speech fallback", async () => {
+test("Daniel API failure surfaces an error without browser fallback", async () => {
   const fallback = new FakeFallback();
+  let receivedError: VoiceError | null = null;
   const provider = new OpenAISpeechSynthesisProvider({
     fallback,
     fetcher: async () => new Response(null, { status: 503 }),
@@ -259,13 +260,14 @@ test("API failure automatically uses browser speech fallback", async () => {
   provider.speak("Fallback answer", "daniel", {
     onStart() {},
     onEnd() {},
-    onError: assert.fail,
+    onError(error) {
+      receivedError = error;
+    },
   });
   await flushPromises();
 
-  assert.deepEqual(fallback.spoken, [
-    { text: "Fallback answer", guideId: "daniel" },
-  ]);
+  assert.deepEqual(fallback.spoken, []);
+  assert.equal(receivedError?.code, "synthesis-unavailable");
 });
 
 test("stop interrupts playback and releases audio resources", async () => {

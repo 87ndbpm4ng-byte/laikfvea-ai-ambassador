@@ -231,11 +231,13 @@ export class OpenAISpeechSynthesisProvider
     reason: string,
   ) {
     if (guideId === "daniel") {
-      console.warn("[voice-output] Daniel using browser fallback.", {
-        provider: "browser",
-        playbackSource: "browser-speech-synthesis",
+      console.error("[voice-output] Daniel speech playback failed.", {
+        provider: "elevenlabs",
+        playbackSource: "none",
         reason,
       });
+      callbacks.onError(OUTPUT_ERROR);
+      return;
     }
 
     if (!this.fallback.isSupported) {
