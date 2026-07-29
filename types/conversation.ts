@@ -31,12 +31,33 @@ export type ConversationApiRequest = {
   sessionId?: string;
 };
 
-export type ConversationApiResponse = {
-  success: boolean;
+export type ConversationApiErrorCode =
+  | "INVALID_REQUEST"
+  | "SESSION_UNAVAILABLE"
+  | "MISSING_API_KEY"
+  | "REQUEST_TIMEOUT"
+  | "SERVICE_UNAVAILABLE";
+
+export type ConversationApiSuccessResponse = {
+  success: true;
   response: string;
-  error?: string;
   sessionId?: string;
+  requestId?: string;
 };
+
+export type ConversationApiErrorResponse = {
+  success: false;
+  response: "";
+  error: {
+    code: ConversationApiErrorCode;
+    message: string;
+    requestId: string;
+  };
+};
+
+export type ConversationApiResponse =
+  | ConversationApiSuccessResponse
+  | ConversationApiErrorResponse;
 
 export type SuggestedQuestion = {
   id: string;

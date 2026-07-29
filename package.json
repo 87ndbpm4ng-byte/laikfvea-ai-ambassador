@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "import:manual": "tsx imports/cli/import-manual.ts",
     "test:imports": "tsx --test imports/tests/manual-import.test.ts",
-    "test:retrieval": "tsx --test lib/retrieval/tests/retrieval.test.ts"
+    "test:retrieval": "tsx --test lib/retrieval/tests/retrieval.test.ts",
+    "test:conversation": "tsx --test lib/conversation/tests/response-engine.test.ts"
   },
   "dependencies": {
     "next": "^16.2.12",

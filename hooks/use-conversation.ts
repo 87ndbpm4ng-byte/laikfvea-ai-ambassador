@@ -80,6 +80,7 @@ export function useConversation(guide: Guide | null, language?: string | null) {
           language: language ?? undefined,
           questionId,
           relatedProduct,
+          demoFallback: questionId ? "suggested-question" : undefined,
           sessionId: sessionIdRef.current,
         });
         sessionIdRef.current = response.sessionId;

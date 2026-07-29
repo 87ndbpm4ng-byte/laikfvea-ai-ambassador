@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { MAX_OPENAI_HISTORY_MESSAGES } from "@/lib/ai/openai-response-engine";
+import {
+  MAX_OPENAI_HISTORY_MESSAGES,
+  MissingOpenAIKeyError,
+} from "@/lib/ai/openai-response-engine";
 import { guides } from "@/lib/data/guides";
 import { AIOrchestrator } from "@/lib/orchestrator/ai-orchestrator";
 import {
@@ -13,6 +16,7 @@ import { SessionManager } from "@/lib/session/session-manager";
 import { InMemorySessionStore } from "@/lib/session/session-store";
 import type {
   ConversationApiRequest,
+  ConversationApiErrorCode,
   ConversationApiResponse,
   ConversationHistoryItem,
 } from "@/types/conversation";
@@ -32,9 +36,23 @@ const orchestrator = new AIOrchestrator(
   new OrchestratorPipeline({ sessionManager }),
 );
 
-function errorResponse(error: string, status: number) {
+function errorResponse({
+  code,
+  message,
+  requestId,
+  status,
+}: {
+  code: ConversationApiErrorCode;
+  message: string;
+  requestId: string;
+  status: number;
+}) {
   return NextResponse.json<ConversationApiResponse>(
-    { success: false, response: "", error },
+    {
+      success: false,
+      response: "",
+      error: { code, message, requestId },
+    },
     { status },
   );
 }
@@ -107,19 +125,82 @@ function getOpenAIErrorStatus(error: unknown) {
   return error instanceof AIOrchestratorError ? 500 : 502;
 }
 
+function errorChainIncludes(
+  error: unknown,
+  predicate: (candidate: Error) => boolean,
+) {
+  let candidate = error;
+  const visited = new Set<unknown>();
+
+  while (candidate instanceof Error && !visited.has(candidate)) {
+    if (predicate(candidate)) {
+      return true;
+    }
+
+    visited.add(candidate);
+    candidate = candidate.cause;
+  }
+
+  return false;
+}
+
+function getPublicErrorCode(error: unknown): ConversationApiErrorCode {
+  if (
+    errorChainIncludes(
+      error,
+      (candidate) => candidate instanceof MissingOpenAIKeyError,
+    )
+  ) {
+    return "MISSING_API_KEY";
+  }
+
+  if (
+    errorChainIncludes(
+      error,
+      (candidate) =>
+        candidate.name === "APIConnectionTimeoutError" ||
+        candidate.name === "TimeoutError" ||
+        /timed?\s*out|timeout/i.test(candidate.message),
+    )
+  ) {
+    return "REQUEST_TIMEOUT";
+  }
+
+  if (error instanceof InvalidOrchestratorInputError) {
+    return "INVALID_REQUEST";
+  }
+
+  if (error instanceof SessionUnavailableError) {
+    return "SESSION_UNAVAILABLE";
+  }
+
+  return "SERVICE_UNAVAILABLE";
+}
+
 export async function POST(request: Request) {
+  const requestId = crypto.randomUUID();
   let body: unknown;
 
   try {
     body = await request.json();
   } catch {
-    return errorResponse("Invalid JSON request.", 400);
+    return errorResponse({
+      code: "INVALID_REQUEST",
+      message: "The conversation request could not be processed.",
+      requestId,
+      status: 400,
+    });
   }
 
   const conversationRequest = validateRequest(body);
 
   if (!conversationRequest) {
-    return errorResponse("Invalid conversation request.", 400);
+    return errorResponse({
+      code: "INVALID_REQUEST",
+      message: "The conversation request could not be processed.",
+      requestId,
+      status: 400,
+    });
   }
 
   try {
@@ -140,19 +221,26 @@ export async function POST(request: Request) {
       success: true,
       response: result.response,
       sessionId: result.sessionId,
+      requestId,
     });
   } catch (error) {
     const status = getOpenAIErrorStatus(error);
+    const code = getPublicErrorCode(error);
 
-    console.error("[conversation-api] OpenAI request failed", {
+    console.error("[conversation-api] Conversation request failed", {
+      requestId,
       name: error instanceof Error ? error.name : "UnknownError",
       status,
-      code: error instanceof AIOrchestratorError ? error.code : undefined,
+      publicCode: code,
+      orchestratorCode:
+        error instanceof AIOrchestratorError ? error.code : undefined,
     });
 
-    return errorResponse(
-      "The conversation service is temporarily unavailable.",
+    return errorResponse({
+      code,
+      message: "The conversation service is temporarily unavailable.",
+      requestId,
       status,
-    );
+    });
   }
 }
