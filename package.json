@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "import:manual": "tsx imports/cli/import-manual.ts",
+    "test:imports": "tsx --test imports/tests/manual-import.test.ts"
   },
   "dependencies": {
     "next": "^16.2.12",
@@ -22,6 +24,7 @@
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.2.12",
     "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.1",
     "typescript": "^6.0.3"
   },
   "overrides": {

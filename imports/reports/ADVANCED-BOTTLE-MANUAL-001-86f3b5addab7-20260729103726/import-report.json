@@ -1,0 +1,706 @@
+{
+  "importId": "ADVANCED-BOTTLE-MANUAL-001-86f3b5addab7-20260729103726",
+  "timestamp": "2026-07-29T10:37:26.938Z",
+  "sourceDocument": {
+    "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+    "title": "Hydrogen Water User Manual",
+    "product": "Laikfvea Hydrogen Water Generator Pro",
+    "documentType": "multi-page-image",
+    "language": "en",
+    "approvalStatus": "unreviewed",
+    "originalFilename": "advanced-bottle-manual-1.jpg, advanced-bottle-manual-2.jpg",
+    "importedAt": "2026-07-29T10:37:26.938Z",
+    "checksum": "86f3b5addab7cfc5f45e9d387dedf559310b2076b031655ee25e55f84484c22b",
+    "pageInformationAvailable": true,
+    "extractionReviewIssues": [
+      {
+        "id": "IMAGE-OCR-MANUAL-REVIEW",
+        "type": "MANUAL_REVIEW_REQUIRED",
+        "severity": "warning",
+        "message": "This draft was extracted locally from images. Every line must be compared with the original pages before approval.",
+        "suggestedAction": "Review the complete OCR output side by side with every source image."
+      },
+      {
+        "id": "OCR-P1-L065",
+        "type": "AMBIGUOUS_TEXT",
+        "severity": "warning",
+        "message": "Low-confidence OCR text on page 1: \"N111,\" (confidence 0.300).",
+        "suggestedAction": "Compare this line with the source image and correct it manually without inferring missing text."
+      },
+      {
+        "id": "OCR-P2-L046",
+        "type": "AMBIGUOUS_TEXT",
+        "severity": "warning",
+        "message": "Low-confidence OCR text on page 2: \"\"genz\"\" (confidence 0.300).",
+        "suggestedAction": "Compare this line with the source image and correct it manually without inferring missing text."
+      },
+      {
+        "id": "OCR-P2-L141",
+        "type": "AMBIGUOUS_TEXT",
+        "severity": "warning",
+        "message": "Low-confidence OCR text on page 2: \"ncentreaton\" (confidence 0.300).",
+        "suggestedAction": "Compare this line with the source image and correct it manually without inferring missing text."
+      },
+      {
+        "id": "OCR-P2-L163",
+        "type": "AMBIGUOUS_TEXT",
+        "severity": "warning",
+        "message": "Low-confidence OCR text on page 2: \"Llutann\" (confidence 0.300).",
+        "suggestedAction": "Compare this line with the source image and correct it manually without inferring missing text."
+      }
+    ]
+  },
+  "detectedMetadata": {
+    "title": "Hydrogen Water User Manual",
+    "product": "Laikfvea Hydrogen Water Generator Pro",
+    "version": null,
+    "publicationDate": null,
+    "language": "en",
+    "pageInformationAvailable": true
+  },
+  "detectedSections": [
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-PREPARING-THE-GENERATOR-FOR-HYDROGEN-INHALATION-01",
+      "kind": "setup",
+      "heading": "PREPARING THE GENERATOR FOR HYDROGEN INHALATION",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P1-PREPARING-THE-GENERATOR-FOR-HYDROGEN-INHALATION-01"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-MAINTENANCE-02",
+      "kind": "maintenance",
+      "heading": "MAINTENANCE",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P1-MAINTENANCE-02"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-SAFETY-INSTRUCTIONS-03",
+      "kind": "safety",
+      "heading": "SAFETY INSTRUCTIONS",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P1-SAFETY-INSTRUCTIONS-03"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-CHARGING-THE-DEVICE-04",
+      "kind": "charging",
+      "heading": "CHARGING THE DEVICE",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P1-CHARGING-THE-DEVICE-04"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-WARNING-05",
+      "kind": "warnings",
+      "heading": "warning",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P1-WARNING-05"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-APP-CONTROL-06",
+      "kind": "operation",
+      "heading": "APP CONTROL",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P1-APP-CONTROL-06"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-UV-STERILIZATION-AND-07",
+      "kind": "operation",
+      "heading": "UV STERILIZATION AND",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P1-UV-STERILIZATION-AND-07"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-SCHUMANN-RESONANCE-08",
+      "kind": "operation",
+      "heading": "SCHUMANN RESONANCE",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P1-SCHUMANN-RESONANCE-08"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-TECHNICAL-SPECIFICATIONS-09",
+      "kind": "technical-specifications",
+      "heading": "TECHNICAL SPECIFICATIONS",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P1-TECHNICAL-SPECIFICATIONS-09"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-HYDROGEN-WATER-10",
+      "kind": "unknown",
+      "heading": "HYDROGEN WATER",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P1-HYDROGEN-WATER-10"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-HYDROGEN-WATER-GENERATOR-PRO-WITH-MINERALIZER-11",
+      "kind": "unknown",
+      "heading": "HYDROGEN WATER GENERATOR PRO WITH MINERALIZER",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P1-HYDROGEN-WATER-GENERATOR-PRO-WITH-MINERALIZER-11"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-USER-MANUAL-12",
+      "kind": "unknown",
+      "heading": "USER MANUAL",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P1-USER-MANUAL-12"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-DESCRIPTION-OF-THE-HYDROGEN-WATER-GENERATOR-13",
+      "kind": "product-overview",
+      "heading": "DESCRIPTION OF THE HYDROGEN WATER GENERATOR",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P2-DESCRIPTION-OF-THE-HYDROGEN-WATER-GENERATOR-13"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-BENEFITS-OF-HYDROGEN-WATER-14",
+      "kind": "product-overview",
+      "heading": "BENEFITS OF HYDROGEN WATER:",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P2-BENEFITS-OF-HYDROGEN-WATER-14"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-HYBROGEN-15",
+      "kind": "unknown",
+      "heading": "HYBROGEN",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P2-HYBROGEN-15"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-PACKAGE-CONTENTS-16",
+      "kind": "components",
+      "heading": "PACKAGE CONTENTS",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P2-PACKAGE-CONTENTS-16"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-HYDROGEN-WITH-MINEDAI7EC-USER-HANLAL-17",
+      "kind": "unknown",
+      "heading": "HYDROGEN WITH MINEDAI7EC USER HANLAL",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P2-HYDROGEN-WITH-MINEDAI7EC-USER-HANLAL-17"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-THE-HYDROGEN-18",
+      "kind": "unknown",
+      "heading": "THE HYDROGEN",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P2-THE-HYDROGEN-18"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-WATER-GENERATOR-19",
+      "kind": "unknown",
+      "heading": "WATER GENERATOR",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P2-WATER-GENERATOR-19"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-CONSISTS-OF-20",
+      "kind": "unknown",
+      "heading": "CONSISTS OF:",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P2-CONSISTS-OF-20"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-HOW-TO-USE-21",
+      "kind": "operation",
+      "heading": "HOW TO USE",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P2-HOW-TO-USE-21"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-HYDROGEN-WATER-PREPARATION-PROCESS-22",
+      "kind": "operation",
+      "heading": "HYDROGEN WATER PREPARATION PROCESS:",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P2-HYDROGEN-WATER-PREPARATION-PROCESS-22"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-ALKALINE-IONIZED-WATER-PREPARATION-WITH-MINERALIZATION-BALLS-23",
+      "kind": "setup",
+      "heading": "ALKALINE IONIZED WATER PREPARATION (WITH MINERALIZATION BALLS)",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P2-ALKALINE-IONIZED-WATER-PREPARATION-WITH-MINERALIZATION-BALLS-23"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-OPERATING-RECOMMENDATIONS-24",
+      "kind": "operation",
+      "heading": "OPERATING RECOMMENDATIONS",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P2-OPERATING-RECOMMENDATIONS-24"
+    },
+    {
+      "sectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-HOW-TO-OPEN-AND-CLOSE-THE-LID-25",
+      "kind": "operation",
+      "heading": "HOW TO OPEN AND CLOSE THE LID",
+      "sourceReference": "ADVANCED-BOTTLE-MANUAL-001-P2-HOW-TO-OPEN-AND-CLOSE-THE-LID-25"
+    }
+  ],
+  "generatedDraftFiles": [
+    "/Users/platonkamenok/Documents/ai ambassador/knowledge/drafts/products/advanced-bottle-manual-001-manual-draft.md"
+  ],
+  "warnings": [
+    {
+      "id": "IMAGE-OCR-MANUAL-REVIEW",
+      "type": "MANUAL_REVIEW_REQUIRED",
+      "severity": "warning",
+      "message": "This draft was extracted locally from images. Every line must be compared with the original pages before approval.",
+      "suggestedAction": "Review the complete OCR output side by side with every source image."
+    },
+    {
+      "id": "OCR-P1-L065",
+      "type": "AMBIGUOUS_TEXT",
+      "severity": "warning",
+      "message": "Low-confidence OCR text on page 1: \"N111,\" (confidence 0.300).",
+      "suggestedAction": "Compare this line with the source image and correct it manually without inferring missing text."
+    },
+    {
+      "id": "OCR-P2-L046",
+      "type": "AMBIGUOUS_TEXT",
+      "severity": "warning",
+      "message": "Low-confidence OCR text on page 2: \"\"genz\"\" (confidence 0.300).",
+      "suggestedAction": "Compare this line with the source image and correct it manually without inferring missing text."
+    },
+    {
+      "id": "OCR-P2-L141",
+      "type": "AMBIGUOUS_TEXT",
+      "severity": "warning",
+      "message": "Low-confidence OCR text on page 2: \"ncentreaton\" (confidence 0.300).",
+      "suggestedAction": "Compare this line with the source image and correct it manually without inferring missing text."
+    },
+    {
+      "id": "OCR-P2-L163",
+      "type": "AMBIGUOUS_TEXT",
+      "severity": "warning",
+      "message": "Low-confidence OCR text on page 2: \"Llutann\" (confidence 0.300).",
+      "suggestedAction": "Compare this line with the source image and correct it manually without inferring missing text."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-P1-HYDROGEN-WATER-10-UNSUPPORTED",
+      "type": "UNSUPPORTED_SECTION",
+      "severity": "warning",
+      "message": "The section \"HYDROGEN WATER\" is not in the recognised manual-section catalogue and was preserved unchanged.",
+      "sourceReference": {
+        "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P1-HYDROGEN-WATER-10",
+        "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+        "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-HYDROGEN-WATER-10",
+        "originalHeading": "HYDROGEN WATER",
+        "pageNumber": 1,
+        "startLine": 152,
+        "endLine": 154
+      },
+      "suggestedAction": "Compare the section with the source and classify it manually."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-P1-HYDROGEN-WATER-GENERATOR-PRO-WITH-MINERALIZER-11-UNSUPPORTED",
+      "type": "UNSUPPORTED_SECTION",
+      "severity": "warning",
+      "message": "The section \"HYDROGEN WATER GENERATOR PRO WITH MINERALIZER\" is not in the recognised manual-section catalogue and was preserved unchanged.",
+      "sourceReference": {
+        "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P1-HYDROGEN-WATER-GENERATOR-PRO-WITH-MINERALIZER-11",
+        "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+        "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-HYDROGEN-WATER-GENERATOR-PRO-WITH-MINERALIZER-11",
+        "originalHeading": "HYDROGEN WATER GENERATOR PRO WITH MINERALIZER",
+        "pageNumber": 1,
+        "startLine": 155,
+        "endLine": 156
+      },
+      "suggestedAction": "Compare the section with the source and classify it manually."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-P1-USER-MANUAL-12-UNSUPPORTED",
+      "type": "UNSUPPORTED_SECTION",
+      "severity": "warning",
+      "message": "The section \"USER MANUAL\" is not in the recognised manual-section catalogue and was preserved unchanged.",
+      "sourceReference": {
+        "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P1-USER-MANUAL-12",
+        "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+        "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-USER-MANUAL-12",
+        "originalHeading": "USER MANUAL",
+        "pageNumber": 1,
+        "startLine": 157,
+        "endLine": 162
+      },
+      "suggestedAction": "Compare the section with the source and classify it manually."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-P2-HYBROGEN-15-UNSUPPORTED",
+      "type": "UNSUPPORTED_SECTION",
+      "severity": "warning",
+      "message": "The section \"HYBROGEN\" is not in the recognised manual-section catalogue and was preserved unchanged.",
+      "sourceReference": {
+        "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P2-HYBROGEN-15",
+        "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+        "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-HYBROGEN-15",
+        "originalHeading": "HYBROGEN",
+        "pageNumber": 2,
+        "startLine": 187,
+        "endLine": 199
+      },
+      "suggestedAction": "Compare the section with the source and classify it manually."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-P2-HYDROGEN-WITH-MINEDAI7EC-USER-HANLAL-17-UNSUPPORTED",
+      "type": "UNSUPPORTED_SECTION",
+      "severity": "warning",
+      "message": "The section \"HYDROGEN WITH MINEDAI7EC USER HANLAL\" is not in the recognised manual-section catalogue and was preserved unchanged.",
+      "sourceReference": {
+        "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P2-HYDROGEN-WITH-MINEDAI7EC-USER-HANLAL-17",
+        "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+        "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-HYDROGEN-WITH-MINEDAI7EC-USER-HANLAL-17",
+        "originalHeading": "HYDROGEN WITH MINEDAI7EC USER HANLAL",
+        "pageNumber": 2,
+        "startLine": 210,
+        "endLine": 218
+      },
+      "suggestedAction": "Compare the section with the source and classify it manually."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-P2-THE-HYDROGEN-18-UNSUPPORTED",
+      "type": "UNSUPPORTED_SECTION",
+      "severity": "warning",
+      "message": "The section \"THE HYDROGEN\" is not in the recognised manual-section catalogue and was preserved unchanged.",
+      "sourceReference": {
+        "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P2-THE-HYDROGEN-18",
+        "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+        "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-THE-HYDROGEN-18",
+        "originalHeading": "THE HYDROGEN",
+        "pageNumber": 2,
+        "startLine": 219,
+        "endLine": 221
+      },
+      "suggestedAction": "Compare the section with the source and classify it manually."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-P2-WATER-GENERATOR-19-UNSUPPORTED",
+      "type": "UNSUPPORTED_SECTION",
+      "severity": "warning",
+      "message": "The section \"WATER GENERATOR\" is not in the recognised manual-section catalogue and was preserved unchanged.",
+      "sourceReference": {
+        "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P2-WATER-GENERATOR-19",
+        "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+        "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-WATER-GENERATOR-19",
+        "originalHeading": "WATER GENERATOR",
+        "pageNumber": 2,
+        "startLine": 222,
+        "endLine": 223
+      },
+      "suggestedAction": "Compare the section with the source and classify it manually."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-P2-CONSISTS-OF-20-UNSUPPORTED",
+      "type": "UNSUPPORTED_SECTION",
+      "severity": "warning",
+      "message": "The section \"CONSISTS OF:\" is not in the recognised manual-section catalogue and was preserved unchanged.",
+      "sourceReference": {
+        "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P2-CONSISTS-OF-20",
+        "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+        "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-CONSISTS-OF-20",
+        "originalHeading": "CONSISTS OF:",
+        "pageNumber": 2,
+        "startLine": 224,
+        "endLine": 247
+      },
+      "suggestedAction": "Compare the section with the source and classify it manually."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-MISSING-VERSION",
+      "type": "MISSING_METADATA",
+      "severity": "warning",
+      "message": "Source metadata field \"version\" was not provided and remains null in the draft.",
+      "suggestedAction": "Check the official manual and add \"version\" manually if it is explicitly available."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-P1-TECHNICAL-SPECIFICATIONS-09-UNIT-B",
+      "type": "UNRECOGNISED_UNIT",
+      "severity": "warning",
+      "message": "The unit token \"b\" is not in the importer allow-list and was preserved exactly.",
+      "sourceReference": {
+        "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P1-TECHNICAL-SPECIFICATIONS-09",
+        "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+        "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-TECHNICAL-SPECIFICATIONS-09",
+        "originalHeading": "TECHNICAL SPECIFICATIONS",
+        "pageNumber": 1,
+        "startLine": 105,
+        "endLine": 151
+      },
+      "suggestedAction": "Verify the unit against the official manual without converting or normalising it."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-P2-ALKALINE-IONIZED-WATER-PREPARATION-WITH-MINERALIZATION-BALLS-23-UNIT-TI",
+      "type": "UNRECOGNISED_UNIT",
+      "severity": "warning",
+      "message": "The unit token \"TI\" is not in the importer allow-list and was preserved exactly.",
+      "sourceReference": {
+        "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P2-ALKALINE-IONIZED-WATER-PREPARATION-WITH-MINERALIZATION-BALLS-23",
+        "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+        "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-ALKALINE-IONIZED-WATER-PREPARATION-WITH-MINERALIZATION-BALLS-23",
+        "originalHeading": "ALKALINE IONIZED WATER PREPARATION (WITH MINERALIZATION BALLS)",
+        "pageNumber": 2,
+        "startLine": 314,
+        "endLine": 331
+      },
+      "suggestedAction": "Verify the unit against the official manual without converting or normalising it."
+    }
+  ],
+  "unresolvedIssues": [
+    {
+      "id": "IMAGE-OCR-MANUAL-REVIEW",
+      "type": "MANUAL_REVIEW_REQUIRED",
+      "severity": "warning",
+      "message": "This draft was extracted locally from images. Every line must be compared with the original pages before approval.",
+      "suggestedAction": "Review the complete OCR output side by side with every source image."
+    },
+    {
+      "id": "OCR-P1-L065",
+      "type": "AMBIGUOUS_TEXT",
+      "severity": "warning",
+      "message": "Low-confidence OCR text on page 1: \"N111,\" (confidence 0.300).",
+      "suggestedAction": "Compare this line with the source image and correct it manually without inferring missing text."
+    },
+    {
+      "id": "OCR-P2-L046",
+      "type": "AMBIGUOUS_TEXT",
+      "severity": "warning",
+      "message": "Low-confidence OCR text on page 2: \"\"genz\"\" (confidence 0.300).",
+      "suggestedAction": "Compare this line with the source image and correct it manually without inferring missing text."
+    },
+    {
+      "id": "OCR-P2-L141",
+      "type": "AMBIGUOUS_TEXT",
+      "severity": "warning",
+      "message": "Low-confidence OCR text on page 2: \"ncentreaton\" (confidence 0.300).",
+      "suggestedAction": "Compare this line with the source image and correct it manually without inferring missing text."
+    },
+    {
+      "id": "OCR-P2-L163",
+      "type": "AMBIGUOUS_TEXT",
+      "severity": "warning",
+      "message": "Low-confidence OCR text on page 2: \"Llutann\" (confidence 0.300).",
+      "suggestedAction": "Compare this line with the source image and correct it manually without inferring missing text."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-P1-HYDROGEN-WATER-10-UNSUPPORTED",
+      "type": "UNSUPPORTED_SECTION",
+      "severity": "warning",
+      "message": "The section \"HYDROGEN WATER\" is not in the recognised manual-section catalogue and was preserved unchanged.",
+      "sourceReference": {
+        "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P1-HYDROGEN-WATER-10",
+        "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+        "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-HYDROGEN-WATER-10",
+        "originalHeading": "HYDROGEN WATER",
+        "pageNumber": 1,
+        "startLine": 152,
+        "endLine": 154
+      },
+      "suggestedAction": "Compare the section with the source and classify it manually."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-P1-HYDROGEN-WATER-GENERATOR-PRO-WITH-MINERALIZER-11-UNSUPPORTED",
+      "type": "UNSUPPORTED_SECTION",
+      "severity": "warning",
+      "message": "The section \"HYDROGEN WATER GENERATOR PRO WITH MINERALIZER\" is not in the recognised manual-section catalogue and was preserved unchanged.",
+      "sourceReference": {
+        "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P1-HYDROGEN-WATER-GENERATOR-PRO-WITH-MINERALIZER-11",
+        "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+        "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-HYDROGEN-WATER-GENERATOR-PRO-WITH-MINERALIZER-11",
+        "originalHeading": "HYDROGEN WATER GENERATOR PRO WITH MINERALIZER",
+        "pageNumber": 1,
+        "startLine": 155,
+        "endLine": 156
+      },
+      "suggestedAction": "Compare the section with the source and classify it manually."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-P1-USER-MANUAL-12-UNSUPPORTED",
+      "type": "UNSUPPORTED_SECTION",
+      "severity": "warning",
+      "message": "The section \"USER MANUAL\" is not in the recognised manual-section catalogue and was preserved unchanged.",
+      "sourceReference": {
+        "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P1-USER-MANUAL-12",
+        "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+        "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-USER-MANUAL-12",
+        "originalHeading": "USER MANUAL",
+        "pageNumber": 1,
+        "startLine": 157,
+        "endLine": 162
+      },
+      "suggestedAction": "Compare the section with the source and classify it manually."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-P2-HYBROGEN-15-UNSUPPORTED",
+      "type": "UNSUPPORTED_SECTION",
+      "severity": "warning",
+      "message": "The section \"HYBROGEN\" is not in the recognised manual-section catalogue and was preserved unchanged.",
+      "sourceReference": {
+        "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P2-HYBROGEN-15",
+        "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+        "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-HYBROGEN-15",
+        "originalHeading": "HYBROGEN",
+        "pageNumber": 2,
+        "startLine": 187,
+        "endLine": 199
+      },
+      "suggestedAction": "Compare the section with the source and classify it manually."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-P2-HYDROGEN-WITH-MINEDAI7EC-USER-HANLAL-17-UNSUPPORTED",
+      "type": "UNSUPPORTED_SECTION",
+      "severity": "warning",
+      "message": "The section \"HYDROGEN WITH MINEDAI7EC USER HANLAL\" is not in the recognised manual-section catalogue and was preserved unchanged.",
+      "sourceReference": {
+        "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P2-HYDROGEN-WITH-MINEDAI7EC-USER-HANLAL-17",
+        "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+        "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-HYDROGEN-WITH-MINEDAI7EC-USER-HANLAL-17",
+        "originalHeading": "HYDROGEN WITH MINEDAI7EC USER HANLAL",
+        "pageNumber": 2,
+        "startLine": 210,
+        "endLine": 218
+      },
+      "suggestedAction": "Compare the section with the source and classify it manually."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-P2-THE-HYDROGEN-18-UNSUPPORTED",
+      "type": "UNSUPPORTED_SECTION",
+      "severity": "warning",
+      "message": "The section \"THE HYDROGEN\" is not in the recognised manual-section catalogue and was preserved unchanged.",
+      "sourceReference": {
+        "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P2-THE-HYDROGEN-18",
+        "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+        "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-THE-HYDROGEN-18",
+        "originalHeading": "THE HYDROGEN",
+        "pageNumber": 2,
+        "startLine": 219,
+        "endLine": 221
+      },
+      "suggestedAction": "Compare the section with the source and classify it manually."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-P2-WATER-GENERATOR-19-UNSUPPORTED",
+      "type": "UNSUPPORTED_SECTION",
+      "severity": "warning",
+      "message": "The section \"WATER GENERATOR\" is not in the recognised manual-section catalogue and was preserved unchanged.",
+      "sourceReference": {
+        "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P2-WATER-GENERATOR-19",
+        "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+        "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-WATER-GENERATOR-19",
+        "originalHeading": "WATER GENERATOR",
+        "pageNumber": 2,
+        "startLine": 222,
+        "endLine": 223
+      },
+      "suggestedAction": "Compare the section with the source and classify it manually."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-P2-CONSISTS-OF-20-UNSUPPORTED",
+      "type": "UNSUPPORTED_SECTION",
+      "severity": "warning",
+      "message": "The section \"CONSISTS OF:\" is not in the recognised manual-section catalogue and was preserved unchanged.",
+      "sourceReference": {
+        "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P2-CONSISTS-OF-20",
+        "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+        "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-CONSISTS-OF-20",
+        "originalHeading": "CONSISTS OF:",
+        "pageNumber": 2,
+        "startLine": 224,
+        "endLine": 247
+      },
+      "suggestedAction": "Compare the section with the source and classify it manually."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-MISSING-VERSION",
+      "type": "MISSING_METADATA",
+      "severity": "warning",
+      "message": "Source metadata field \"version\" was not provided and remains null in the draft.",
+      "suggestedAction": "Check the official manual and add \"version\" manually if it is explicitly available."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-P1-TECHNICAL-SPECIFICATIONS-09-UNIT-B",
+      "type": "UNRECOGNISED_UNIT",
+      "severity": "warning",
+      "message": "The unit token \"b\" is not in the importer allow-list and was preserved exactly.",
+      "sourceReference": {
+        "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P1-TECHNICAL-SPECIFICATIONS-09",
+        "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+        "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-TECHNICAL-SPECIFICATIONS-09",
+        "originalHeading": "TECHNICAL SPECIFICATIONS",
+        "pageNumber": 1,
+        "startLine": 105,
+        "endLine": 151
+      },
+      "suggestedAction": "Verify the unit against the official manual without converting or normalising it."
+    },
+    {
+      "id": "ADVANCED-BOTTLE-MANUAL-001-P2-ALKALINE-IONIZED-WATER-PREPARATION-WITH-MINERALIZATION-BALLS-23-UNIT-TI",
+      "type": "UNRECOGNISED_UNIT",
+      "severity": "warning",
+      "message": "The unit token \"TI\" is not in the importer allow-list and was preserved exactly.",
+      "sourceReference": {
+        "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P2-ALKALINE-IONIZED-WATER-PREPARATION-WITH-MINERALIZATION-BALLS-23",
+        "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+        "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-ALKALINE-IONIZED-WATER-PREPARATION-WITH-MINERALIZATION-BALLS-23",
+        "originalHeading": "ALKALINE IONIZED WATER PREPARATION (WITH MINERALIZATION BALLS)",
+        "pageNumber": 2,
+        "startLine": 314,
+        "endLine": 331
+      },
+      "suggestedAction": "Verify the unit against the official manual without converting or normalising it."
+    }
+  ],
+  "skippedContent": [],
+  "validationResult": {
+    "valid": true,
+    "checks": [
+      {
+        "name": "source-id-present",
+        "passed": true,
+        "message": "A source ID is present."
+      },
+      {
+        "name": "draft-status-enforced",
+        "passed": true,
+        "message": "The generated document is explicitly marked as draft."
+      },
+      {
+        "name": "safe-draft-output-path",
+        "passed": true,
+        "message": "The output path resolves inside a configured directory named \"drafts\"."
+      },
+      {
+        "name": "all-factual-sections-referenced",
+        "passed": true,
+        "message": "Every extracted section has a source ID and a reference present in the draft."
+      },
+      {
+        "name": "stable-source-location",
+        "passed": true,
+        "message": "Every reference includes a page number or stable source line range."
+      },
+      {
+        "name": "source-content-preserved-verbatim",
+        "passed": true,
+        "message": "Every extracted section appears unchanged in the generated draft."
+      },
+      {
+        "name": "warnings-preserved",
+        "passed": true,
+        "message": "All detected warnings and limitations are preserved."
+      }
+    ],
+    "issues": [
+      {
+        "id": "ADVANCED-BOTTLE-MANUAL-001-MISSING-VERSION",
+        "type": "MISSING_METADATA",
+        "severity": "warning",
+        "message": "Source metadata field \"version\" was not provided and remains null in the draft.",
+        "suggestedAction": "Check the official manual and add \"version\" manually if it is explicitly available."
+      },
+      {
+        "id": "ADVANCED-BOTTLE-MANUAL-001-P1-TECHNICAL-SPECIFICATIONS-09-UNIT-B",
+        "type": "UNRECOGNISED_UNIT",
+        "severity": "warning",
+        "message": "The unit token \"b\" is not in the importer allow-list and was preserved exactly.",
+        "sourceReference": {
+          "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P1-TECHNICAL-SPECIFICATIONS-09",
+          "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+          "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P1-TECHNICAL-SPECIFICATIONS-09",
+          "originalHeading": "TECHNICAL SPECIFICATIONS",
+          "pageNumber": 1,
+          "startLine": 105,
+          "endLine": 151
+        },
+        "suggestedAction": "Verify the unit against the official manual without converting or normalising it."
+      },
+      {
+        "id": "ADVANCED-BOTTLE-MANUAL-001-P2-ALKALINE-IONIZED-WATER-PREPARATION-WITH-MINERALIZATION-BALLS-23-UNIT-TI",
+        "type": "UNRECOGNISED_UNIT",
+        "severity": "warning",
+        "message": "The unit token \"TI\" is not in the importer allow-list and was preserved exactly.",
+        "sourceReference": {
+          "referenceId": "ADVANCED-BOTTLE-MANUAL-001-P2-ALKALINE-IONIZED-WATER-PREPARATION-WITH-MINERALIZATION-BALLS-23",
+          "sourceId": "ADVANCED-BOTTLE-MANUAL-001",
+          "stableSectionId": "ADVANCED-BOTTLE-MANUAL-001-P2-ALKALINE-IONIZED-WATER-PREPARATION-WITH-MINERALIZATION-BALLS-23",
+          "originalHeading": "ALKALINE IONIZED WATER PREPARATION (WITH MINERALIZATION BALLS)",
+          "pageNumber": 2,
+          "startLine": 314,
+          "endLine": 331
+        },
+        "suggestedAction": "Verify the unit against the official manual without converting or normalising it."
+      }
+    ]
+  }
+}

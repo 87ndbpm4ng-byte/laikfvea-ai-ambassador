@@ -1,0 +1,60 @@
+import type { SessionConversationEntry } from "@/lib/session/conversation-history";
+import type { VisitorSession } from "@/lib/session/session-types";
+import type { ResponseStrategy } from "@/lib/response/response-types";
+import type { Guide } from "@/types/guide";
+
+export type OrchestratorMetadata = {
+  requestId: string;
+  receivedAt: string;
+  providerId: string;
+  guide: Guide;
+};
+
+export type PromptContextFragment = {
+  id: string;
+  content: string;
+  sourceLabel?: string;
+};
+
+export type OrchestratorPrompt = {
+  systemInstructions: string;
+  responseDirectives: readonly string[];
+  sessionContext: {
+    sessionId: string;
+    conversationStage: string;
+    visitorIntent: string | null;
+    language: string | null;
+    discussedTopics: readonly string[];
+    viewedProducts: readonly string[];
+    visitorGoals: readonly string[];
+  };
+  conversationHistory: readonly SessionConversationEntry[];
+  userMessage: string;
+  supplementalContext: readonly PromptContextFragment[];
+};
+
+export type OrchestrateMessageInput = {
+  message: string;
+  guide: Guide;
+  sessionId?: string;
+  language?: string | null;
+  supplementalContext?: readonly PromptContextFragment[];
+};
+
+export type OrchestratorResult = {
+  sessionId: string;
+  response: string;
+  responseStrategy: ResponseStrategy;
+  session: VisitorSession;
+};
+
+export interface OrchestratorAIProvider {
+  readonly id: string;
+  generate(
+    prompt: OrchestratorPrompt,
+    guide: Guide,
+  ): Promise<string>;
+}
+
+export type OrchestratorClock = () => Date;
+export type OrchestratorIdFactory = () => string;
