@@ -12,57 +12,54 @@ import {
   SessionEndScreen,
 } from "@/components/screens/journey-screens";
 import { PrimaryButton } from "@/components/ui/primary-button";
-import {
-  ConversationEntry,
-  GuideId,
-  JourneyScreen,
-  ProductId,
-  getPreparedResponse,
-  products,
-} from "@/lib/experience-data";
+import { useConversation } from "@/hooks/use-conversation";
+import { guides } from "@/lib/data/guides";
+import { products } from "@/lib/data/products";
+import { getSuggestedQuestion } from "@/lib/data/suggested-questions";
+import type { JourneyScreen } from "@/types/conversation";
+import type { GuideId } from "@/types/guide";
+import type { ProductId } from "@/types/product";
 
 const languages = ["English", "中文", "Русский", "Español"] as const;
 
 export default function Home() {
   const [screen, setScreen] = useState<JourneyScreen>("idle");
   const [, setSelectedLanguage] = useState<string | null>(null);
-  const [selectedGuide, setSelectedGuide] = useState<GuideId | null>(null);
+  const [selectedGuideId, setSelectedGuideId] = useState<GuideId | null>(null);
   const [selectedProduct, setSelectedProduct] =
     useState<ProductId>("everyday");
-  const [history, setHistory] = useState<ConversationEntry[]>([]);
-
-  function askQuestion(question: string) {
-    setHistory((entries) => [
-      ...entries,
-      {
-        id: Date.now(),
-        question,
-        response: getPreparedResponse(question),
-      },
-    ]);
-  }
+  const selectedGuide = selectedGuideId ? guides[selectedGuideId] : null;
+  const conversation = useConversation(selectedGuide);
 
   function openProduct(product: ProductId) {
     setSelectedProduct(product);
     setScreen("product-detail");
   }
 
-  function askAboutProduct() {
+  async function askAboutProduct() {
     const product = products[selectedProduct];
-    askQuestion(`Tell me about ${product.name}`);
+    await conversation.submitText(
+      `Tell me about ${product.name}`,
+      selectedProduct,
+    );
     setScreen("conversation");
   }
 
-  function askAboutComparison() {
-    askQuestion("Compare the available products");
+  async function askAboutComparison() {
+    const comparisonQuestion = getSuggestedQuestion("product-comparison");
+
+    if (comparisonQuestion) {
+      await conversation.submitSuggestedQuestion(comparisonQuestion);
+    }
+
     setScreen("conversation");
   }
 
   function restartSession() {
     setSelectedLanguage(null);
-    setSelectedGuide(null);
+    setSelectedGuideId(null);
     setSelectedProduct("everyday");
-    setHistory([]);
+    conversation.clearHistory();
     setScreen("idle");
   }
 
@@ -123,22 +120,24 @@ export default function Home() {
           </section>
         ) : screen === "guide" ? (
           <GuideSelectionScreen
-            selectedGuide={selectedGuide}
-            onSelect={setSelectedGuide}
+            selectedGuide={selectedGuideId}
+            onSelect={setSelectedGuideId}
             onBack={() => setScreen("language")}
             onContinue={() => setScreen("introduction")}
           />
-        ) : screen === "introduction" && selectedGuide ? (
+        ) : screen === "introduction" && selectedGuideId ? (
           <GuideIntroductionScreen
-            guideId={selectedGuide}
+            guideId={selectedGuideId}
             onBack={() => setScreen("guide")}
             onBegin={() => setScreen("conversation")}
           />
-        ) : screen === "conversation" && selectedGuide ? (
+        ) : screen === "conversation" && selectedGuideId ? (
           <ConversationScreen
-            guideId={selectedGuide}
-            history={history}
-            onAsk={askQuestion}
+            guideId={selectedGuideId}
+            messages={conversation.messages}
+            isLoading={conversation.isLoading}
+            onAskSuggested={conversation.submitSuggestedQuestion}
+            onAskText={conversation.submitText}
             onProducts={() => setScreen("products")}
             onEnd={() => setScreen("end")}
           />
@@ -167,8 +166,8 @@ export default function Home() {
           />
         ) : (
           <GuideSelectionScreen
-            selectedGuide={selectedGuide}
-            onSelect={setSelectedGuide}
+            selectedGuide={selectedGuideId}
+            onSelect={setSelectedGuideId}
             onBack={() => setScreen("language")}
             onContinue={() => setScreen("introduction")}
           />

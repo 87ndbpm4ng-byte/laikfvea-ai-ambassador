@@ -1,16 +1,20 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, KeyboardEvent, useState } from "react";
 import { GuideCard } from "@/components/ui/guide-card";
 import { PrimaryButton } from "@/components/ui/primary-button";
+import { guides } from "@/lib/data/guides";
 import {
-  ConversationEntry,
-  GuideId,
-  ProductId,
-  guides,
+  productComparisonRows,
   products,
-  suggestedQuestions,
-} from "@/lib/experience-data";
+} from "@/lib/data/products";
+import { suggestedQuestions } from "@/lib/data/suggested-questions";
+import type {
+  ConversationMessage,
+  SuggestedQuestion,
+} from "@/types/conversation";
+import type { GuideId } from "@/types/guide";
+import type { ProductId } from "@/types/product";
 
 type GuideSelectionScreenProps = {
   selectedGuide: GuideId | null;
@@ -99,32 +103,68 @@ export function GuideIntroductionScreen({
 
 type ConversationScreenProps = {
   guideId: GuideId;
-  history: ConversationEntry[];
-  onAsk: (question: string) => void;
+  messages: ConversationMessage[];
+  isLoading: boolean;
+  onAskSuggested: (question: SuggestedQuestion) => Promise<boolean>;
+  onAskText: (question: string) => Promise<boolean>;
   onProducts: () => void;
   onEnd: () => void;
 };
 
+type ConversationTurn = {
+  visitor: ConversationMessage;
+  guide?: ConversationMessage;
+};
+
+function createConversationTurns(messages: ConversationMessage[]) {
+  return messages.reduce<ConversationTurn[]>((turns, message) => {
+    if (message.role === "visitor") {
+      turns.push({ visitor: message });
+    } else if (message.role === "guide") {
+      const currentTurn = turns.at(-1);
+
+      if (currentTurn && !currentTurn.guide) {
+        currentTurn.guide = message;
+      }
+    }
+
+    return turns;
+  }, []);
+}
+
 export function ConversationScreen({
   guideId,
-  history,
-  onAsk,
+  messages,
+  isLoading,
+  onAskSuggested,
+  onAskText,
   onProducts,
   onEnd,
 }: ConversationScreenProps) {
   const guide = guides[guideId];
   const [draft, setDraft] = useState("");
+  const conversationTurns = createConversationTurns(messages);
 
-  function submitQuestion(event: FormEvent<HTMLFormElement>) {
+  async function submitQuestion(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const question = draft.trim();
 
-    if (!question) {
+    if (!question || isLoading) {
       return;
     }
 
-    onAsk(question);
-    setDraft("");
+    const submitted = await onAskText(question);
+
+    if (submitted) {
+      setDraft("");
+    }
+  }
+
+  function submitOnEnter(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+      event.preventDefault();
+      event.currentTarget.form?.requestSubmit();
+    }
   }
 
   return (
@@ -146,8 +186,9 @@ export function ConversationScreen({
         className="response-area"
         aria-live="polite"
         aria-label="Conversation"
+        aria-busy={isLoading}
       >
-        {history.length === 0 ? (
+        {conversationTurns.length === 0 ? (
           <div className="response-welcome">
             <p>
               Ask a question or choose a topic below. I’ll use the approved
@@ -156,16 +197,23 @@ export function ConversationScreen({
           </div>
         ) : (
           <ol className="conversation-history">
-            {history.map((entry) => (
-              <li className="conversation-entry" key={entry.id}>
+            {conversationTurns.map((turn) => (
+              <li className="conversation-entry" key={turn.visitor.id}>
                 <div className="visitor-question">
                   <span>You asked</span>
-                  <p>{entry.question}</p>
+                  <p>{turn.visitor.content}</p>
                 </div>
-                <div className="guide-response">
-                  <span>{guide.name}</span>
-                  <p>{entry.response}</p>
-                </div>
+                {turn.guide ? (
+                  <div className="guide-response">
+                    <span>{guide.name}</span>
+                    <p>{turn.guide.content}</p>
+                  </div>
+                ) : (
+                  <div className="guide-response">
+                    <span>{guide.name}</span>
+                    <p>Preparing response…</p>
+                  </div>
+                )}
               </li>
             ))}
           </ol>
@@ -177,10 +225,11 @@ export function ConversationScreen({
           <button
             className="suggestion-button"
             type="button"
-            key={question}
-            onClick={() => onAsk(question)}
+            key={question.id}
+            disabled={isLoading}
+            onClick={() => onAskSuggested(question)}
           >
-            {question}
+            {question.label}
           </button>
         ))}
       </div>
@@ -192,18 +241,25 @@ export function ConversationScreen({
         <input
           id="visitor-question"
           value={draft}
+          disabled={isLoading}
           onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={submitOnEnter}
           placeholder="Ask your guide"
         />
         <button
           className="composer-icon-button"
           type="button"
           aria-label="Microphone placeholder"
+          disabled={isLoading}
         >
           Mic
         </button>
-        <button className="composer-send" type="submit" disabled={!draft.trim()}>
-          Send
+        <button
+          className="composer-send"
+          type="submit"
+          disabled={!draft.trim() || isLoading}
+        >
+          {isLoading ? "Sending" : "Send"}
         </button>
       </form>
 
@@ -337,14 +393,6 @@ type ProductComparisonScreenProps = {
   onBack: () => void;
 };
 
-const comparisonRows = [
-  ["Intended use", "Everyday use", "Advanced use"],
-  ["Portability", "Portable design", "Advanced bottle"],
-  ["Hydrogen water", "Included", "Included"],
-  ["Inhalation", "Not included", "Included"],
-  ["Mineralisation", "Not included", "Included"],
-] as const;
-
 export function ProductComparisonScreen({
   onAsk,
   onBack,
@@ -364,16 +412,16 @@ export function ProductComparisonScreen({
           <thead>
             <tr>
               <th scope="col">Feature</th>
-              <th scope="col">Everyday Bottle</th>
-              <th scope="col">Advanced Bottle</th>
+              <th scope="col">{products.everyday.name}</th>
+              <th scope="col">{products.advanced.name}</th>
             </tr>
           </thead>
           <tbody>
-            {comparisonRows.map(([feature, goValue, proValue]) => (
-              <tr key={feature}>
-                <th scope="row">{feature}</th>
-                <td>{goValue}</td>
-                <td>{proValue}</td>
+            {productComparisonRows.map((row) => (
+              <tr key={row.id}>
+                <th scope="row">{row.label}</th>
+                <td>{row.everyday}</td>
+                <td>{row.advanced}</td>
               </tr>
             ))}
           </tbody>
