@@ -4,6 +4,7 @@ import OpenAI from "openai";
 import {
   OPENAI_MAX_OUTPUT_TOKENS,
   OPENAI_MODEL,
+  OPENAI_REQUEST_TIMEOUT_MS,
 } from "@/lib/ai/model-config";
 import { createSystemPrompt } from "@/lib/ai/system-prompt";
 import type { ConversationHistoryItem } from "@/types/conversation";
@@ -42,7 +43,11 @@ export async function generateOpenAIResponse({
     throw new MissingOpenAIKeyError();
   }
 
-  const client = new OpenAI({ apiKey });
+  const client = new OpenAI({
+    apiKey,
+    maxRetries: 0,
+    timeout: OPENAI_REQUEST_TIMEOUT_MS,
+  });
   const recentHistory = history.slice(-MAX_OPENAI_HISTORY_MESSAGES);
   const input = [
     ...recentHistory.map((item) => ({

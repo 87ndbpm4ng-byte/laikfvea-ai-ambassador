@@ -20,7 +20,7 @@ function createMessageId(role: ConversationMessage["role"]) {
   return `${role}-${Date.now()}-${fallbackMessageSequence}`;
 }
 
-export function useConversation(guide: Guide | null) {
+export function useConversation(guide: Guide | null, language?: string | null) {
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const loadingRef = useRef(false);
@@ -76,6 +76,7 @@ export function useConversation(guide: Guide | null) {
           content: normalizedContent,
           guide,
           history,
+          language: language ?? undefined,
           questionId,
           relatedProduct,
         });
@@ -99,7 +100,7 @@ export function useConversation(guide: Guide | null) {
         setIsLoading(false);
       }
     },
-    [guide, messages],
+    [guide, language, messages],
   );
 
   const submitSuggestedQuestion = useCallback(

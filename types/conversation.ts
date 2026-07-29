@@ -27,6 +27,7 @@ export type ConversationApiRequest = {
   message: string;
   guideId: GuideId;
   history: ConversationHistoryItem[];
+  language?: string;
 };
 
 export type ConversationApiResponse = {

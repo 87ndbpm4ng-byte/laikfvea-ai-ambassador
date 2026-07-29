@@ -24,12 +24,12 @@ const languages = ["English", "中文", "Русский", "Español"] as const;
 
 export default function Home() {
   const [screen, setScreen] = useState<JourneyScreen>("idle");
-  const [, setSelectedLanguage] = useState<string | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const [selectedGuideId, setSelectedGuideId] = useState<GuideId | null>(null);
   const [selectedProduct, setSelectedProduct] =
     useState<ProductId>("everyday");
   const selectedGuide = selectedGuideId ? guides[selectedGuideId] : null;
-  const conversation = useConversation(selectedGuide);
+  const conversation = useConversation(selectedGuide, selectedLanguage);
 
   function openProduct(product: ProductId) {
     setSelectedProduct(product);

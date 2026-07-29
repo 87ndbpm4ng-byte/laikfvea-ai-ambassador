@@ -19,6 +19,7 @@ export const runtime = "nodejs";
 const MAX_MESSAGE_LENGTH = 1_000;
 const MAX_HISTORY_ITEM_LENGTH = 2_000;
 const MAX_RECEIVED_HISTORY_MESSAGES = 30;
+const MAX_LANGUAGE_LENGTH = 40;
 
 function errorResponse(error: string, status: number) {
   return NextResponse.json<ConversationApiResponse>(
@@ -58,6 +59,10 @@ function validateRequest(value: unknown): ConversationApiRequest | null {
     request.message.trim().length === 0 ||
     request.message.length > MAX_MESSAGE_LENGTH ||
     !isGuideId(request.guideId) ||
+    (request.language !== undefined &&
+      (typeof request.language !== "string" ||
+        request.language.trim().length === 0 ||
+        request.language.length > MAX_LANGUAGE_LENGTH)) ||
     !Array.isArray(request.history) ||
     request.history.length > MAX_RECEIVED_HISTORY_MESSAGES ||
     !request.history.every(isHistoryItem)
@@ -69,6 +74,10 @@ function validateRequest(value: unknown): ConversationApiRequest | null {
     message: request.message.trim(),
     guideId: request.guideId,
     history: request.history.slice(-MAX_OPENAI_HISTORY_MESSAGES),
+    language:
+      typeof request.language === "string"
+        ? request.language.trim()
+        : undefined,
   };
 }
 
@@ -79,6 +88,10 @@ function getOpenAIErrorStatus(error: unknown) {
 
   if (error instanceof OpenAI.RateLimitError) {
     return 429;
+  }
+
+  if (error instanceof OpenAI.APIConnectionTimeoutError) {
+    return 504;
   }
 
   if (error instanceof OpenAI.APIError && error.status >= 400) {

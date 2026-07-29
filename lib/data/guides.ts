@@ -9,7 +9,8 @@ export const guides: Record<GuideId, Guide> = {
     introduction:
       "I’ll help you explore hydrogen technology, everyday use and recovery.",
     focusAreas: ["Daily use", "Recovery", "Lifestyle"],
-    communicationStyle: "Warm, practical and focused on everyday context.",
+    communicationStyle:
+      "Warm, approachable and calm. Explain ideas simply through everyday routines, accessibility and lifestyle context.",
   },
   daniel: {
     id: "daniel",
@@ -23,6 +24,7 @@ export const guides: Record<GuideId, Guide> = {
       "Engineering",
       "Product comparisons",
     ],
-    communicationStyle: "Clear, precise and focused on technical context.",
+    communicationStyle:
+      "Precise, analytical and structured. Explain how things work and clarify product differences without unnecessary jargon.",
   },
 };
