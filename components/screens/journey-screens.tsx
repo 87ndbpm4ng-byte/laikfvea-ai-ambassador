@@ -3,6 +3,8 @@
 import { FormEvent, KeyboardEvent, useState } from "react";
 import { GuideCard } from "@/components/ui/guide-card";
 import { PrimaryButton } from "@/components/ui/primary-button";
+import { VoiceControls } from "@/components/ui/voice-controls";
+import { useVoiceMode } from "@/hooks/use-voice-mode";
 import { guides } from "@/lib/data/guides";
 import {
   productComparisonRows,
@@ -144,6 +146,12 @@ export function ConversationScreen({
   const guide = guides[guideId];
   const [draft, setDraft] = useState("");
   const conversationTurns = createConversationTurns(messages);
+  const voice = useVoiceMode({
+    guideId,
+    messages,
+    isConversationLoading: isLoading,
+    submitTranscript: onAskText,
+  });
 
   async function submitQuestion(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -247,14 +255,6 @@ export function ConversationScreen({
           placeholder="Ask your guide"
         />
         <button
-          className="composer-icon-button"
-          type="button"
-          aria-label="Microphone placeholder"
-          disabled={isLoading}
-        >
-          Mic
-        </button>
-        <button
           className="composer-send"
           type="submit"
           disabled={!draft.trim() || isLoading}
@@ -262,6 +262,21 @@ export function ConversationScreen({
           {isLoading ? "Sending" : "Send"}
         </button>
       </form>
+
+      <VoiceControls
+        enabled={voice.isEnabled}
+        inputState={voice.inputState}
+        outputState={voice.outputState}
+        transcript={voice.transcript}
+        error={voice.error}
+        recognitionSupported={voice.isRecognitionSupported}
+        synthesisSupported={voice.isSynthesisSupported}
+        disabled={isLoading}
+        onEnabledChange={voice.setEnabled}
+        onStartListening={voice.startListening}
+        onStopListening={voice.stopListening}
+        onStopSpeaking={voice.stopSpeaking}
+      />
 
       <button className="explorer-action" type="button" onClick={onProducts}>
         Explore Products
