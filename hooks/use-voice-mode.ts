@@ -5,6 +5,7 @@ import { BrowserSpeechRecognitionProvider } from "@/lib/voice/browser-speech-rec
 import { OpenAISpeechSynthesisProvider } from "@/lib/voice/openai-speech-synthesis";
 import type {
   SpeechRecognitionProvider,
+  SpeechPlaybackProvider,
   SpeechSynthesisProvider,
   VoiceError,
   VoiceInputState,
@@ -41,6 +42,8 @@ export function useVoiceMode({
   const [isEnabled, setIsEnabled] = useState(false);
   const [inputState, setInputState] = useState<VoiceInputState>("idle");
   const [outputState, setOutputState] = useState<VoiceOutputState>("idle");
+  const [playbackProvider, setPlaybackProvider] =
+    useState<SpeechPlaybackProvider | null>(null);
   const [transcript, setTranscript] = useState("");
   const [error, setError] = useState<VoiceError | null>(null);
   const submittedTranscriptRef = useRef(false);
@@ -51,6 +54,7 @@ export function useVoiceMode({
     synthesis.stop();
     setInputState("idle");
     setOutputState("idle");
+    setPlaybackProvider(null);
   }, [recognition, synthesis]);
 
   const setEnabled = useCallback(
@@ -83,6 +87,7 @@ export function useVoiceMode({
 
     synthesis.stop();
     setOutputState("idle");
+    setPlaybackProvider(null);
     setError(null);
     setTranscript("");
     setInputState("listening");
@@ -142,6 +147,7 @@ export function useVoiceMode({
 
     lastSpokenMessageRef.current = latestGuideMessage.id;
     synthesis.speak(latestGuideMessage.content, guideId, {
+      onProvider: setPlaybackProvider,
       onStart: () => setOutputState("speaking"),
       onEnd: () => setOutputState("idle"),
       onError: handleError,
@@ -169,6 +175,7 @@ export function useVoiceMode({
     isSynthesisSupported: synthesis.isSupported,
     inputState,
     outputState,
+    playbackProvider,
     transcript,
     error,
     setEnabled,

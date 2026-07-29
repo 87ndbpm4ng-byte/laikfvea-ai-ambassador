@@ -1,6 +1,7 @@
 "use client";
 
 import type {
+  SpeechPlaybackProvider,
   VoiceError,
   VoiceInputState,
   VoiceOutputState,
@@ -10,6 +11,8 @@ type VoiceControlsProps = {
   enabled: boolean;
   inputState: VoiceInputState;
   outputState: VoiceOutputState;
+  playbackProvider: SpeechPlaybackProvider | null;
+  guideName: string;
   transcript: string;
   error: VoiceError | null;
   recognitionSupported: boolean;
@@ -25,6 +28,8 @@ export function VoiceControls({
   enabled,
   inputState,
   outputState,
+  playbackProvider,
+  guideName,
   transcript,
   error,
   recognitionSupported,
@@ -122,6 +127,15 @@ export function VoiceControls({
               </button>
             ) : null}
           </div>
+
+          {guideName === "Daniel" && playbackProvider ? (
+            <p className="voice-provider-badge" role="status">
+              Daniel voice:{" "}
+              {playbackProvider === "elevenlabs"
+                ? "ElevenLabs"
+                : "Browser fallback"}
+            </p>
+          ) : null}
 
           {!recognitionSupported ? (
             <p className="voice-message" role="status">

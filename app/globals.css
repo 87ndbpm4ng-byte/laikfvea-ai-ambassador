@@ -634,6 +634,19 @@ h1 {
   margin: 0;
 }
 
+.voice-provider-badge {
+  width: fit-content;
+  margin: 0.75rem 0 0;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid #d8e4e9;
+  border-radius: 999px;
+  background: #f5f9fa;
+  color: #385663;
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
 .voice-panel-title {
   font-size: 1rem;
   font-weight: 600;

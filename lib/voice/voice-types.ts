@@ -7,6 +7,7 @@ export type VoiceInputState =
   | "unavailable";
 
 export type VoiceOutputState = "idle" | "speaking" | "unavailable";
+export type SpeechPlaybackProvider = "elevenlabs" | "openai" | "browser";
 
 export type VoiceErrorCode =
   | "permission-denied"
@@ -40,6 +41,7 @@ export interface SpeechSynthesisProvider {
     text: string,
     guideId: GuideId,
     callbacks: {
+      onProvider?: (provider: SpeechPlaybackProvider) => void;
       onStart: () => void;
       onEnd: () => void;
       onError: (error: VoiceError) => void;

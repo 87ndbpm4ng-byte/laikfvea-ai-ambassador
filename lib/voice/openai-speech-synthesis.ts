@@ -1,5 +1,6 @@
 import { BrowserSpeechSynthesisProvider } from "@/lib/voice/browser-speech-synthesis";
 import type {
+  SpeechPlaybackProvider,
   SpeechSynthesisProvider,
   VoiceError,
 } from "@/lib/voice/voice-types";
@@ -74,6 +75,7 @@ export class OpenAISpeechSynthesisProvider
     text: string,
     guideId: GuideId,
     callbacks: {
+      onProvider?: (provider: SpeechPlaybackProvider) => void;
       onStart: () => void;
       onEnd: () => void;
       onError: (error: VoiceError) => void;
@@ -121,6 +123,7 @@ export class OpenAISpeechSynthesisProvider
     text: string,
     guideId: GuideId,
     callbacks: {
+      onProvider?: (provider: SpeechPlaybackProvider) => void;
       onStart: () => void;
       onEnd: () => void;
       onError: (error: VoiceError) => void;
@@ -167,6 +170,9 @@ export class OpenAISpeechSynthesisProvider
       this.activeObjectURL = objectURL;
       this.activeAudio = audio;
       audio.onplay = () => {
+        if (serverProvider === "elevenlabs" || serverProvider === "openai") {
+          callbacks.onProvider?.(serverProvider);
+        }
         if (guideId === "daniel") {
           console.info("[voice-output] Daniel playback started.", {
             playbackSource: serverProvider,
@@ -217,6 +223,7 @@ export class OpenAISpeechSynthesisProvider
     text: string,
     guideId: GuideId,
     callbacks: {
+      onProvider?: (provider: SpeechPlaybackProvider) => void;
       onStart: () => void;
       onEnd: () => void;
       onError: (error: VoiceError) => void;
@@ -236,6 +243,7 @@ export class OpenAISpeechSynthesisProvider
       return;
     }
 
+    callbacks.onProvider?.("browser");
     this.fallback.speak(text, guideId, callbacks);
   }
 

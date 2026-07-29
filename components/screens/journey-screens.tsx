@@ -267,6 +267,8 @@ export function ConversationScreen({
         enabled={voice.isEnabled}
         inputState={voice.inputState}
         outputState={voice.outputState}
+        playbackProvider={voice.playbackProvider}
+        guideName={guide.name}
         transcript={voice.transcript}
         error={voice.error}
         recognitionSupported={voice.isRecognitionSupported}
