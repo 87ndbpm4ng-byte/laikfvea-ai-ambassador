@@ -28,12 +28,14 @@ export type ConversationApiRequest = {
   guideId: GuideId;
   history: ConversationHistoryItem[];
   language?: string;
+  sessionId?: string;
 };
 
 export type ConversationApiResponse = {
   success: boolean;
   response: string;
   error?: string;
+  sessionId?: string;
 };
 
 export type SuggestedQuestion = {

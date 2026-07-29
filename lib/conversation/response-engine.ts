@@ -17,11 +17,13 @@ export type ResponseRequest = {
   language?: string;
   questionId?: string;
   relatedProduct?: ProductId;
+  sessionId?: string;
 };
 
 export type ResponseResult = {
   content: string;
   relatedProduct?: ProductId;
+  sessionId?: string;
 };
 
 export function generateLocalConversationResponse({
@@ -54,7 +56,8 @@ async function requestOpenAIResponse({
   guide,
   history,
   language,
-}: ResponseRequest): Promise<string> {
+  sessionId,
+}: ResponseRequest): Promise<ConversationApiResponse> {
   const response = await fetch("/api/conversation", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -63,6 +66,7 @@ async function requestOpenAIResponse({
       guideId: guide.id,
       history,
       language,
+      sessionId,
     }),
     signal: AbortSignal.timeout(25_000),
   });
@@ -78,7 +82,10 @@ async function requestOpenAIResponse({
     throw new Error("OpenAI response unavailable.");
   }
 
-  return result.response.trim();
+  return {
+    ...result,
+    response: result.response.trim(),
+  };
 }
 
 function isConversationApiResponse(
@@ -106,8 +113,9 @@ export async function generateConversationResponse(
     const response = await requestOpenAIResponse(request);
 
     return {
-      content: response,
+      content: response.response,
       relatedProduct: request.relatedProduct,
+      sessionId: response.sessionId,
     };
   } catch {
     return generateLocalConversationResponse(request);

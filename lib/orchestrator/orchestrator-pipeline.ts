@@ -29,6 +29,26 @@ import { ResponseStrategyValidationError } from "@/lib/response/response-validat
 import { SessionManager } from "@/lib/session/session-manager";
 import type { ConversationHistoryItem } from "@/types/conversation";
 import type { Guide } from "@/types/guide";
+import path from "node:path";
+import {
+  createRetrievalContext,
+  sanitizeVisitorResponse,
+} from "@/lib/retrieval/retrieval-context";
+import {
+  createSkippedRetrievalResult,
+  RetrievalEngine,
+} from "@/lib/retrieval/retrieval-engine";
+import { ApprovedKnowledgeLoader } from "@/lib/retrieval/retrieval-loader";
+import {
+  createRetrievalQuery,
+  shouldRunRetrieval,
+} from "@/lib/retrieval/retrieval-query";
+import type { KnowledgeRetriever } from "@/lib/retrieval/retrieval-types";
+import { createRetrievalDiagnostics } from "@/lib/retrieval/retrieval-diagnostics";
+import { validateGroundedResponse } from "@/lib/retrieval/retrieval-answer-validator";
+
+const INSUFFICIENT_KNOWLEDGE_RESPONSE =
+  "The available product documentation does not give me enough information to answer that reliably.";
 
 function defaultIdFactory() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -78,6 +98,7 @@ export type OrchestratorPipelineDependencies = {
   provider?: OrchestratorAIProvider;
   clock?: OrchestratorClock;
   createId?: OrchestratorIdFactory;
+  retrieval?: KnowledgeRetriever;
 };
 
 /**
@@ -91,6 +112,7 @@ export class OrchestratorPipeline {
   private readonly provider: OrchestratorAIProvider;
   private readonly clock: OrchestratorClock;
   private readonly createId: OrchestratorIdFactory;
+  private readonly retrieval: KnowledgeRetriever;
 
   constructor({
     sessionManager,
@@ -99,6 +121,9 @@ export class OrchestratorPipeline {
     provider,
     clock = () => new Date(),
     createId = defaultIdFactory,
+    retrieval = new RetrievalEngine(
+      new ApprovedKnowledgeLoader(path.join(process.cwd(), "knowledge")),
+    ),
   }: OrchestratorPipelineDependencies) {
     this.sessionManager = sessionManager;
     this.responseEngine = responseEngine;
@@ -107,6 +132,7 @@ export class OrchestratorPipeline {
       provider ?? new ExistingOpenAIProvider(this.promptBuilder);
     this.clock = clock;
     this.createId = createId;
+    this.retrieval = retrieval;
   }
 
   async execute(
@@ -129,6 +155,13 @@ export class OrchestratorPipeline {
         experience,
       });
       const responseStrategy = this.createStrategy(responseContext);
+      const retrievalQuery = createRetrievalQuery({
+        message,
+        session: activeSession,
+      });
+      const retrievalResult = shouldRunRetrieval(message)
+        ? await this.retrieval.search(retrievalQuery)
+        : createSkippedRetrievalResult(retrievalQuery);
       const context = createOrchestratorContext({
         session: activeSession,
         experience,
@@ -140,12 +173,23 @@ export class OrchestratorPipeline {
           providerId: this.provider.id,
           guide: input.guide,
         },
+        retrievalContext: retrievalResult.skipped
+          ? null
+          : createRetrievalContext(retrievalResult),
       });
       const prompt = this.buildPrompt(
         context,
         input.supplementalContext,
       );
-      const response = await this.requestResponse(prompt, input.guide);
+      const retrievalContext = context.retrievalContext;
+      let response = retrievalResult.insufficientKnowledge
+        ? INSUFFICIENT_KNOWLEDGE_RESPONSE
+        : sanitizeVisitorResponse(
+            await this.requestResponse(prompt, input.guide),
+          );
+      if (!validateGroundedResponse(response, retrievalContext).valid) {
+        response = INSUFFICIENT_KNOWLEDGE_RESPONSE;
+      }
       const updatedSession = this.sessionManager.recordAssistantMessage(
         activeSession.sessionId,
         { content: response },
@@ -156,6 +200,8 @@ export class OrchestratorPipeline {
         response,
         responseStrategy,
         session: updatedSession,
+        retrieval: retrievalResult,
+        diagnostics: createRetrievalDiagnostics(retrievalResult),
       };
     } catch (error) {
       if (error instanceof AIOrchestratorError) {

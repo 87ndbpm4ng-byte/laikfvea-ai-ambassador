@@ -24,6 +24,7 @@ export function useConversation(guide: Guide | null, language?: string | null) {
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const loadingRef = useRef(false);
+  const sessionIdRef = useRef<string | undefined>(undefined);
 
   const submit = useCallback(
     async ({
@@ -79,7 +80,9 @@ export function useConversation(guide: Guide | null, language?: string | null) {
           language: language ?? undefined,
           questionId,
           relatedProduct,
+          sessionId: sessionIdRef.current,
         });
+        sessionIdRef.current = response.sessionId;
 
         const guideMessage: ConversationMessage = {
           id: createMessageId("guide"),
@@ -123,6 +126,7 @@ export function useConversation(guide: Guide | null, language?: string | null) {
     loadingRef.current = false;
     setIsLoading(false);
     setMessages([]);
+    sessionIdRef.current = undefined;
   }, []);
 
   return {

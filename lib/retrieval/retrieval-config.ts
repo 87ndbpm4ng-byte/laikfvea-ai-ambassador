@@ -1,0 +1,57 @@
+export const RETRIEVAL_CONFIG = {
+  maxChunks: 4,
+  maxTotalCharacters: 4_800,
+  maxRecentContextCharacters: 800,
+  maxRecentMessages: 4,
+  minimumChunkCharacters: 20,
+  maximumChunkCharacters: 1_800,
+  thresholds: {
+    high: 13,
+    medium: 7,
+    low: 3,
+  },
+  weights: {
+    exactPhrase: 8,
+    headingTerm: 3,
+    bodyTerm: 1,
+    productMatch: 6,
+    productMismatch: -20,
+    intentMatch: 3,
+    sectionTypeMatch: 4,
+    recentContextTerm: 1,
+    safetyMatch: 5,
+  },
+} as const;
+
+export const RETRIEVAL_TOPIC_TERMS = [
+  "bottle",
+  "product",
+  "compare",
+  "clean",
+  "cleaning",
+  "charge",
+  "charging",
+  "battery",
+  "troubleshoot",
+  "maintenance",
+  "specification",
+  "dimensions",
+  "warning",
+  "safety",
+  "inhalation",
+  "mineralisation",
+  "mineralization",
+  "operate",
+  "operation",
+  "setup",
+] as const;
+
+export const GREETING_TERMS = new Set([
+  "hello",
+  "hi",
+  "hey",
+  "thanks",
+  "thank",
+  "goodbye",
+  "bye",
+]);

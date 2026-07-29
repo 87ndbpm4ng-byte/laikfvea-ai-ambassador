@@ -1,12 +1,16 @@
-import OpenAI from "openai";
 import { NextResponse } from "next/server";
-import {
-  EmptyOpenAIResponseError,
-  MAX_OPENAI_HISTORY_MESSAGES,
-  MissingOpenAIKeyError,
-  generateOpenAIResponse,
-} from "@/lib/ai/openai-response-engine";
+import { MAX_OPENAI_HISTORY_MESSAGES } from "@/lib/ai/openai-response-engine";
 import { guides } from "@/lib/data/guides";
+import { AIOrchestrator } from "@/lib/orchestrator/ai-orchestrator";
+import {
+  AIOrchestratorError,
+  InvalidOrchestratorInputError,
+  OpenAIFailureError,
+  SessionUnavailableError,
+} from "@/lib/orchestrator/orchestrator-errors";
+import { OrchestratorPipeline } from "@/lib/orchestrator/orchestrator-pipeline";
+import { SessionManager } from "@/lib/session/session-manager";
+import { InMemorySessionStore } from "@/lib/session/session-store";
 import type {
   ConversationApiRequest,
   ConversationApiResponse,
@@ -20,6 +24,13 @@ const MAX_MESSAGE_LENGTH = 1_000;
 const MAX_HISTORY_ITEM_LENGTH = 2_000;
 const MAX_RECEIVED_HISTORY_MESSAGES = 30;
 const MAX_LANGUAGE_LENGTH = 40;
+const MAX_SESSION_ID_LENGTH = 200;
+const sessionManager = new SessionManager({
+  store: new InMemorySessionStore(),
+});
+const orchestrator = new AIOrchestrator(
+  new OrchestratorPipeline({ sessionManager }),
+);
 
 function errorResponse(error: string, status: number) {
   return NextResponse.json<ConversationApiResponse>(
@@ -63,6 +74,10 @@ function validateRequest(value: unknown): ConversationApiRequest | null {
       (typeof request.language !== "string" ||
         request.language.trim().length === 0 ||
         request.language.length > MAX_LANGUAGE_LENGTH)) ||
+    (request.sessionId !== undefined &&
+      (typeof request.sessionId !== "string" ||
+        request.sessionId.length === 0 ||
+        request.sessionId.length > MAX_SESSION_ID_LENGTH)) ||
     !Array.isArray(request.history) ||
     request.history.length > MAX_RECEIVED_HISTORY_MESSAGES ||
     !request.history.every(isHistoryItem)
@@ -78,27 +93,18 @@ function validateRequest(value: unknown): ConversationApiRequest | null {
       typeof request.language === "string"
         ? request.language.trim()
         : undefined,
+    sessionId:
+      typeof request.sessionId === "string"
+        ? request.sessionId
+        : undefined,
   };
 }
 
 function getOpenAIErrorStatus(error: unknown) {
-  if (error instanceof MissingOpenAIKeyError) {
-    return 503;
-  }
-
-  if (error instanceof OpenAI.RateLimitError) {
-    return 429;
-  }
-
-  if (error instanceof OpenAI.APIConnectionTimeoutError) {
-    return 504;
-  }
-
-  if (error instanceof OpenAI.APIError && error.status >= 400) {
-    return error.status >= 500 ? 502 : error.status;
-  }
-
-  return 502;
+  if (error instanceof InvalidOrchestratorInputError) return 400;
+  if (error instanceof SessionUnavailableError) return 409;
+  if (error instanceof OpenAIFailureError) return 503;
+  return error instanceof AIOrchestratorError ? 500 : 502;
 }
 
 export async function POST(request: Request) {
@@ -117,15 +123,23 @@ export async function POST(request: Request) {
   }
 
   try {
-    const response = await generateOpenAIResponse({
+    const usableSessionId =
+      conversationRequest.sessionId &&
+      sessionManager.readSession(conversationRequest.sessionId)?.status ===
+        "active"
+        ? conversationRequest.sessionId
+        : undefined;
+    const result = await orchestrator.handleMessage({
       message: conversationRequest.message,
       guide: guides[conversationRequest.guideId],
-      history: conversationRequest.history,
+      sessionId: usableSessionId,
+      language: conversationRequest.language,
     });
 
     return NextResponse.json<ConversationApiResponse>({
       success: true,
-      response,
+      response: result.response,
+      sessionId: result.sessionId,
     });
   } catch (error) {
     const status = getOpenAIErrorStatus(error);
@@ -133,15 +147,11 @@ export async function POST(request: Request) {
     console.error("[conversation-api] OpenAI request failed", {
       name: error instanceof Error ? error.name : "UnknownError",
       status,
-      requestId:
-        error instanceof OpenAI.APIError ? error.requestID : undefined,
-      emptyResponse: error instanceof EmptyOpenAIResponseError,
+      code: error instanceof AIOrchestratorError ? error.code : undefined,
     });
 
     return errorResponse(
-      status === 429
-        ? "The conversation service is temporarily busy."
-        : "The conversation service is temporarily unavailable.",
+      "The conversation service is temporarily unavailable.",
       status,
     );
   }

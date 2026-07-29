@@ -3,6 +3,7 @@ import type { ResponseStrategy } from "@/lib/response/response-types";
 import type { SessionConversationEntry } from "@/lib/session/conversation-history";
 import type { VisitorSession } from "@/lib/session/session-types";
 import type { OrchestratorMetadata } from "@/lib/orchestrator/orchestrator-types";
+import type { RetrievalContext } from "@/lib/retrieval/retrieval-types";
 
 export type OrchestratorContext = {
   session: VisitorSession;
@@ -11,6 +12,7 @@ export type OrchestratorContext = {
   conversationHistory: readonly SessionConversationEntry[];
   userMessage: string;
   metadata: OrchestratorMetadata;
+  retrievalContext: RetrievalContext | null;
 };
 
 export type CreateOrchestratorContextInput = {
@@ -19,6 +21,7 @@ export type CreateOrchestratorContextInput = {
   responseStrategy: ResponseStrategy;
   userMessage: string;
   metadata: OrchestratorMetadata;
+  retrievalContext?: RetrievalContext | null;
 };
 
 /**
@@ -31,6 +34,7 @@ export function createOrchestratorContext({
   responseStrategy,
   userMessage,
   metadata,
+  retrievalContext = null,
 }: CreateOrchestratorContextInput): OrchestratorContext {
   const normalizedMessage = userMessage.trim();
 
@@ -55,5 +59,6 @@ export function createOrchestratorContext({
     conversationHistory: session.conversationHistory,
     userMessage: normalizedMessage,
     metadata,
+    retrievalContext,
   };
 }

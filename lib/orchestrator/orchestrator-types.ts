@@ -2,6 +2,11 @@ import type { SessionConversationEntry } from "@/lib/session/conversation-histor
 import type { VisitorSession } from "@/lib/session/session-types";
 import type { ResponseStrategy } from "@/lib/response/response-types";
 import type { Guide } from "@/types/guide";
+import type {
+  RetrievalContext,
+  RetrievalResult,
+} from "@/lib/retrieval/retrieval-types";
+import type { RetrievalDiagnostics } from "@/lib/retrieval/retrieval-diagnostics";
 
 export type OrchestratorMetadata = {
   requestId: string;
@@ -31,6 +36,7 @@ export type OrchestratorPrompt = {
   conversationHistory: readonly SessionConversationEntry[];
   userMessage: string;
   supplementalContext: readonly PromptContextFragment[];
+  approvedKnowledgeContext: RetrievalContext | null;
 };
 
 export type OrchestrateMessageInput = {
@@ -46,6 +52,8 @@ export type OrchestratorResult = {
   response: string;
   responseStrategy: ResponseStrategy;
   session: VisitorSession;
+  retrieval: RetrievalResult;
+  diagnostics?: RetrievalDiagnostics;
 };
 
 export interface OrchestratorAIProvider {
