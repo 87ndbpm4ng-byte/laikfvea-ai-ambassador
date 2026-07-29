@@ -34,7 +34,17 @@ export async function generateElevenLabsSpeech(
   const voiceId =
     options.voiceId ?? process.env.ELEVENLABS_DANIEL_VOICE_ID;
 
+  console.info("[speech-api] Daniel speech provider selected.", {
+    provider: "elevenlabs",
+    voiceId: voiceId || "missing",
+  });
+
   if (!apiKey || !voiceId) {
+    console.error("[speech-api] Daniel ElevenLabs configuration missing.", {
+      provider: "elevenlabs",
+      voiceId: voiceId || "missing",
+      apiKeyConfigured: Boolean(apiKey),
+    });
     throw new MissingElevenLabsConfigError();
   }
 
@@ -59,9 +69,26 @@ export async function generateElevenLabsSpeech(
     },
   );
 
+  console.info("[speech-api] Daniel ElevenLabs response received.", {
+    provider: "elevenlabs",
+    voiceId,
+    status: response.status,
+    contentType: response.headers.get("content-type"),
+  });
+
   if (!response.ok) {
     throw new ElevenLabsSpeechError(response.status);
   }
 
-  return response.arrayBuffer();
+  const audio = await response.arrayBuffer();
+
+  console.info("[speech-api] Daniel ElevenLabs audio buffered.", {
+    provider: "elevenlabs",
+    voiceId,
+    status: response.status,
+    contentType: response.headers.get("content-type"),
+    audioByteLength: audio.byteLength,
+  });
+
+  return audio;
 }

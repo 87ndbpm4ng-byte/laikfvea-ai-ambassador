@@ -50,6 +50,16 @@ export async function POST(request: Request) {
   try {
     const { audio, provider } = await generateGuideSpeech(speechRequest);
 
+    if (speechRequest.guideId === "daniel") {
+      console.info("[speech-api] Daniel audio response ready.", {
+        provider,
+        voiceId: process.env.ELEVENLABS_DANIEL_VOICE_ID || "missing",
+        status: 200,
+        contentType: "audio/mpeg",
+        audioByteLength: audio.byteLength,
+      });
+    }
+
     return new Response(audio, {
       status: 200,
       headers: {

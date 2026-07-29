@@ -144,7 +144,19 @@ export class OpenAISpeechSynthesisProvider
         throw new Error(`Speech request failed with status ${response.status}.`);
       }
 
+      const serverProvider =
+        response.headers.get("x-speech-provider") ?? "unknown";
       const blob = await response.blob();
+
+      if (guideId === "daniel") {
+        console.info("[voice-output] Daniel server audio received.", {
+          provider: serverProvider,
+          responseStatus: response.status,
+          contentType: response.headers.get("content-type"),
+          audioByteLength: blob.size,
+          cacheControl: response.headers.get("cache-control"),
+        });
+      }
 
       if (controller.signal.aborted || requestId !== this.requestSequence) {
         return;
@@ -154,14 +166,23 @@ export class OpenAISpeechSynthesisProvider
       const audio = this.createAudio(objectURL);
       this.activeObjectURL = objectURL;
       this.activeAudio = audio;
-      audio.onplay = callbacks.onStart;
+      audio.onplay = () => {
+        if (guideId === "daniel") {
+          console.info("[voice-output] Daniel playback started.", {
+            playbackSource: serverProvider,
+            audioSource: "fresh-object-url",
+            audioByteLength: blob.size,
+          });
+        }
+        callbacks.onStart();
+      };
       audio.onended = () => {
         this.releaseAudio(audio);
         callbacks.onEnd();
       };
       audio.onerror = () => {
         this.releaseAudio(audio);
-        this.useFallback(text, guideId, callbacks);
+        this.useFallback(text, guideId, callbacks, "audio-playback-error");
       };
 
       await audio.play();
@@ -179,7 +200,12 @@ export class OpenAISpeechSynthesisProvider
           name: error instanceof Error ? error.name : "UnknownError",
         });
       }
-      this.useFallback(text, guideId, callbacks);
+      this.useFallback(
+        text,
+        guideId,
+        callbacks,
+        error instanceof Error ? error.message : "unknown-error",
+      );
     } finally {
       if (this.activeRequest === controller) {
         this.activeRequest = null;
@@ -195,7 +221,16 @@ export class OpenAISpeechSynthesisProvider
       onEnd: () => void;
       onError: (error: VoiceError) => void;
     },
+    reason: string,
   ) {
+    if (guideId === "daniel") {
+      console.warn("[voice-output] Daniel using browser fallback.", {
+        provider: "browser",
+        playbackSource: "browser-speech-synthesis",
+        reason,
+      });
+    }
+
     if (!this.fallback.isSupported) {
       callbacks.onError(OUTPUT_ERROR);
       return;
