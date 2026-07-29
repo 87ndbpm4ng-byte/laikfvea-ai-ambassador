@@ -268,6 +268,7 @@ export function ConversationScreen({
         inputState={voice.inputState}
         outputState={voice.outputState}
         playbackProvider={voice.playbackProvider}
+        playbackBlocked={voice.isPlaybackBlocked}
         guideName={guide.name}
         transcript={voice.transcript}
         error={voice.error}
@@ -278,6 +279,7 @@ export function ConversationScreen({
         onStartListening={voice.startListening}
         onStopListening={voice.stopListening}
         onStopSpeaking={voice.stopSpeaking}
+        onRetryPlayback={voice.retryPlayback}
       />
 
       <button className="explorer-action" type="button" onClick={onProducts}>

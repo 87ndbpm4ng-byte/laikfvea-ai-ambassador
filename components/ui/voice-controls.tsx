@@ -12,6 +12,7 @@ type VoiceControlsProps = {
   inputState: VoiceInputState;
   outputState: VoiceOutputState;
   playbackProvider: SpeechPlaybackProvider | null;
+  playbackBlocked: boolean;
   guideName: string;
   transcript: string;
   error: VoiceError | null;
@@ -22,6 +23,7 @@ type VoiceControlsProps = {
   onStartListening: () => void;
   onStopListening: () => void;
   onStopSpeaking: () => void;
+  onRetryPlayback: () => void;
 };
 
 export function VoiceControls({
@@ -29,6 +31,7 @@ export function VoiceControls({
   inputState,
   outputState,
   playbackProvider,
+  playbackBlocked,
   guideName,
   transcript,
   error,
@@ -39,6 +42,7 @@ export function VoiceControls({
   onStartListening,
   onStopListening,
   onStopSpeaking,
+  onRetryPlayback,
 }: VoiceControlsProps) {
   const isListening = inputState === "listening";
   const isProcessing = inputState === "processing";
@@ -128,18 +132,22 @@ export function VoiceControls({
             ) : null}
           </div>
 
-          {guideName === "Daniel" &&
-          outputState === "speaking" &&
-          playbackProvider ? (
+          {outputState === "speaking" && playbackProvider ? (
             <p className="voice-provider-badge" role="status">
-              Daniel voice:{" "}
-              {playbackProvider === "elevenlabs"
-                ? "ElevenLabs"
-                : "Browser fallback"}
+              {guideName} voice:{" "}
+              {playbackProvider === "elevenlabs" ? "ElevenLabs" : "OpenAI"}
             </p>
           ) : null}
 
-          {!recognitionSupported ? (
+          {playbackBlocked && guideName === "Daniel" ? (
+            <button
+              className="voice-retry"
+              type="button"
+              onClick={onRetryPlayback}
+            >
+              Tap to hear Daniel
+            </button>
+          ) : !recognitionSupported ? (
             <p className="voice-message" role="status">
               Voice input isn’t available in this browser. You can still type
               your question.

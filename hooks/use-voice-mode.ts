@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BrowserSpeechRecognitionProvider } from "@/lib/voice/browser-speech-recognition";
+import { unlockVoiceOutput } from "@/lib/voice/audio-unlock";
 import { OpenAISpeechSynthesisProvider } from "@/lib/voice/openai-speech-synthesis";
 import type {
   SpeechRecognitionProvider,
@@ -44,6 +45,7 @@ export function useVoiceMode({
   const [outputState, setOutputState] = useState<VoiceOutputState>("idle");
   const [playbackProvider, setPlaybackProvider] =
     useState<SpeechPlaybackProvider | null>(null);
+  const [isPlaybackBlocked, setIsPlaybackBlocked] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [error, setError] = useState<VoiceError | null>(null);
   const submittedTranscriptRef = useRef(false);
@@ -55,6 +57,7 @@ export function useVoiceMode({
     setInputState("idle");
     setOutputState("idle");
     setPlaybackProvider(null);
+    setIsPlaybackBlocked(false);
   }, [recognition, synthesis]);
 
   const setEnabled = useCallback(
@@ -65,9 +68,11 @@ export function useVoiceMode({
 
       if (!enabled) {
         stopAll();
+      } else {
+        void unlockVoiceOutput(synthesis);
       }
     },
-    [stopAll],
+    [stopAll, synthesis],
   );
 
   const handleError = useCallback((voiceError: VoiceError) => {
@@ -86,8 +91,10 @@ export function useVoiceMode({
     }
 
     synthesis.stop();
+    void unlockVoiceOutput(synthesis);
     setOutputState("idle");
     setPlaybackProvider(null);
+    setIsPlaybackBlocked(false);
     setError(null);
     setTranscript("");
     setInputState("listening");
@@ -148,7 +155,15 @@ export function useVoiceMode({
     lastSpokenMessageRef.current = latestGuideMessage.id;
     synthesis.speak(latestGuideMessage.content, guideId, {
       onProvider: setPlaybackProvider,
-      onStart: () => setOutputState("speaking"),
+      onPlaybackBlocked: () => {
+        setIsPlaybackBlocked(true);
+        setOutputState("idle");
+        setError(null);
+      },
+      onStart: () => {
+        setIsPlaybackBlocked(false);
+        setOutputState("speaking");
+      },
       onEnd: () => setOutputState("idle"),
       onError: handleError,
     });
@@ -176,14 +191,20 @@ export function useVoiceMode({
     inputState,
     outputState,
     playbackProvider,
+    isPlaybackBlocked,
     transcript,
     error,
     setEnabled,
     startListening,
     stopListening,
+    retryPlayback: async () => {
+      setError(null);
+      await synthesis.retry?.();
+    },
     stopSpeaking: () => {
       synthesis.stop();
       setOutputState("idle");
+      setIsPlaybackBlocked(false);
     },
   };
 }

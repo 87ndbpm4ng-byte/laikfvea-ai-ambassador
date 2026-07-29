@@ -647,6 +647,32 @@ h1 {
   letter-spacing: 0.01em;
 }
 
+.voice-retry {
+  min-height: 3.5rem;
+  margin-top: 0.75rem;
+  padding: 0.8rem 1.1rem;
+  border: 1px solid #7eafc3;
+  border-radius: 1rem;
+  background: #fff;
+  color: #111;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.voice-retry:hover {
+  background: #f5f9fa;
+}
+
+.voice-retry:active {
+  transform: scale(0.985);
+}
+
+.voice-retry:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
 .voice-panel-title {
   font-size: 1rem;
   font-weight: 600;

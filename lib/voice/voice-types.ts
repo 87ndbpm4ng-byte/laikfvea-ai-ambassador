@@ -21,6 +21,14 @@ export type VoiceError = {
   message: string;
 };
 
+export type SpeechSynthesisCallbacks = {
+  onProvider?: (provider: SpeechPlaybackProvider) => void;
+  onPlaybackBlocked?: () => void;
+  onStart: () => void;
+  onEnd: () => void;
+  onError: (error: VoiceError) => void;
+};
+
 export type RecognitionCallbacks = {
   onInterimTranscript: (transcript: string) => void;
   onFinalTranscript: (transcript: string) => void;
@@ -40,12 +48,9 @@ export interface SpeechSynthesisProvider {
   speak(
     text: string,
     guideId: GuideId,
-    callbacks: {
-      onProvider?: (provider: SpeechPlaybackProvider) => void;
-      onStart: () => void;
-      onEnd: () => void;
-      onError: (error: VoiceError) => void;
-    },
+    callbacks: SpeechSynthesisCallbacks,
   ): void;
+  unlock?(): Promise<boolean>;
+  retry?(): Promise<boolean>;
   stop(): void;
 }

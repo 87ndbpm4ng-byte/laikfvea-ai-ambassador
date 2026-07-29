@@ -12,6 +12,7 @@ import {
   type SpeechClient,
 } from "@/lib/voice/openai-speech-service";
 import { OpenAISpeechSynthesisProvider } from "@/lib/voice/openai-speech-synthesis";
+import { unlockVoiceOutput } from "@/lib/voice/audio-unlock";
 import { OPENAI_VOICE_PROFILES } from "@/lib/voice/openai-voice-config";
 import type {
   SpeechSynthesisProvider,
@@ -65,11 +66,15 @@ type FakeAudio = {
   onerror: (() => void) | null;
   playCount: number;
   pauseCount: number;
+  loadCount: number;
+  playErrors: Error[];
   play(): Promise<void>;
   pause(): void;
+  load(): void;
+  removeAttribute(name: string): void;
 };
 
-function createFakeAudio(source: string): FakeAudio {
+function createFakeAudio(source = ""): FakeAudio {
   return {
     src: source,
     currentTime: 0,
@@ -78,15 +83,78 @@ function createFakeAudio(source: string): FakeAudio {
     onerror: null,
     playCount: 0,
     pauseCount: 0,
+    loadCount: 0,
+    playErrors: [],
     async play() {
       this.playCount += 1;
+      const error = this.playErrors.shift();
+
+      if (error) {
+        throw error;
+      }
+
       this.onplay?.();
     },
     pause() {
       this.pauseCount += 1;
     },
+    load() {
+      this.loadCount += 1;
+    },
+    removeAttribute(name) {
+      if (name === "src") {
+        this.src = "";
+      }
+    },
   };
 }
+
+test("Voice Mode toggle and Talk both request audio unlock", async () => {
+  let unlockCount = 0;
+  const provider: SpeechSynthesisProvider = {
+    isSupported: true,
+    speak() {},
+    stop() {},
+    async unlock() {
+      unlockCount += 1;
+      return true;
+    },
+  };
+
+  await unlockVoiceOutput(provider);
+  await unlockVoiceOutput(provider);
+
+  assert.equal(unlockCount, 2);
+});
+
+test("persistent audio unlock supports delayed speech playback", async () => {
+  const audio = createFakeAudio();
+  const provider = new OpenAISpeechSynthesisProvider({
+    fallback: new FakeFallback(),
+    fetcher: async () =>
+      new Response(Uint8Array.from([1, 2, 3]), {
+        status: 200,
+        headers: {
+          "Content-Type": "audio/mpeg",
+          "X-Speech-Provider": "elevenlabs",
+        },
+      }),
+    createAudio: () => audio,
+    createObjectURL: () => "blob:delayed",
+    revokeObjectURL() {},
+  });
+
+  assert.equal(await provider.unlock(), true);
+  provider.speak("Delayed answer", "daniel", {
+    onStart() {},
+    onEnd() {},
+    onError: assert.fail,
+  });
+  await flushPromises();
+
+  assert.equal(audio.playCount, 2);
+  assert.equal(audio.src, "blob:delayed");
+});
 
 test("Emily and Daniel use the configured OpenAI voices", () => {
   assert.equal(OPENAI_VOICE_PROFILES.emily.voice, "marin");
@@ -270,6 +338,45 @@ test("Daniel API failure surfaces an error without browser fallback", async () =
   assert.equal(receivedError?.code, "synthesis-unavailable");
 });
 
+test("blocked Daniel playback offers a direct retry on the same player", async () => {
+  const audio = createFakeAudio();
+  const blockedError = new Error("Playback requires user activation.");
+  blockedError.name = "NotAllowedError";
+  audio.playErrors.push(blockedError);
+  const provider = new OpenAISpeechSynthesisProvider({
+    fallback: new FakeFallback(),
+    fetcher: async () =>
+      new Response(Uint8Array.from([1]), {
+        status: 200,
+        headers: { "X-Speech-Provider": "elevenlabs" },
+      }),
+    createAudio: () => audio,
+    createObjectURL: () => "blob:blocked",
+    revokeObjectURL() {},
+  });
+  let blocked = 0;
+  let started = 0;
+
+  provider.speak("Tap to retry", "daniel", {
+    onPlaybackBlocked: () => {
+      blocked += 1;
+    },
+    onStart: () => {
+      started += 1;
+    },
+    onEnd() {},
+    onError: assert.fail,
+  });
+  await flushPromises();
+
+  assert.equal(blocked, 1);
+  assert.equal(started, 0);
+  assert.equal(audio.src, "blob:blocked");
+  assert.equal(await provider.retry(), true);
+  assert.equal(started, 1);
+  assert.equal(audio.playCount, 2);
+});
+
 test("stop interrupts playback and releases audio resources", async () => {
   const audio = createFakeAudio("blob:active");
   const revoked: string[] = [];
@@ -295,18 +402,15 @@ test("stop interrupts playback and releases audio resources", async () => {
 });
 
 test("new speech prevents overlapping playback", async () => {
-  const audioElements = [
-    createFakeAudio("blob:first"),
-    createFakeAudio("blob:second"),
-  ];
-  let audioIndex = 0;
+  const audio = createFakeAudio();
   let urlIndex = 0;
+  const revoked: string[] = [];
   const provider = new OpenAISpeechSynthesisProvider({
     fallback: new FakeFallback(),
     fetcher: async () => new Response(Uint8Array.from([1]), { status: 200 }),
-    createAudio: () => audioElements[audioIndex++],
+    createAudio: () => audio,
     createObjectURL: () => `blob:${++urlIndex}`,
-    revokeObjectURL() {},
+    revokeObjectURL: (url) => revoked.push(url),
   });
   const callbacks = { onStart() {}, onEnd() {}, onError: assert.fail };
 
@@ -315,8 +419,9 @@ test("new speech prevents overlapping playback", async () => {
   provider.speak("Second answer", "emily", callbacks);
   await flushPromises();
 
-  assert.equal(audioElements[0].pauseCount, 1);
-  assert.equal(audioElements[1].playCount, 1);
+  assert.equal(audio.playCount, 2);
+  assert.equal(audio.src, "blob:2");
+  assert.deepEqual(revoked, ["blob:1"]);
 });
 
 test("text conversation remains unaffected when both audio providers fail", async () => {
