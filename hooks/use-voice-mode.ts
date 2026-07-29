@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BrowserSpeechRecognitionProvider } from "@/lib/voice/browser-speech-recognition";
-import { BrowserSpeechSynthesisProvider } from "@/lib/voice/browser-speech-synthesis";
+import { OpenAISpeechSynthesisProvider } from "@/lib/voice/openai-speech-synthesis";
 import type {
   SpeechRecognitionProvider,
   SpeechSynthesisProvider,
@@ -35,7 +35,7 @@ export function useVoiceMode({
     [recognitionProvider],
   );
   const synthesis = useMemo(
-    () => synthesisProvider ?? new BrowserSpeechSynthesisProvider(),
+    () => synthesisProvider ?? new OpenAISpeechSynthesisProvider(),
     [synthesisProvider],
   );
   const [isEnabled, setIsEnabled] = useState(false);

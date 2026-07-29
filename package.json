@@ -14,7 +14,7 @@
     "test:prompts": "tsx --test lib/orchestrator/tests/prompt-builder.test.ts",
     "test:session-context": "tsx --test lib/session/tests/conversation-context.test.ts",
     "test:multi-source": "tsx --test lib/retrieval/tests/multi-source.test.ts",
-    "test:voice": "tsx --test lib/voice/tests/browser-speech-synthesis.test.ts"
+    "test:voice": "tsx --test lib/voice/tests/*.test.ts"
   },
   "dependencies": {
     "next": "^16.2.12",
