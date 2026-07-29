@@ -59,9 +59,23 @@ export function useConversation(guide: Guide | null) {
       ]);
 
       try {
+        const history = messages
+          .filter(
+            (
+              message,
+            ): message is ConversationMessage & {
+              role: "visitor" | "guide";
+            } => message.role === "visitor" || message.role === "guide",
+          )
+          .slice(-10)
+          .map((message) => ({
+            role: message.role,
+            content: message.content,
+          }));
         const response = await generateConversationResponse({
           content: normalizedContent,
           guide,
+          history,
           questionId,
           relatedProduct,
         });
@@ -85,7 +99,7 @@ export function useConversation(guide: Guide | null) {
         setIsLoading(false);
       }
     },
-    [guide],
+    [guide, messages],
   );
 
   const submitSuggestedQuestion = useCallback(

@@ -1,4 +1,5 @@
 import type { ProductId } from "@/types/product";
+import type { GuideId } from "@/types/guide";
 
 export type ConversationRole = "visitor" | "guide" | "system";
 
@@ -15,6 +16,23 @@ export type ConversationMessage = {
   timestamp: string;
   relatedProduct?: ProductId;
   questionId?: string;
+};
+
+export type ConversationHistoryItem = {
+  role: Extract<ConversationRole, "visitor" | "guide">;
+  content: string;
+};
+
+export type ConversationApiRequest = {
+  message: string;
+  guideId: GuideId;
+  history: ConversationHistoryItem[];
+};
+
+export type ConversationApiResponse = {
+  success: boolean;
+  response: string;
+  error?: string;
 };
 
 export type SuggestedQuestion = {
