@@ -1,4 +1,4 @@
-import { generateOpenAISpeech } from "@/lib/voice/openai-speech-service";
+import { generateGuideSpeech } from "@/lib/voice/guide-speech-service";
 import { SpeechRateLimiter } from "@/lib/voice/speech-rate-limit";
 import { validateSpeechRequest } from "@/lib/voice/speech-request";
 
@@ -47,17 +47,8 @@ export async function POST(request: Request) {
     return jsonError("INVALID_REQUEST", "The voice request is invalid.", 400);
   }
 
-  if (!process.env.OPENAI_API_KEY) {
-    console.error("[speech-api] OPENAI_API_KEY is not configured.");
-    return jsonError(
-      "SERVICE_UNAVAILABLE",
-      "Voice generation is temporarily unavailable.",
-      503,
-    );
-  }
-
   try {
-    const audio = await generateOpenAISpeech(speechRequest);
+    const { audio, provider } = await generateGuideSpeech(speechRequest);
 
     return new Response(audio, {
       status: 200,
@@ -66,11 +57,13 @@ export async function POST(request: Request) {
         "Content-Length": String(audio.byteLength),
         "Content-Type": "audio/mpeg",
         "X-Content-Type-Options": "nosniff",
+        "X-Speech-Provider": provider,
       },
     });
   } catch (error) {
     console.error("[speech-api] Speech generation failed.", {
       name: error instanceof Error ? error.name : "UnknownError",
+      guideId: speechRequest.guideId,
     });
     return jsonError(
       "SERVICE_UNAVAILABLE",

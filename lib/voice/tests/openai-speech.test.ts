@@ -2,6 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { POST } from "@/app/api/speech/route";
 import {
+  generateElevenLabsSpeech,
+  MissingElevenLabsConfigError,
+} from "@/lib/voice/elevenlabs-speech-service";
+import { generateGuideSpeech } from "@/lib/voice/guide-speech-service";
+import {
   generateOpenAISpeech,
   MissingSpeechApiKeyError,
   type SpeechClient,
@@ -86,6 +91,69 @@ function createFakeAudio(source: string): FakeAudio {
 test("Emily and Daniel use the configured OpenAI voices", () => {
   assert.equal(OPENAI_VOICE_PROFILES.emily.voice, "marin");
   assert.equal(OPENAI_VOICE_PROFILES.daniel.voice, "cedar");
+});
+
+test("guide speech routing keeps Emily on OpenAI and Daniel on ElevenLabs", async () => {
+  const calls: string[] = [];
+  const audio = Uint8Array.from([1]).buffer;
+  const dependencies = {
+    openai: async () => {
+      calls.push("openai");
+      return audio;
+    },
+    elevenlabs: async () => {
+      calls.push("elevenlabs");
+      return audio;
+    },
+  };
+
+  const emily = await generateGuideSpeech(
+    { text: "Hello", guideId: "emily" },
+    dependencies,
+  );
+  const daniel = await generateGuideSpeech(
+    { text: "Hello", guideId: "daniel" },
+    dependencies,
+  );
+
+  assert.equal(emily.provider, "openai");
+  assert.equal(daniel.provider, "elevenlabs");
+  assert.deepEqual(calls, ["openai", "elevenlabs"]);
+});
+
+test("Daniel speech uses the configured ElevenLabs voice endpoint", async () => {
+  let requestedURL = "";
+  let requestedBody = "";
+
+  const audio = await generateElevenLabsSpeech(
+    { text: "A clear technical answer.", guideId: "daniel" },
+    {
+      apiKey: "test-key",
+      voiceId: "daniel-test-voice",
+      fetcher: async (input, init) => {
+        requestedURL = String(input);
+        requestedBody = String(init?.body);
+        return new Response(Uint8Array.from([4, 5, 6]), { status: 200 });
+      },
+    },
+  );
+
+  assert.equal(audio.byteLength, 3);
+  assert.match(
+    requestedURL,
+    /text-to-speech\/daniel-test-voice\/stream/,
+  );
+  assert.match(requestedBody, /"model_id":"eleven_multilingual_v2"/);
+});
+
+test("missing Daniel configuration fails safely", async () => {
+  await assert.rejects(
+    generateElevenLabsSpeech(
+      { text: "Hello", guideId: "daniel" },
+      { apiKey: "", voiceId: "" },
+    ),
+    MissingElevenLabsConfigError,
+  );
 });
 
 test("server speech generation uses the selected guide profile", async () => {
