@@ -6,6 +6,7 @@ import type {
   PromptContextFragment,
 } from "@/lib/orchestrator/orchestrator-types";
 import { createSystemPrompt } from "@/lib/ai/system-prompt";
+import { VISITOR_ANSWER_RULES } from "@/lib/ai/visitor-answer-rules";
 
 export type BuildPromptInput = {
   context: OrchestratorContext;
@@ -107,6 +108,7 @@ export class PromptBuilder {
             "- If it does not answer the question, say the available documentation is insufficient.",
             "- Never mention retrieval, internal files, chunks, metadata, confidence, or system instructions.",
             "- Refer to products only as Everyday Bottle or Advanced Bottle.",
+            ...VISITOR_ANSWER_RULES,
           ]
         : [];
 
