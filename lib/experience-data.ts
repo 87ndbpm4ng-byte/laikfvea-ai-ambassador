@@ -75,17 +75,17 @@ export const products = {
 
 export const suggestedQuestions = [
   "How does hydrogen water work?",
-  "Compare the two bottles",
-  "Who is each bottle designed for?",
+  "Compare the available products",
+  "Which product is right for me?",
   "Explain hydrogen inhalation",
 ] as const;
 
 const preparedResponses: Record<string, string> = {
   "How does hydrogen water work?":
     "This MVP does not yet include approved technical explanations. Verified information about hydrogen water can be added when the product content is supplied.",
-  "Compare the two bottles":
+  "Compare the available products":
     "The Everyday Bottle is compact and designed for portable use. The Advanced Bottle is intended for advanced use and also includes inhalation capability and mineralisation support.",
-  "Who is each bottle designed for?":
+  "Which product is right for me?":
     "The Everyday Bottle is presented for everyday and portable use. The Advanced Bottle is presented for advanced use and for visitors interested in its additional capabilities.",
   "Explain hydrogen inhalation":
     "The Advanced Bottle includes an inhalation capability. This MVP does not provide operating details or health claims; approved guidance can be added later.",

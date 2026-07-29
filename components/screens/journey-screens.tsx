@@ -208,7 +208,7 @@ export function ConversationScreen({
       </form>
 
       <button className="explorer-action" type="button" onClick={onProducts}>
-        Product Explorer
+        Explore Products
       </button>
     </section>
   );
@@ -404,7 +404,7 @@ export function SessionEndScreen({
       className="screen-content end-content"
       aria-labelledby="end-heading"
     >
-      <h1 id="end-heading">Thank you for exploring hydrogen technology.</h1>
+      <h1 id="end-heading">Thank you for visiting.</h1>
       <div className="screen-actions">
         <PrimaryButton onClick={onRestart}>Start Again</PrimaryButton>
         <button className="secondary-action" type="button" onClick={onReturn}>

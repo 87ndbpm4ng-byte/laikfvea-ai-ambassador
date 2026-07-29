@@ -19,3 +19,28 @@ Goals:
 
 When uncertain:
 Choose the more premium and minimal solution.
+
+## Product Reveal Principle
+
+The application must not feel like a sales tool.
+
+During onboarding and the early conversation, do not mention:
+
+- Laikfvea
+- GO
+- PRO
+
+Use neutral descriptions instead.
+
+Only reveal product names when the visitor explicitly asks about available products or chooses to explore them.
+
+The visitor should first become interested in hydrogen technology, then naturally discover the products through conversation.
+
+This principle should apply to:
+
+- onboarding screens
+- guide introduction
+- suggested questions
+- product explorer
+- placeholder content
+- conversation flow

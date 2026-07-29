@@ -54,7 +54,7 @@ export default function Home() {
   }
 
   function askAboutComparison() {
-    askQuestion("Compare the two bottles");
+    askQuestion("Compare the available products");
     setScreen("conversation");
   }
 
