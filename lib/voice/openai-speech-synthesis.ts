@@ -9,9 +9,18 @@ import type { GuideId } from "@/types/guide";
 type AudioPlayback = {
   src: string;
   currentTime: number;
+  duration?: number;
+  networkState?: number;
+  readyState?: number;
+  error?: {
+    code: number;
+    message?: string;
+  } | null;
   onplay: (() => void) | null;
   onended: (() => void) | null;
   onerror: (() => void) | null;
+  addEventListener?: (event: string, listener: () => void) => void;
+  canPlayType?: (type: string) => string;
   play(): Promise<void>;
   pause(): void;
 };
@@ -156,6 +165,7 @@ export class OpenAISpeechSynthesisProvider
           provider: serverProvider,
           responseStatus: response.status,
           contentType: response.headers.get("content-type"),
+          blobMimeType: blob.type,
           audioByteLength: blob.size,
           cacheControl: response.headers.get("cache-control"),
         });
@@ -169,6 +179,44 @@ export class OpenAISpeechSynthesisProvider
       const audio = this.createAudio(objectURL);
       this.activeObjectURL = objectURL;
       this.activeAudio = audio;
+
+      if (guideId === "daniel") {
+        console.info("[voice-output] Daniel audio element created.", {
+          objectURL,
+          audioSource: audio.src,
+          sourceMatchesObjectURL: audio.src === objectURL,
+          blobMimeType: blob.type,
+          mp3Support: audio.canPlayType?.("audio/mpeg") || "unavailable",
+          objectURLActive: this.activeObjectURL === objectURL,
+        });
+
+        const mediaEvents = [
+          "loadstart",
+          "loadedmetadata",
+          "canplay",
+          "canplaythrough",
+          "play",
+          "playing",
+          "pause",
+          "ended",
+          "error",
+        ];
+
+        for (const mediaEvent of mediaEvents) {
+          audio.addEventListener?.(mediaEvent, () => {
+            console.info(`[voice-output] Daniel media event: ${mediaEvent}.`, {
+              currentTime: audio.currentTime,
+              duration: audio.duration,
+              readyState: audio.readyState,
+              networkState: audio.networkState,
+              objectURLActive: this.activeObjectURL === objectURL,
+              mediaErrorCode: audio.error?.code ?? null,
+              mediaErrorMessage: audio.error?.message ?? null,
+            });
+          });
+        }
+      }
+
       audio.onplay = () => {
         if (serverProvider === "elevenlabs" || serverProvider === "openai") {
           callbacks.onProvider?.(serverProvider);
@@ -187,11 +235,55 @@ export class OpenAISpeechSynthesisProvider
         callbacks.onEnd();
       };
       audio.onerror = () => {
+        const mediaErrorCode = audio.error?.code ?? null;
+        const mediaErrorMessage = audio.error?.message ?? null;
+        console.error("[voice-output] Daniel audio element error.", {
+          mediaErrorCode,
+          mediaErrorMessage,
+          readyState: audio.readyState,
+          networkState: audio.networkState,
+          objectURLActive: this.activeObjectURL === objectURL,
+        });
         this.releaseAudio(audio);
-        this.useFallback(text, guideId, callbacks, "audio-playback-error");
+        this.useFallback(
+          text,
+          guideId,
+          callbacks,
+          `audio-playback-error code=${mediaErrorCode ?? "none"} message=${
+            mediaErrorMessage || "unavailable"
+          }`,
+        );
       };
 
-      await audio.play();
+      if (guideId === "daniel") {
+        console.info("[voice-output] Daniel awaiting audio.play().", {
+          objectURLActive: this.activeObjectURL === objectURL,
+        });
+      }
+
+      try {
+        await audio.play();
+        if (guideId === "daniel") {
+          console.info("[voice-output] Daniel audio.play() fulfilled.", {
+            objectURLActive: this.activeObjectURL === objectURL,
+          });
+        }
+      } catch (playbackError) {
+        console.error("[voice-output] Daniel audio.play() rejected.", {
+          name:
+            playbackError instanceof Error
+              ? playbackError.name
+              : "UnknownError",
+          message:
+            playbackError instanceof Error
+              ? playbackError.message
+              : String(playbackError),
+          objectURLActive: this.activeObjectURL === objectURL,
+          mediaErrorCode: audio.error?.code ?? null,
+          mediaErrorMessage: audio.error?.message ?? null,
+        });
+        throw playbackError;
+      }
     } catch (error) {
       if (controller.signal.aborted || requestId !== this.requestSequence) {
         return;
@@ -263,6 +355,9 @@ export class OpenAISpeechSynthesisProvider
 
   private releaseObjectURL() {
     if (this.activeObjectURL) {
+      console.info("[voice-output] Releasing speech object URL.", {
+        objectURL: this.activeObjectURL,
+      });
       this.revokeObjectURL(this.activeObjectURL);
       this.activeObjectURL = null;
     }
