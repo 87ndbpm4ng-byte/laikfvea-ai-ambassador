@@ -1,6 +1,10 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { KnowledgeLoadError } from "@/lib/retrieval/retrieval-errors";
+import {
+  normalizeDocumentType,
+  resolveSourcePriority,
+} from "@/lib/retrieval/knowledge-metadata";
 import type {
   ApprovedKnowledgeDocument,
   RetrievalProduct,
@@ -47,6 +51,23 @@ function normalizeProduct(value: unknown): RetrievalProduct | null {
   if (normalized.includes("advanced")) return "advanced";
   if (normalized.includes("everyday")) return "everyday";
   return null;
+}
+
+function normalizeValues(...values: unknown[]) {
+  return [
+    ...new Set(
+      values.flatMap((value) => {
+        if (Array.isArray(value)) {
+          return value.filter(
+            (item): item is string => typeof item === "string",
+          );
+        }
+        return typeof value === "string" ? [value] : [];
+      }),
+    ),
+  ]
+    .map((value) => value.trim().toLocaleLowerCase("en"))
+    .filter(Boolean);
 }
 
 function isExcludedPath(filePath: string, knowledgeRoot: string): boolean {
@@ -97,6 +118,13 @@ export class ApprovedKnowledgeLoader {
         }
         const title = parsed.frontmatter.title;
         const tags = parsed.frontmatter.tags;
+        const sourceType =
+          typeof parsed.frontmatter.sourceType === "string"
+            ? parsed.frontmatter.sourceType
+            : "approved-markdown";
+        const documentType = normalizeDocumentType(
+          parsed.frontmatter.documentType ?? sourceType,
+        );
         documents.push({
           documentId: path
             .relative(this.knowledgeRoot, filePath)
@@ -104,10 +132,12 @@ export class ApprovedKnowledgeLoader {
             .join("/"),
           title: typeof title === "string" ? title : path.basename(filePath, ".md"),
           sourceId,
-          sourceType:
-            typeof parsed.frontmatter.sourceType === "string"
-              ? parsed.frontmatter.sourceType
-              : "approved-markdown",
+          sourceType,
+          documentType,
+          sourcePriority: resolveSourcePriority(
+            documentType,
+            parsed.frontmatter.sourcePriority,
+          ),
           sourceVersion:
             typeof parsed.frontmatter.sourceVersion === "string"
               ? parsed.frontmatter.sourceVersion
@@ -118,7 +148,12 @@ export class ApprovedKnowledgeLoader {
               : "en",
           product: normalizeProduct(parsed.frontmatter.product),
           approvalStatus: "approved",
-          tags: Array.isArray(tags) ? tags : [],
+          topics: normalizeValues(
+            parsed.frontmatter.topic,
+            parsed.frontmatter.topics,
+            tags,
+          ),
+          tags: normalizeValues(tags),
           content: parsed.body,
         });
       }

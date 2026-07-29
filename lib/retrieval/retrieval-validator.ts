@@ -12,6 +12,11 @@ export function isSafeKnowledgeChunk(chunk: RetrievalChunk): boolean {
     chunk.approvalStatus === "approved" &&
     Boolean(chunk.sourceId) &&
     Boolean(chunk.sourceReference) &&
+    Boolean(chunk.documentTitle) &&
+    Boolean(chunk.documentType) &&
+    Number.isInteger(chunk.sourcePriority) &&
+    chunk.sourcePriority > 0 &&
+    Boolean(chunk.language) &&
     !INSTRUCTION_INJECTION.test(chunk.text)
   );
 }

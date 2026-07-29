@@ -85,3 +85,16 @@ test("prompt builder source includes private session context and ambiguity rules
   assert.match(promptBuilder, /reference resolution is marked ambiguous/i);
   assert.match(promptBuilder, /Never mention session state/i);
 });
+
+test("prompt builder carries source authority without exposing it", async () => {
+  const promptBuilder = await readFile(
+    path.join(process.cwd(), "lib/orchestrator/prompt-builder.ts"),
+    "utf8",
+  );
+
+  assert.match(promptBuilder, /Source priority:/);
+  assert.match(promptBuilder, /highest source priority/i);
+  assert.match(promptBuilder, /Do not blend conflicting values/i);
+  assert.match(promptBuilder, /equal source priority/i);
+  assert.match(promptBuilder, /Never mention retrieval.*source priority/i);
+});

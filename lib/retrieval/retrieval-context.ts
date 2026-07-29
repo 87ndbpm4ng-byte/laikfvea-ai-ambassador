@@ -20,6 +20,14 @@ export function createRetrievalContext(
   return {
     passages: result.matchedChunks.map(({ chunk }) => ({
       sourceReference: chunk.sourceReference,
+      sourceId: chunk.sourceId,
+      documentTitle: chunk.documentTitle,
+      documentType: chunk.documentType,
+      sourcePriority: chunk.sourcePriority,
+      sourceVersion: chunk.sourceVersion,
+      language: chunk.language,
+      product: chunk.product,
+      topics: chunk.topics,
       text: visitorSafeKnowledge(chunk.text),
     })),
     confidence: result.confidence,
