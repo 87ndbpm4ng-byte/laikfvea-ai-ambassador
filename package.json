@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
     "import:manual": "tsx imports/cli/import-manual.ts",
     "test:imports": "tsx --test imports/tests/manual-import.test.ts",
     "test:retrieval": "tsx --test lib/retrieval/tests/retrieval.test.ts",
@@ -14,9 +15,11 @@
     "test:prompts": "tsx --test lib/orchestrator/tests/prompt-builder.test.ts",
     "test:session-context": "tsx --test lib/session/tests/conversation-context.test.ts",
     "test:multi-source": "tsx --test lib/retrieval/tests/multi-source.test.ts",
-    "test:voice": "tsx --test lib/voice/tests/*.test.ts"
+    "test:voice": "tsx --test lib/voice/tests/*.test.ts",
+    "test:liveavatar": "tsx --test lib/liveavatar/tests/*.test.ts"
   },
   "dependencies": {
+    "@heygen/liveavatar-web-sdk": "^0.0.18",
     "next": "^16.2.12",
     "openai": "^7.1.0",
     "react": "^19.2.8",

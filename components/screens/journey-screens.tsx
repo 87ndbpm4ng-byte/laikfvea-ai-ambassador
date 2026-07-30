@@ -1,10 +1,12 @@
 "use client";
 
 import { FormEvent, KeyboardEvent, useState } from "react";
+import { LiveAvatarRenderer } from "@/components/liveavatar/liveavatar-renderer";
 import { GuideCard } from "@/components/ui/guide-card";
 import { PrimaryButton } from "@/components/ui/primary-button";
 import { VoiceControls } from "@/components/ui/voice-controls";
 import { useVoiceMode } from "@/hooks/use-voice-mode";
+import { useLiveAvatarIdleTimeout } from "@/hooks/use-liveavatar-idle-timeout";
 import { guides } from "@/lib/data/guides";
 import {
   productComparisonRows,
@@ -12,6 +14,7 @@ import {
 } from "@/lib/data/products";
 import { suggestedQuestions } from "@/lib/data/suggested-questions";
 import type { SpeechSynthesisProvider } from "@/lib/voice/voice-types";
+import type { DanielAvatarOutput } from "@/lib/liveavatar/liveavatar-types";
 import type {
   ConversationMessage,
   SuggestedQuestion,
@@ -112,7 +115,9 @@ type ConversationScreenProps = {
   onAskText: (question: string) => Promise<boolean>;
   onProducts: () => void;
   onEnd: () => void;
+  onIdleTimeout: () => void;
   synthesisProvider?: SpeechSynthesisProvider;
+  liveAvatarService?: DanielAvatarOutput;
 };
 
 type ConversationTurn = {
@@ -144,7 +149,9 @@ export function ConversationScreen({
   onAskText,
   onProducts,
   onEnd,
+  onIdleTimeout,
   synthesisProvider,
+  liveAvatarService,
 }: ConversationScreenProps) {
   const guide = guides[guideId];
   const [draft, setDraft] = useState("");
@@ -155,6 +162,10 @@ export function ConversationScreen({
     isConversationLoading: isLoading,
     submitTranscript: onAskText,
     synthesisProvider,
+  });
+  const idleTimeout = useLiveAvatarIdleTimeout({
+    service: guideId === "daniel" ? liveAvatarService : undefined,
+    onTimeout: onIdleTimeout,
   });
 
   async function submitQuestion(event: FormEvent<HTMLFormElement>) {
@@ -193,6 +204,33 @@ export function ConversationScreen({
           End Session
         </button>
       </header>
+
+      {guideId === "daniel" && liveAvatarService ? (
+        <LiveAvatarRenderer
+          service={liveAvatarService}
+          idleSecondsRemaining={idleTimeout.remainingSeconds}
+        />
+      ) : null}
+
+      {idleTimeout.showWarning && idleTimeout.remainingSeconds !== null ? (
+        <div
+          className="liveavatar-idle-warning"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="liveavatar-idle-warning-title"
+        >
+          <div>
+            <h2 id="liveavatar-idle-warning-title">Still exploring?</h2>
+            <p>
+              This session will restart in {idleTimeout.remainingSeconds}{" "}
+              seconds.
+            </p>
+            <PrimaryButton onClick={idleTimeout.continueSession}>
+              Continue session
+            </PrimaryButton>
+          </div>
+        </div>
+      ) : null}
 
       <div
         className="response-area"

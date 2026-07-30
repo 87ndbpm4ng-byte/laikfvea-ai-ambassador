@@ -1,5 +1,6 @@
 import {
   ELEVENLABS_DANIEL_SETTINGS,
+  ELEVENLABS_LIVEAVATAR_OUTPUT_FORMAT,
   ELEVENLABS_OUTPUT_FORMAT,
   ELEVENLABS_REQUEST_TIMEOUT_MS,
   ELEVENLABS_TTS_MODEL,
@@ -20,10 +21,13 @@ export class ElevenLabsSpeechError extends Error {
   }
 }
 
+export type ElevenLabsSpeechOutput = "playback" | "liveavatar";
+
 type ElevenLabsSpeechOptions = {
   apiKey?: string;
   voiceId?: string;
   fetcher?: typeof fetch;
+  output?: ElevenLabsSpeechOutput;
 };
 
 export async function generateElevenLabsSpeech(
@@ -33,6 +37,12 @@ export async function generateElevenLabsSpeech(
   const apiKey = options.apiKey ?? process.env.ELEVENLABS_API_KEY;
   const voiceId =
     options.voiceId ?? process.env.ELEVENLABS_DANIEL_VOICE_ID;
+  const outputFormat =
+    options.output === "liveavatar"
+      ? ELEVENLABS_LIVEAVATAR_OUTPUT_FORMAT
+      : ELEVENLABS_OUTPUT_FORMAT;
+  const accept =
+    options.output === "liveavatar" ? "application/octet-stream" : "audio/mpeg";
 
   console.info("[speech-api] Daniel speech provider selected.", {
     provider: "elevenlabs",
@@ -52,11 +62,11 @@ export async function generateElevenLabsSpeech(
   const response = await fetcher(
     `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(
       voiceId,
-    )}/stream?output_format=${ELEVENLABS_OUTPUT_FORMAT}`,
+    )}/stream?output_format=${outputFormat}`,
     {
       method: "POST",
       headers: {
-        Accept: "audio/mpeg",
+        Accept: accept,
         "Content-Type": "application/json",
         "xi-api-key": apiKey,
       },

@@ -7,7 +7,11 @@ export type VoiceInputState =
   | "unavailable";
 
 export type VoiceOutputState = "idle" | "speaking" | "unavailable";
-export type SpeechPlaybackProvider = "elevenlabs" | "openai" | "browser";
+export type SpeechPlaybackProvider =
+  | "liveavatar"
+  | "elevenlabs"
+  | "openai"
+  | "browser";
 
 export type VoiceErrorCode =
   | "permission-denied"
@@ -55,5 +59,9 @@ export interface SpeechSynthesisProvider {
   activate?(): Promise<boolean>;
   retry?(): Promise<boolean>;
   reset?(): void;
+  startListening?(): void;
+  stopListening?(): void;
+  setReady?(): void;
+  setThinking?(): void;
   stop(): void;
 }

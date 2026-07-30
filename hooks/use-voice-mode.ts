@@ -36,7 +36,7 @@ export function useVoiceMode({
     () => recognitionProvider ?? new BrowserSpeechRecognitionProvider(),
     [recognitionProvider],
   );
-  const synthesis = useMemo(
+  const synthesis: SpeechSynthesisProvider = useMemo(
     () => synthesisProvider ?? new OpenAISpeechSynthesisProvider(),
     [synthesisProvider],
   );
@@ -96,15 +96,19 @@ export function useVoiceMode({
     });
   }, [synthesis]);
 
-  const handleError = useCallback((voiceError: VoiceError) => {
-    setError(voiceError);
-    setInputState(
-      voiceError.code === "recognition-unavailable" ? "unavailable" : "idle",
-    );
-    setOutputState(
-      voiceError.code === "synthesis-unavailable" ? "unavailable" : "idle",
-    );
-  }, []);
+  const handleError = useCallback(
+    (voiceError: VoiceError) => {
+      synthesis.setReady?.();
+      setError(voiceError);
+      setInputState(
+        voiceError.code === "recognition-unavailable" ? "unavailable" : "idle",
+      );
+      setOutputState(
+        voiceError.code === "synthesis-unavailable" ? "unavailable" : "idle",
+      );
+    },
+    [synthesis],
+  );
 
   const startListening = useCallback(() => {
     if (
@@ -116,6 +120,7 @@ export function useVoiceMode({
     }
 
     synthesis.stop();
+    synthesis.startListening?.();
     setOutputState("idle");
     setPlaybackProvider(null);
     setIsPlaybackBlocked(false);
@@ -134,6 +139,8 @@ export function useVoiceMode({
         submittedTranscriptRef.current = true;
         setTranscript(finalTranscript);
         setInputState("processing");
+        synthesis.stopListening?.();
+        synthesis.setThinking?.();
         try {
           await submitTranscript(finalTranscript);
         } finally {
@@ -141,6 +148,7 @@ export function useVoiceMode({
         }
       },
       onEnd: () => {
+        if (!submittedTranscriptRef.current) synthesis.setReady?.();
         setInputState((current) =>
           current === "processing" ? current : "idle",
         );
@@ -159,7 +167,8 @@ export function useVoiceMode({
 
   const stopListening = useCallback(() => {
     recognition.stop();
-  }, [recognition]);
+    synthesis.stopListening?.();
+  }, [recognition, synthesis]);
 
   useEffect(() => {
     if (!isEnabled || !isAudioSessionActivated) {

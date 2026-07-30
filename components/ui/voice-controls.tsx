@@ -163,7 +163,11 @@ export function VoiceControls({
           {outputState === "speaking" && playbackProvider ? (
             <p className="voice-provider-badge" role="status">
               {guideName} voice:{" "}
-              {playbackProvider === "elevenlabs" ? "ElevenLabs" : "OpenAI"}
+              {playbackProvider === "liveavatar"
+                ? "LiveAvatar"
+                : playbackProvider === "elevenlabs"
+                  ? "ElevenLabs"
+                  : "OpenAI"}
             </p>
           ) : null}
 

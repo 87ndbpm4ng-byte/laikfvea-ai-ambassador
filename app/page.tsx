@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ScreenContainer } from "@/components/layout/screen-container";
 import {
   ConversationScreen,
@@ -16,6 +16,8 @@ import { useConversation } from "@/hooks/use-conversation";
 import { guides } from "@/lib/data/guides";
 import { products } from "@/lib/data/products";
 import { getSuggestedQuestion } from "@/lib/data/suggested-questions";
+import { LiveAvatarService } from "@/lib/liveavatar/liveavatar-service";
+import { LiveAvatarSpeechSynthesisProvider } from "@/lib/voice/liveavatar-speech-synthesis";
 import { OpenAISpeechSynthesisProvider } from "@/lib/voice/openai-speech-synthesis";
 import type { JourneyScreen } from "@/types/conversation";
 import type { GuideId } from "@/types/guide";
@@ -31,10 +33,25 @@ export default function Home() {
     useState<ProductId>("everyday");
   const selectedGuide = selectedGuideId ? guides[selectedGuideId] : null;
   const conversation = useConversation(selectedGuide, selectedLanguage);
-  const speechSynthesis = useMemo(
+  const liveAvatarService = useMemo(() => new LiveAvatarService(), []);
+  const fallbackSpeechSynthesis = useMemo(
     () => new OpenAISpeechSynthesisProvider(),
     [],
   );
+  const speechSynthesis = useMemo(
+    () =>
+      new LiveAvatarSpeechSynthesisProvider({
+        avatar: liveAvatarService,
+        fallback: fallbackSpeechSynthesis,
+      }),
+    [fallbackSpeechSynthesis, liveAvatarService],
+  );
+
+  useEffect(() => {
+    if (selectedGuideId !== "daniel") {
+      void liveAvatarService.disconnect();
+    }
+  }, [liveAvatarService, selectedGuideId]);
 
   function openProduct(product: ProductId) {
     setSelectedProduct(product);
@@ -151,7 +168,9 @@ export default function Home() {
             onAskText={conversation.submitText}
             onProducts={() => setScreen("products")}
             onEnd={endSession}
+            onIdleTimeout={restartSession}
             synthesisProvider={speechSynthesis}
+            liveAvatarService={liveAvatarService}
           />
         ) : screen === "products" ? (
           <ProductExplorerScreen

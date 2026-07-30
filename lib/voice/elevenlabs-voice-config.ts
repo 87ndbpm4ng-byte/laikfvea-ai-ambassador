@@ -1,5 +1,6 @@
 export const ELEVENLABS_TTS_MODEL = "eleven_multilingual_v2";
 export const ELEVENLABS_OUTPUT_FORMAT = "mp3_44100_128";
+export const ELEVENLABS_LIVEAVATAR_OUTPUT_FORMAT = "pcm_24000";
 export const ELEVENLABS_REQUEST_TIMEOUT_MS = 20_000;
 
 export const ELEVENLABS_DANIEL_SETTINGS = {
