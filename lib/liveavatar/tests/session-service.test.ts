@@ -2,10 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   createLiveAvatarSessionToken,
+  createLiveAvatarProviderErrorDetails,
   createLiveAvatarTokenRequest,
   getLiveAvatarConfiguration,
   LIVEAVATAR_SANDBOX_AVATAR_ID,
   LIVEAVATAR_SESSION_MODE,
+  isRetryableLiveAvatarStatus,
   LiveAvatarConfigurationError,
   LiveAvatarServiceError,
 } from "../session-service";
@@ -54,6 +56,18 @@ test("builds production configuration without a sandbox override", () => {
       avatar_id: "selected-public-avatar",
     },
   );
+});
+
+test("trims surrounding whitespace from server environment values", () => {
+  const configuration = getLiveAvatarConfiguration({
+    LIVEAVATAR_API_KEY: `  ${API_KEY}\n`,
+    LIVEAVATAR_ENVIRONMENT: " production \n",
+    LIVEAVATAR_DANIEL_AVATAR_ID: " selected-public-avatar \n",
+  });
+
+  assert.equal(configuration.apiKey, API_KEY);
+  assert.equal(configuration.environment, "production");
+  assert.equal(configuration.avatarId, "selected-public-avatar");
 });
 
 test("rejects an invalid environment value", () => {
@@ -151,7 +165,13 @@ test("fails safely when the provider rejects token creation", async () => {
         new Response(
           JSON.stringify({
             code: 4001,
-            message: "Provider detail that must remain server-side",
+            message: "avatar_id is not available to this account",
+            errors: [
+              {
+                field: "avatar_id",
+                message: "Invalid avatar",
+              },
+            ],
           }),
           {
             status: 400,
@@ -162,6 +182,53 @@ test("fails safely when the provider rejects token creation", async () => {
     (error: unknown) =>
       error instanceof LiveAvatarServiceError &&
       error.status === 400 &&
-      error.providerCode === 4001,
+      error.providerCode === 4001 &&
+      error.retryable === false &&
+      error.details.validationMessage ===
+        "avatar_id is not available to this account" &&
+      error.details.invalidFields.includes("avatar_id"),
+  );
+});
+
+test("classifies deterministic provider failures as non-retryable", () => {
+  for (const status of [400, 401, 403, 404, 422]) {
+    assert.equal(isRetryableLiveAvatarStatus(status), false);
+  }
+});
+
+test("classifies rate limits and server failures as retryable", () => {
+  for (const status of [429, 500, 502, 503]) {
+    assert.equal(isRetryableLiveAvatarStatus(status), true);
+  }
+});
+
+test("safe provider diagnostics never include secrets or full identifiers", () => {
+  const details = createLiveAvatarProviderErrorDetails({
+    status: 422,
+    payload: {
+      code: "VALIDATION_ERROR",
+      message:
+        "Avatar 12345678-1234-1234-1234-123456789abc is unavailable for sk-secret-value",
+      detail: [{ loc: ["body", "avatar_id"], msg: "Invalid avatar" }],
+    },
+    configuration: {
+      apiKey: "sk-secret-value",
+      avatarId: "12345678-1234-1234-1234-123456789abc",
+      environment: "production",
+      avatarSource: "environment-variable",
+    },
+  });
+  const serialized = JSON.stringify(details);
+
+  assert.equal(details.status, 422);
+  assert.equal(details.providerCode, "VALIDATION_ERROR");
+  assert.equal(details.retryable, false);
+  assert.deepEqual(details.invalidFields, ["avatar_id"]);
+  assert.equal(details.avatarIdPresent, true);
+  assert.equal(details.avatarIdSuffix, "…9abc");
+  assert.doesNotMatch(serialized, /sk-secret-value/);
+  assert.doesNotMatch(
+    serialized,
+    /12345678-1234-1234-1234-123456789abc/,
   );
 });

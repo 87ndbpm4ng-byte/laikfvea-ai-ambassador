@@ -1,6 +1,7 @@
 import {
   createLiveAvatarSessionToken,
   getLiveAvatarIdleTimeoutSeconds,
+  isLiveAvatarEnabled,
   LiveAvatarConfigurationError,
   LiveAvatarServiceError,
 } from "@/lib/liveavatar/session-service";
@@ -8,11 +9,19 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function errorResponse(code: string, message: string, status: number) {
+const VOICE_ONLY_MESSAGE =
+  "The avatar session could not be started. Voice-only mode is available.";
+
+function errorResponse(
+  code: string,
+  message: string,
+  status: number,
+  retryable = false,
+) {
   return Response.json(
     {
       success: false,
-      error: { code, message },
+      error: { code, message, retryable },
     },
     {
       status,
@@ -22,13 +31,13 @@ function errorResponse(code: string, message: string, status: number) {
 }
 
 export async function GET() {
-  const environment = process.env.LIVEAVATAR_ENVIRONMENT;
+  const environment = process.env.LIVEAVATAR_ENVIRONMENT?.trim();
   const validEnvironment =
     environment === "sandbox" || environment === "production";
 
   return Response.json(
     {
-      enabled: process.env.NEXT_PUBLIC_LIVEAVATAR_ENABLED === "true",
+      enabled: isLiveAvatarEnabled(),
       environment: validEnvironment ? environment : "invalid",
       avatarSource:
         environment === "sandbox"
@@ -43,7 +52,7 @@ export async function GET() {
 }
 
 export async function POST() {
-  if (process.env.NEXT_PUBLIC_LIVEAVATAR_ENABLED !== "true") {
+  if (!isLiveAvatarEnabled()) {
     return errorResponse(
       "LIVEAVATAR_DISABLED",
       "LiveAvatar is not enabled.",
@@ -92,14 +101,17 @@ export async function POST() {
     }
 
     if (error instanceof LiveAvatarServiceError) {
-      console.error("[liveavatar] Session token request failed.", {
-        status: error.status,
-        providerCode: error.providerCode,
-      });
+      console.error(
+        "[LiveAvatar] Session token request failed.",
+        error.details,
+      );
       return errorResponse(
-        "SESSION_TOKEN_FAILED",
-        "LiveAvatar could not start a session.",
+        error.retryable
+          ? "LIVEAVATAR_TEMPORARILY_UNAVAILABLE"
+          : "LIVEAVATAR_CONFIGURATION_REJECTED",
+        VOICE_ONLY_MESSAGE,
         502,
+        error.retryable,
       );
     }
 
@@ -108,8 +120,9 @@ export async function POST() {
     });
     return errorResponse(
       "SERVICE_UNAVAILABLE",
-      "LiveAvatar is temporarily unavailable.",
+      VOICE_ONLY_MESSAGE,
       503,
+      true,
     );
   }
 }

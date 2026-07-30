@@ -23,7 +23,7 @@ type SessionApiResponse =
     }
   | {
       success: false;
-      error?: { code?: string; message?: string };
+      error?: { code?: string; message?: string; retryable?: boolean };
     };
 
 type AvatarSession = Pick<
@@ -50,6 +50,19 @@ type LiveAvatarServiceOptions = {
 
 const SAFE_CONNECTION_ERROR =
   "Daniel’s visual connection is unavailable. Voice playback will continue.";
+const SAFE_CONFIGURATION_ERROR =
+  "The avatar session could not be started. Voice-only mode is available.";
+
+class LiveAvatarSessionRequestError extends Error {
+  constructor(
+    message: string,
+    readonly retryable: boolean,
+    readonly code?: string,
+  ) {
+    super(message);
+    this.name = "LiveAvatarSessionRequestError";
+  }
+}
 
 export class LiveAvatarService implements DanielAvatarOutput {
   private readonly fetcher: typeof fetch;
@@ -219,10 +232,12 @@ export class LiveAvatarService implements DanielAvatarOutput {
       const payload = (await response.json()) as SessionApiResponse;
 
       if (!response.ok || !payload.success) {
-        throw new Error(
+        throw new LiveAvatarSessionRequestError(
           !payload.success && payload.error?.message
             ? payload.error.message
-            : "LiveAvatar session creation failed.",
+            : SAFE_CONNECTION_ERROR,
+          !payload.success && payload.error?.retryable === true,
+          !payload.success ? payload.error?.code : undefined,
         );
       }
 
@@ -250,10 +265,25 @@ export class LiveAvatarService implements DanielAvatarOutput {
     } catch (error) {
       console.warn("[liveavatar] Connection failed.", {
         name: error instanceof Error ? error.name : "UnknownError",
+        code:
+          error instanceof LiveAvatarSessionRequestError
+            ? error.code
+            : undefined,
+        retryable:
+          error instanceof LiveAvatarSessionRequestError
+            ? error.retryable
+            : true,
       });
       await this.releaseSession();
-      this.update("disconnected", null, SAFE_CONNECTION_ERROR);
-      this.scheduleReconnect();
+      const retryable =
+        !(error instanceof LiveAvatarSessionRequestError) || error.retryable;
+      this.update(
+        "disconnected",
+        null,
+        retryable ? SAFE_CONNECTION_ERROR : SAFE_CONFIGURATION_ERROR,
+        "elevenlabs-fallback",
+      );
+      if (retryable) this.scheduleReconnect();
       return false;
     }
   }

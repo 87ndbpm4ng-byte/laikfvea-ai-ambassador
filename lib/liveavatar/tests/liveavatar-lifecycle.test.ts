@@ -60,6 +60,23 @@ function sessionResponse() {
   );
 }
 
+function failedSessionResponse(status: number, retryable: boolean) {
+  return Response.json(
+    {
+      success: false,
+      error: {
+        code: retryable
+          ? "LIVEAVATAR_TEMPORARILY_UNAVAILABLE"
+          : "LIVEAVATAR_CONFIGURATION_REJECTED",
+        message:
+          "The avatar session could not be started. Voice-only mode is available.",
+        retryable,
+      },
+    },
+    { status },
+  );
+}
+
 test("constructing the service does not create a session on page load", () => {
   let fetchCount = 0;
   let sessionCount = 0;
@@ -137,10 +154,7 @@ test("automatic reconnect stops after two attempts and selects fallback", async 
     fetcher: async () => {
       fetchCount += 1;
       if (fetchCount === 1) return sessionResponse();
-      return Response.json(
-        { success: false, error: { code: "UNAVAILABLE" } },
-        { status: 503 },
-      );
+      return failedSessionResponse(502, true);
     },
     createSession: () => session as never,
   });
@@ -171,6 +185,58 @@ test("automatic reconnect stops after two attempts and selects fallback", async 
     "elevenlabs-fallback",
   );
   await service.disconnect();
+});
+
+test("a deterministic 422 provider failure is not retried", async () => {
+  let fetchCount = 0;
+  let latestSnapshot: LiveAvatarSnapshot | null = null;
+  const service = new LiveAvatarService({
+    reconnectDelayMs: 0,
+    fetcher: async () => {
+      fetchCount += 1;
+      return failedSessionResponse(502, false);
+    },
+  });
+  service.subscribe((snapshot) => {
+    latestSnapshot = snapshot;
+  });
+
+  assert.equal(await service.connect(), false);
+  await new Promise((resolve) => setTimeout(resolve, 20));
+
+  assert.equal(fetchCount, 1);
+  assert.equal(
+    (latestSnapshot as LiveAvatarSnapshot | null)?.reconnectAttemptCount,
+    0,
+  );
+  assert.equal(
+    (latestSnapshot as LiveAvatarSnapshot | null)?.outputPath,
+    "elevenlabs-fallback",
+  );
+  assert.equal(
+    (latestSnapshot as LiveAvatarSnapshot | null)?.error,
+    "The avatar session could not be started. Voice-only mode is available.",
+  );
+  await service.disconnect();
+});
+
+test("429 and 5xx route failures remain retryable", async () => {
+  for (const status of [429, 500, 502, 503]) {
+    let fetchCount = 0;
+    const service = new LiveAvatarService({
+      reconnectDelayMs: 0,
+      maxAutomaticReconnects: 1,
+      fetcher: async () => {
+        fetchCount += 1;
+        return failedSessionResponse(status, true);
+      },
+    });
+
+    assert.equal(await service.connect(), false);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(fetchCount, 2);
+    await service.disconnect();
+  }
 });
 
 test("session cleanup stops active resources", async () => {
