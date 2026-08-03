@@ -180,7 +180,11 @@ export class LiveAvatarSpeechSynthesisProvider
       console.warn("[liveavatar] Daniel visual speech failed; using audio fallback.", {
         name: error instanceof Error ? error.name : "UnknownError",
       });
-      this.avatar.interrupt();
+      try {
+        this.avatar.interrupt();
+      } catch {
+        // A stale avatar must never prevent the current answer's audio fallback.
+      }
       this.avatar.markFallback();
 
       if (this.fallback.isSupported) {

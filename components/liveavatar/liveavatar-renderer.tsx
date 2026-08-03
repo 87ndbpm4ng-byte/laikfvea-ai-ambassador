@@ -26,12 +26,21 @@ type DevelopmentStatus = {
 };
 
 const STATE_LABELS: Record<LiveAvatarSnapshot["state"], string> = {
-  disconnected: "Disconnected",
-  connecting: "Connecting",
-  connected: "Connected",
-  listening: "Listening",
-  thinking: "Thinking",
-  speaking: "Speaking",
+  disconnected: "Ready",
+  connecting: "Getting ready…",
+  connected: "Ready",
+  listening: "Listening…",
+  thinking: "Preparing an answer…",
+  speaking: "Speaking…",
+};
+
+const STATE_DESCRIPTIONS: Record<LiveAvatarSnapshot["state"], string> = {
+  disconnected: "Voice-only mode remains available.",
+  connecting: "Preparing the visual connection.",
+  connected: "Ask a question when you’re ready.",
+  listening: "Daniel is paying attention.",
+  thinking: "Considering your question.",
+  speaking: "Daniel is answering now.",
 };
 
 export function LiveAvatarRenderer({
@@ -71,9 +80,33 @@ export function LiveAvatarRenderer({
     };
   }, []);
 
+  const isUnavailable =
+    snapshot.state === "disconnected" && Boolean(snapshot.error);
+  const visibleStateLabel =
+    snapshot.state === "disconnected"
+      ? isUnavailable
+        ? "Voice-only mode"
+        : "Ready"
+      : STATE_LABELS[snapshot.state];
+  const visibleStateDescription =
+    snapshot.state === "disconnected"
+      ? isUnavailable
+        ? "Daniel is available by voice while the visual session is unavailable."
+        : "Enable Voice Mode when you’re ready to begin."
+      : STATE_DESCRIPTIONS[snapshot.state];
+
   return (
-    <div className="liveavatar-ambassador" aria-label="Daniel visual guide">
-      <div className="liveavatar-ambassador-stage">
+    <div
+      className="liveavatar-ambassador"
+      data-state={snapshot.state}
+      aria-label="Daniel visual guide"
+    >
+      <div
+        className="liveavatar-ambassador-stage"
+        aria-busy={
+          snapshot.state === "connecting" || snapshot.state === "thinking"
+        }
+      >
         <video
           ref={videoRef}
           className="liveavatar-ambassador-video"
@@ -82,17 +115,27 @@ export function LiveAvatarRenderer({
           aria-label="Daniel’s LiveAvatar stream"
         />
         {snapshot.state === "disconnected" ? (
-          <div className="liveavatar-ambassador-placeholder" aria-hidden="true">
-            D
+          <div className="liveavatar-ambassador-placeholder">
+            <span aria-hidden="true">D</span>
+            <p>Daniel will appear here when the visual session is ready.</p>
           </div>
         ) : null}
       </div>
-      <div className="liveavatar-ambassador-status" aria-live="polite">
-        <span
-          className={`liveavatar-state-dot liveavatar-state-${snapshot.state}`}
-          aria-hidden="true"
-        />
-        <span>{STATE_LABELS[snapshot.state]}</span>
+      <div
+        className="liveavatar-ambassador-status"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        <span className="liveavatar-state-mark" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+        </span>
+        <span className="liveavatar-state-copy">
+          <strong>{visibleStateLabel}</strong>
+          <span>{visibleStateDescription}</span>
+        </span>
         {snapshot.state === "disconnected" && snapshot.error ? (
           <button type="button" onClick={() => void service.reconnect()}>
             Reconnect

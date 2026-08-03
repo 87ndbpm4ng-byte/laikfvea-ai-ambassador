@@ -11,7 +11,6 @@ import {
   ProductExplorerScreen,
   SessionEndScreen,
 } from "@/components/screens/journey-screens";
-import { PrimaryButton } from "@/components/ui/primary-button";
 import { useConversation } from "@/hooks/use-conversation";
 import { guides } from "@/lib/data/guides";
 import { products } from "@/lib/data/products";
@@ -99,11 +98,48 @@ export default function Home() {
             className="screen-content idle-content"
             aria-labelledby="idle-heading"
           >
-            <h1 id="idle-heading">Curious about hydrogen technology?</h1>
-            <p>Explore the technology, compare products and ask questions.</p>
-            <PrimaryButton onClick={() => setScreen("language")}>
-              Start
-            </PrimaryButton>
+            <header className="idle-header">
+              <p className="idle-eyebrow">Hydrogen technology, made clear</p>
+              <h1 id="idle-heading">Choose your AI specialist.</h1>
+              <p className="idle-support">
+                Meet the guide whose perspective best matches what you would
+                like to explore.
+              </p>
+            </header>
+
+            <div
+              className="idle-specialist-grid"
+              role="group"
+              aria-label="AI specialists"
+            >
+              {Object.values(guides).map((guide) => (
+                <button
+                  className="idle-specialist-card"
+                  type="button"
+                  key={guide.id}
+                  onClick={() => {
+                    setSelectedGuideId(guide.id);
+                    setScreen("language");
+                  }}
+                >
+                  <span className="idle-specialist-portrait" aria-hidden="true">
+                    {guide.initial}
+                  </span>
+                  <span className="idle-specialist-copy">
+                    <strong>{guide.name}</strong>
+                    <span>{guide.role}</span>
+                    <small>
+                      {guide.id === "daniel"
+                        ? "Explains technology, engineering and product features."
+                        : "Explains wellness, hydration and everyday routines."}
+                    </small>
+                  </span>
+                  <span className="idle-specialist-action">
+                    Select {guide.name}
+                  </span>
+                </button>
+              ))}
+            </div>
           </section>
         ) : screen === "language" ? (
           <section
@@ -128,7 +164,9 @@ export default function Home() {
                     key={language}
                     onClick={() => {
                       setSelectedLanguage(language);
-                      setScreen("guide");
+                      setScreen(
+                        selectedGuideId ? "introduction" : "guide",
+                      );
                     }}
                     lang={
                       language === "中文"
@@ -156,7 +194,7 @@ export default function Home() {
         ) : screen === "introduction" && selectedGuideId ? (
           <GuideIntroductionScreen
             guideId={selectedGuideId}
-            onBack={() => setScreen("guide")}
+            onBack={() => setScreen("language")}
             onBegin={() => setScreen("conversation")}
           />
         ) : screen === "conversation" && selectedGuideId ? (
@@ -167,6 +205,7 @@ export default function Home() {
             onAskSuggested={conversation.submitSuggestedQuestion}
             onAskText={conversation.submitText}
             onProducts={() => setScreen("products")}
+            onOpenProduct={openProduct}
             onEnd={endSession}
             onIdleTimeout={restartSession}
             synthesisProvider={speechSynthesis}

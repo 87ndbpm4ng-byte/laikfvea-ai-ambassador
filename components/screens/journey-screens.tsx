@@ -97,12 +97,17 @@ export function GuideIntroductionScreen({
         Back
       </button>
 
-      <div className="introduction-portrait" aria-hidden="true">
-        {guide.initial}
+      <div className="introduction-layout">
+        <div className="introduction-portrait" aria-hidden="true">
+          {guide.initial}
+        </div>
+        <div className="introduction-copy">
+          <p className="introduction-role">{guide.role}</p>
+          <h1 id="introduction-heading">Hello, I’m {guide.name}.</h1>
+          <p>{guide.introduction}</p>
+          <PrimaryButton onClick={onBegin}>Begin conversation</PrimaryButton>
+        </div>
       </div>
-      <h1 id="introduction-heading">Hello, I’m {guide.name}.</h1>
-      <p>{guide.introduction}</p>
-      <PrimaryButton onClick={onBegin}>Begin</PrimaryButton>
     </section>
   );
 }
@@ -114,11 +119,63 @@ type ConversationScreenProps = {
   onAskSuggested: (question: SuggestedQuestion) => Promise<boolean>;
   onAskText: (question: string) => Promise<boolean>;
   onProducts: () => void;
+  onOpenProduct: (product: ProductId) => void;
   onEnd: () => void;
   onIdleTimeout: () => void;
   synthesisProvider?: SpeechSynthesisProvider;
   liveAvatarService?: DanielAvatarOutput;
 };
+
+const quickTopics = [
+  {
+    id: "hydrogen-technology",
+    suggestedQuestionId: "hydrogen-water-overview",
+    marker: "HT",
+    title: "Hydrogen Technology",
+    description: "Understand the core principles.",
+    question: "How does hydrogen water work?",
+  },
+  {
+    id: "product-comparison",
+    suggestedQuestionId: "product-comparison",
+    marker: "PC",
+    title: "Product Comparison",
+    description: "See the meaningful differences.",
+    question: "Compare the available products",
+  },
+  {
+    id: "hydrogen-inhalation",
+    suggestedQuestionId: "hydrogen-inhalation",
+    marker: "HI",
+    title: "Hydrogen Inhalation",
+    description: "Explore the documented capability.",
+    question: "Explain hydrogen inhalation",
+  },
+  {
+    id: "charging-maintenance",
+    suggestedQuestionId: null,
+    marker: "CM",
+    title: "Charging & Maintenance",
+    description: "Learn about everyday care.",
+    question: "How do I charge and maintain the Advanced Bottle?",
+  },
+  {
+    id: "materials",
+    suggestedQuestionId: null,
+    marker: "MT",
+    title: "Materials",
+    description: "Ask what the documentation confirms.",
+    question: "What materials are used in the products?",
+  },
+  {
+    id: "warranty",
+    suggestedQuestionId: null,
+    marker: "WR",
+    title: "Warranty",
+    description: "Check the available warranty information.",
+    question: "What warranty information is available?",
+  },
+] as const;
 
 type ConversationTurn = {
   visitor: ConversationMessage;
@@ -148,6 +205,7 @@ export function ConversationScreen({
   onAskSuggested,
   onAskText,
   onProducts,
+  onOpenProduct,
   onEnd,
   onIdleTimeout,
   synthesisProvider,
@@ -156,6 +214,23 @@ export function ConversationScreen({
   const guide = guides[guideId];
   const [draft, setDraft] = useState("");
   const conversationTurns = createConversationTurns(messages);
+  const latestVisitorMessage = [...messages]
+    .reverse()
+    .find((message) => message.role === "visitor");
+  const latestRelatedProduct = [...messages]
+    .reverse()
+    .find((message) => message.relatedProduct)?.relatedProduct;
+  const isComparisonContext = Boolean(
+    latestVisitorMessage &&
+      /\b(compare|comparison|both|products)\b/i.test(
+        latestVisitorMessage.content,
+      ),
+  );
+  const contextualProductIds: ProductId[] = isComparisonContext
+    ? ["everyday", "advanced"]
+    : latestRelatedProduct
+      ? [latestRelatedProduct]
+      : [];
   const voice = useVoiceMode({
     guideId,
     messages,
@@ -197,20 +272,13 @@ export function ConversationScreen({
     >
       <header className="conversation-header">
         <div>
-          <p className="guide-context">{guide.role}</p>
-          <h1 id="conversation-heading">{guide.name}</h1>
+          <p className="guide-context">AI Product Specialist</p>
+          <h1 id="conversation-heading">Conversation with {guide.name}</h1>
         </div>
         <button className="text-action" type="button" onClick={onEnd}>
           End Session
         </button>
       </header>
-
-      {guideId === "daniel" && liveAvatarService ? (
-        <LiveAvatarRenderer
-          service={liveAvatarService}
-          idleSecondsRemaining={idleTimeout.remainingSeconds}
-        />
-      ) : null}
 
       {idleTimeout.showWarning && idleTimeout.remainingSeconds !== null ? (
         <div
@@ -232,104 +300,202 @@ export function ConversationScreen({
         </div>
       ) : null}
 
-      <div
-        className="response-area"
-        aria-live="polite"
-        aria-label="Conversation"
-        aria-busy={isLoading}
-      >
-        {conversationTurns.length === 0 ? (
-          <div className="response-welcome">
-            <p>
-              Ask a question or choose a topic below. I’ll use the approved
-              information available in this demonstration.
-            </p>
-          </div>
-        ) : (
-          <ol className="conversation-history">
-            {conversationTurns.map((turn) => (
-              <li className="conversation-entry" key={turn.visitor.id}>
-                <div className="visitor-question">
-                  <span>You asked</span>
-                  <p>{turn.visitor.content}</p>
-                </div>
-                {turn.guide ? (
-                  <div className="guide-response">
-                    <span>{guide.name}</span>
-                    <p>{turn.guide.content}</p>
-                  </div>
-                ) : (
-                  <div className="guide-response">
-                    <span>{guide.name}</span>
-                    <p>Preparing response…</p>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ol>
-        )}
-      </div>
+      <div className="conversation-workspace">
+        <aside className="conversation-specialist">
+          {guideId === "daniel" && liveAvatarService ? (
+            <LiveAvatarRenderer
+              service={liveAvatarService}
+              idleSecondsRemaining={idleTimeout.remainingSeconds}
+            />
+          ) : (
+            <div
+              className="specialist-static-stage"
+              aria-label={`${guide.name}, ${guide.role}`}
+            >
+              <span aria-hidden="true">{guide.initial}</span>
+              <div>
+                <strong>{guide.name}</strong>
+                <p>{guide.role}</p>
+              </div>
+            </div>
+          )}
 
-      <div className="suggested-questions" aria-label="Suggested questions">
-        {suggestedQuestions.map((question) => (
-          <button
-            className="suggestion-button"
-            type="button"
-            key={question.id}
-            disabled={isLoading}
-            onClick={() => onAskSuggested(question)}
+          {guideId === "emily" ? (
+            <div className="specialist-identity" role="status">
+              <span className="specialist-ready-mark" aria-hidden="true" />
+              <div>
+                <strong>{guide.name}</strong>
+                <p>{guide.role}</p>
+              </div>
+              <span>Ready</span>
+            </div>
+          ) : null}
+        </aside>
+
+        <main className="conversation-dialogue">
+          <div
+            className="response-area"
+            aria-live="polite"
+            aria-label="Conversation"
+            aria-busy={isLoading}
           >
-            {question.label}
-          </button>
-        ))}
+            {conversationTurns.length === 0 ? (
+              <div className="response-welcome">
+                <strong>What would you like to understand?</strong>
+                <p>
+                  Ask {guide.name} directly, or begin with one of the topics
+                  below.
+                </p>
+              </div>
+            ) : (
+              <ol className="conversation-history">
+                {conversationTurns.map((turn) => (
+                  <li className="conversation-entry" key={turn.visitor.id}>
+                    <div className="visitor-question">
+                      <span>You asked</span>
+                      <p>{turn.visitor.content}</p>
+                    </div>
+                    {turn.guide ? (
+                      <div className="guide-response">
+                        <span>{guide.name}</span>
+                        <p>{turn.guide.content}</p>
+                      </div>
+                    ) : (
+                      <div className="guide-response is-preparing">
+                        <span>{guide.name}</span>
+                        <p>
+                          <span className="thinking-dots" aria-hidden="true">
+                            <i />
+                            <i />
+                            <i />
+                          </span>
+                          <span className="sr-only">Preparing response</span>
+                        </p>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+
+          <VoiceControls
+            enabled={voice.isEnabled}
+            inputState={voice.inputState}
+            outputState={voice.outputState}
+            playbackProvider={voice.playbackProvider}
+            playbackBlocked={voice.isPlaybackBlocked}
+            audioSessionActivated={voice.isAudioSessionActivated}
+            activationFailed={voice.activationFailed}
+            guideName={guide.name}
+            transcript={voice.transcript}
+            error={voice.error}
+            recognitionSupported={voice.isRecognitionSupported}
+            synthesisSupported={voice.isSynthesisSupported}
+            disabled={isLoading}
+            onEnabledChange={voice.setEnabled}
+            onActivateAudioSession={voice.activateAudioSession}
+            onStartListening={voice.startListening}
+            onStopListening={voice.stopListening}
+            onStopSpeaking={voice.stopSpeaking}
+            onRetryPlayback={voice.retryPlayback}
+          />
+
+          <form className="composer" onSubmit={submitQuestion}>
+            <label className="sr-only" htmlFor="visitor-question">
+              Ask your guide
+            </label>
+            <input
+              id="visitor-question"
+              value={draft}
+              disabled={isLoading}
+              onChange={(event) => setDraft(event.target.value)}
+              onKeyDown={submitOnEnter}
+              placeholder={`Ask ${guide.name} a question`}
+            />
+            <button
+              className="composer-send"
+              type="submit"
+              disabled={!draft.trim() || isLoading}
+            >
+              {isLoading ? "Sending" : "Send"}
+            </button>
+          </form>
+        </main>
+
+        <aside className="conversation-context" aria-label="Conversation context">
+          <section className="context-section">
+            <div className="context-heading">
+              <p>Quick topics</p>
+              <span>Choose a starting point</span>
+            </div>
+            <div className="quick-topic-list">
+              {quickTopics.map((topic) => (
+                <button
+                  className="quick-topic-card"
+                  type="button"
+                  key={topic.id}
+                  disabled={isLoading}
+                  onClick={() => {
+                    const suggestedQuestion = topic.suggestedQuestionId
+                      ? suggestedQuestions.find(
+                          (question) =>
+                            question.id === topic.suggestedQuestionId,
+                        )
+                      : undefined;
+
+                    return suggestedQuestion
+                      ? onAskSuggested(suggestedQuestion)
+                      : onAskText(topic.question);
+                  }}
+                >
+                  <span className="quick-topic-marker" aria-hidden="true">
+                    {topic.marker}
+                  </span>
+                  <span>
+                    <strong>{topic.title}</strong>
+                    <small>{topic.description}</small>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="context-section product-context-section">
+            <div className="context-heading">
+              <p>Related products</p>
+              <span>
+                {contextualProductIds.length
+                  ? "Based on this conversation"
+                  : "Explore when you’re ready"}
+              </span>
+            </div>
+            {contextualProductIds.length ? (
+              <div className="context-product-list">
+                {contextualProductIds.map((productId) => (
+                  <button
+                    className="context-product-card"
+                    type="button"
+                    key={productId}
+                    onClick={() => onOpenProduct(productId)}
+                  >
+                    <span aria-hidden="true">{products[productId].shortName}</span>
+                    <strong>{products[productId].name}</strong>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <button
+                className="context-explore-action"
+                type="button"
+                onClick={onProducts}
+              >
+                Explore products
+              </button>
+            )}
+          </section>
+        </aside>
       </div>
-
-      <form className="composer" onSubmit={submitQuestion}>
-        <label className="sr-only" htmlFor="visitor-question">
-          Ask your guide
-        </label>
-        <input
-          id="visitor-question"
-          value={draft}
-          disabled={isLoading}
-          onChange={(event) => setDraft(event.target.value)}
-          onKeyDown={submitOnEnter}
-          placeholder="Ask your guide"
-        />
-        <button
-          className="composer-send"
-          type="submit"
-          disabled={!draft.trim() || isLoading}
-        >
-          {isLoading ? "Sending" : "Send"}
-        </button>
-      </form>
-
-      <VoiceControls
-        enabled={voice.isEnabled}
-        inputState={voice.inputState}
-        outputState={voice.outputState}
-        playbackProvider={voice.playbackProvider}
-        playbackBlocked={voice.isPlaybackBlocked}
-        audioSessionActivated={voice.isAudioSessionActivated}
-        activationFailed={voice.activationFailed}
-        guideName={guide.name}
-        transcript={voice.transcript}
-        error={voice.error}
-        recognitionSupported={voice.isRecognitionSupported}
-        synthesisSupported={voice.isSynthesisSupported}
-        disabled={isLoading}
-        onEnabledChange={voice.setEnabled}
-        onActivateAudioSession={voice.activateAudioSession}
-        onStartListening={voice.startListening}
-        onStopListening={voice.stopListening}
-        onStopSpeaking={voice.stopSpeaking}
-        onRetryPlayback={voice.retryPlayback}
-      />
-
-      <button className="explorer-action" type="button" onClick={onProducts}>
-        Explore Products
-      </button>
     </section>
   );
 }
@@ -352,7 +518,7 @@ export function ProductExplorerScreen({
     >
       <header className="section-header">
         <h1 id="products-heading">Product Explorer</h1>
-        <p>Explore the two products available in this demonstration.</p>
+        <p>Explore the available products and their key capabilities.</p>
       </header>
 
       <div className="product-grid">
@@ -516,6 +682,9 @@ export function SessionEndScreen({
       className="screen-content end-content"
       aria-labelledby="end-heading"
     >
+      <div className="end-mark" aria-hidden="true">
+        <span />
+      </div>
       <h1 id="end-heading">Thank you for visiting.</h1>
       <div className="screen-actions">
         <PrimaryButton onClick={onRestart}>Start Again</PrimaryButton>

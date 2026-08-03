@@ -54,22 +54,37 @@ export function VoiceControls({
   const isProcessing = inputState === "processing";
   const isSpeaking = outputState === "speaking";
   const status = !audioSessionActivated
-    ? "Voice setup"
+    ? "Ready to begin"
     : isListening
-      ? "Listening"
+      ? "Listening…"
       : isProcessing
-        ? "Preparing your answer"
+        ? "Preparing an answer…"
         : isSpeaking
-          ? "Speaking"
-          : "Voice ready";
+          ? "Speaking…"
+          : "Ready";
 
   return (
-    <div className="voice-panel">
+    <div
+      className="voice-panel"
+      data-voice-state={
+        !enabled
+          ? "off"
+          : !audioSessionActivated
+            ? "setup"
+            : isListening
+              ? "listening"
+              : isProcessing
+                ? "thinking"
+                : isSpeaking
+                  ? "speaking"
+                  : "ready"
+      }
+    >
       <div className="voice-panel-header">
         <div>
-          <p className="voice-panel-title">Voice Mode</p>
+          <p className="voice-panel-title">Speak with {guideName}</p>
           <p className="voice-panel-support">
-            Speak and hear your guide respond.
+            A natural, hands-free conversation.
           </p>
         </div>
         <button
@@ -94,10 +109,10 @@ export function VoiceControls({
                 type="button"
                 onClick={onActivateAudioSession}
               >
-                Start voice conversation
+                Begin voice
               </button>
               <p role={activationFailed ? "alert" : "status"}>
-                Tap Start voice conversation to enable audio.
+                Tap once to begin speaking with {guideName}.
               </p>
             </div>
           ) : null}
@@ -131,8 +146,19 @@ export function VoiceControls({
               <div className="voice-status-line">
                 <span
                   className={`voice-state-indicator ${
-                    isListening || isSpeaking ? "is-active" : ""
+                    isListening || isSpeaking || isProcessing
+                      ? "is-active"
+                      : ""
                   }`}
+                  data-state={
+                    isListening
+                      ? "listening"
+                      : isProcessing
+                        ? "thinking"
+                        : isSpeaking
+                          ? "speaking"
+                          : "ready"
+                  }
                   aria-hidden="true"
                 >
                   <i />

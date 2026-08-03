@@ -23,6 +23,7 @@ export interface DanielAvatarOutput {
   connect(): Promise<boolean>;
   reconnect(): Promise<boolean>;
   disconnect(): Promise<void>;
+  dispose(): Promise<void>;
   attach(element: HTMLVideoElement | null): void;
   startListening(): void;
   stopListening(): void;

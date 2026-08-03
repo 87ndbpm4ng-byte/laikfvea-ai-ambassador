@@ -12,6 +12,7 @@ import type {
   LiveAvatarState,
   LiveAvatarStateListener,
 } from "@/lib/liveavatar/liveavatar-types";
+import { classifyLiveAvatarError } from "@/lib/liveavatar/liveavatar-errors";
 
 type SessionApiResponse =
   | {
@@ -85,11 +86,28 @@ export class LiveAvatarService implements DanielAvatarOutput {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private keepAliveTimer: ReturnType<typeof setInterval> | null = null;
   private desiredConnection = false;
+  private disposed = false;
+  private sessionGeneration = 0;
+  private activeSessionGeneration = 0;
   private reconnectAttemptCount = 0;
   private readonly maxAutomaticReconnects: number;
   private pendingSpeech:
     | { resolve: () => void; reject: (error: Error) => void }
     | null = null;
+  private readonly handlePageHide = () => {
+    void this.dispose();
+  };
+  private readonly handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+    const classification = classifyLiveAvatarError(event.reason);
+    if (!classification.providerFailure) return;
+
+    event.preventDefault();
+    console.warn("[liveavatar] Contained an asynchronous provider failure.", {
+      code: classification.code,
+      retryable: classification.retryable,
+    });
+    void this.handleProviderFailure(event.reason);
+  };
 
   constructor(options: LiveAvatarServiceOptions = {}) {
     this.fetcher =
@@ -102,21 +120,17 @@ export class LiveAvatarService implements DanielAvatarOutput {
     this.maxAutomaticReconnects = options.maxAutomaticReconnects ?? 2;
 
     if (typeof window !== "undefined") {
-      window.addEventListener("pagehide", () => {
-        void this.disconnect();
-      });
+      window.addEventListener("pagehide", this.handlePageHide);
+      window.addEventListener("unhandledrejection", this.handleUnhandledRejection);
     }
   }
 
   get isConnected() {
-    return (
-      this.session !== null &&
-      this.snapshot.state !== "disconnected" &&
-      this.snapshot.state !== "connecting"
-    );
+    return this.getValidSession() !== null;
   }
 
   connect() {
+    if (this.disposed) return Promise.resolve(false);
     this.desiredConnection = true;
 
     if (this.isConnected) {
@@ -147,24 +161,38 @@ export class LiveAvatarService implements DanielAvatarOutput {
     this.update("disconnected", null, null, "elevenlabs-fallback");
   }
 
+  async dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    if (typeof window !== "undefined") {
+      window.removeEventListener("pagehide", this.handlePageHide);
+      window.removeEventListener("unhandledrejection", this.handleUnhandledRejection);
+    }
+    await this.disconnect();
+    this.listeners.clear();
+  }
+
   attach(element: HTMLVideoElement | null) {
     this.video = element;
 
-    if (element && this.session && this.isConnected) {
-      this.attachStream(this.session);
+    const session = this.getValidSession();
+    if (element && session) {
+      this.attachStream(session);
     }
   }
 
   startListening() {
-    if (!this.session || !this.isConnected) return;
-    this.session.startListening();
-    this.update("listening");
+    this.runSessionAction("start-listening", (session) => {
+      session.startListening();
+      this.update("listening");
+    });
   }
 
   stopListening() {
-    if (!this.session || !this.isConnected) return;
-    this.session.stopListening();
-    this.update("thinking");
+    this.runSessionAction("stop-listening", (session) => {
+      session.stopListening();
+      this.update("thinking");
+    });
   }
 
   setReady() {
@@ -185,7 +213,8 @@ export class LiveAvatarService implements DanielAvatarOutput {
   }
 
   speakAudio(audioBase64: string) {
-    if (!this.session || !this.isConnected) {
+    const session = this.getValidSession();
+    if (!session) {
       return Promise.reject(new Error("LiveAvatar is not connected."));
     }
 
@@ -195,9 +224,10 @@ export class LiveAvatarService implements DanielAvatarOutput {
       this.pendingSpeech = { resolve, reject };
 
       try {
-        this.session?.repeatAudio(audioBase64);
+        session.repeatAudio(audioBase64);
       } catch (error) {
         this.pendingSpeech = null;
+        void this.handleProviderFailure(error);
         reject(
           error instanceof Error
             ? error
@@ -208,9 +238,11 @@ export class LiveAvatarService implements DanielAvatarOutput {
   }
 
   interrupt() {
-    this.session?.interrupt();
     this.interruptPendingSpeech();
-    if (this.isConnected) this.update("listening");
+    this.runSessionAction("interrupt", (session) => {
+      session.interrupt();
+      this.update("listening");
+    });
   }
 
   subscribe(listener: LiveAvatarStateListener) {
@@ -245,6 +277,7 @@ export class LiveAvatarService implements DanielAvatarOutput {
 
       const session = this.createSession(payload.sessionToken);
       this.session = session;
+      this.activeSessionGeneration = ++this.sessionGeneration;
       this.bindSession(session, payload.sessionId);
       await session.start();
 
@@ -263,6 +296,7 @@ export class LiveAvatarService implements DanielAvatarOutput {
       this.startKeepAlive(session);
       return true;
     } catch (error) {
+      const classification = classifyLiveAvatarError(error);
       console.warn("[liveavatar] Connection failed.", {
         name: error instanceof Error ? error.name : "UnknownError",
         code:
@@ -272,11 +306,13 @@ export class LiveAvatarService implements DanielAvatarOutput {
         retryable:
           error instanceof LiveAvatarSessionRequestError
             ? error.retryable
-            : true,
+            : classification.retryable,
       });
       await this.releaseSession();
       const retryable =
-        !(error instanceof LiveAvatarSessionRequestError) || error.retryable;
+        error instanceof LiveAvatarSessionRequestError
+          ? error.retryable
+          : classification.retryable;
       this.update(
         "disconnected",
         null,
@@ -303,6 +339,8 @@ export class LiveAvatarService implements DanielAvatarOutput {
     session.on(SessionEvent.SESSION_DISCONNECTED, () => {
       if (this.session !== session) return;
       this.session = null;
+      this.activeSessionGeneration = 0;
+      this.sessionGeneration += 1;
       this.stopKeepAlive();
       this.clearVideo();
       this.interruptPendingSpeech();
@@ -322,7 +360,12 @@ export class LiveAvatarService implements DanielAvatarOutput {
 
   private attachStream(session: AvatarSession) {
     if (!this.video) return;
-    session.attach(this.video);
+    try {
+      session.attach(this.video);
+    } catch (error) {
+      void this.handleProviderFailure(error);
+      return;
+    }
     void this.video.play().catch((error: unknown) => {
       console.warn("[liveavatar] Avatar stream playback was blocked.", {
         name: error instanceof Error ? error.name : "UnknownError",
@@ -382,7 +425,7 @@ export class LiveAvatarService implements DanielAvatarOutput {
     this.stopKeepAlive();
     this.keepAliveTimer = setInterval(() => {
       if (this.session !== session) return;
-      void session.keepAlive().catch(() => this.scheduleReconnect());
+      void session.keepAlive().catch((error) => this.handleProviderFailure(error));
     }, this.keepAliveIntervalMs);
   }
 
@@ -414,8 +457,59 @@ export class LiveAvatarService implements DanielAvatarOutput {
     this.interruptPendingSpeech();
     const session = this.session;
     this.session = null;
+    this.activeSessionGeneration = 0;
+    this.sessionGeneration += 1;
     session?.removeAllListeners();
     if (session) await session.stop().catch(() => undefined);
     this.clearVideo();
+  }
+
+  private getValidSession() {
+    if (
+      this.disposed ||
+      !this.desiredConnection ||
+      !this.session ||
+      !this.snapshot.sessionId ||
+      this.activeSessionGeneration === 0 ||
+      this.activeSessionGeneration !== this.sessionGeneration ||
+      this.snapshot.state === "disconnected" ||
+      this.snapshot.state === "connecting"
+    ) {
+      return null;
+    }
+    return this.session;
+  }
+
+  private runSessionAction(
+    action: string,
+    callback: (session: AvatarSession) => void,
+  ) {
+    const session = this.getValidSession();
+    if (!session) return false;
+    try {
+      callback(session);
+      return true;
+    } catch (error) {
+      const classification = classifyLiveAvatarError(error);
+      console.warn("[liveavatar] Provider action failed safely.", {
+        action,
+        code: classification.code,
+        retryable: classification.retryable,
+      });
+      void this.handleProviderFailure(error);
+      return false;
+    }
+  }
+
+  private async handleProviderFailure(error: unknown) {
+    const classification = classifyLiveAvatarError(error);
+    await this.releaseSession();
+    this.update(
+      "disconnected",
+      null,
+      classification.retryable ? SAFE_CONNECTION_ERROR : SAFE_CONFIGURATION_ERROR,
+      "elevenlabs-fallback",
+    );
+    if (classification.retryable) this.scheduleReconnect();
   }
 }

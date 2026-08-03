@@ -13,15 +13,20 @@ class FakeSession {
   handlers = new Map<string, Handler[]>();
   startCount = 0;
   stopCount = 0;
+  failStart: Error | null = null;
+  failRepeat: Error | null = null;
+  failInterrupt: Error | null = null;
 
   async start() {
     this.startCount += 1;
+    if (this.failStart) throw this.failStart;
   }
   async stop() {
     this.stopCount += 1;
   }
   attach() {}
   repeatAudio() {
+    if (this.failRepeat) throw this.failRepeat;
     return "audio-event";
   }
   startListening() {
@@ -30,7 +35,9 @@ class FakeSession {
   stopListening() {
     return "listen-stop";
   }
-  interrupt() {}
+  interrupt() {
+    if (this.failInterrupt) throw this.failInterrupt;
+  }
   async keepAlive() {}
   on(event: string, handler: Handler) {
     const handlers = this.handlers.get(event) ?? [];
@@ -282,4 +289,62 @@ test("speech completion events remain available after production safeguards", as
   session.emit(AgentEventsEnum.AVATAR_SPEAK_ENDED, {});
   await speech;
   await service.disconnect();
+});
+
+test("Session not found during interrupt is contained and disposes the stale session", async () => {
+  const session = new FakeSession();
+  session.failInterrupt = new Error("Session not found");
+  let latestSnapshot: LiveAvatarSnapshot | null = null;
+  const service = new LiveAvatarService({
+    fetcher: async () => sessionResponse(),
+    createSession: () => session as never,
+  });
+  service.subscribe((snapshot) => {
+    latestSnapshot = snapshot;
+  });
+
+  assert.equal(await service.connect(), true);
+  assert.doesNotThrow(() => service.interrupt());
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(session.stopCount, 1);
+  assert.equal(
+    (latestSnapshot as LiveAvatarSnapshot | null)?.outputPath,
+    "elevenlabs-fallback",
+  );
+  await assert.rejects(() => service.speakAudio("AQID"), /not connected/i);
+});
+
+test("repeatAudio failure falls back without reusing the invalid session", async () => {
+  const session = new FakeSession();
+  session.failRepeat = new Error("Session expired");
+  const service = new LiveAvatarService({
+    fetcher: async () => sessionResponse(),
+    createSession: () => session as never,
+  });
+
+  assert.equal(await service.connect(), true);
+  await assert.rejects(() => service.speakAudio("AQID"), /Session expired/);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(session.stopCount, 1);
+  await assert.rejects(() => service.speakAudio("AQID"), /not connected/i);
+});
+
+test("insufficient credits from SDK start is deterministic and not retried", async () => {
+  let fetchCount = 0;
+  const session = new FakeSession();
+  session.failStart = new Error("Insufficient credits for session");
+  const service = new LiveAvatarService({
+    reconnectDelayMs: 0,
+    fetcher: async () => {
+      fetchCount += 1;
+      return sessionResponse();
+    },
+    createSession: () => session as never,
+  });
+
+  assert.equal(await service.connect(), false);
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.equal(fetchCount, 1);
+  assert.equal(session.stopCount, 1);
 });

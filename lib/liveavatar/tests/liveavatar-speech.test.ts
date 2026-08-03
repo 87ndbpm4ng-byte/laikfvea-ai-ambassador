@@ -19,6 +19,7 @@ class FakeAvatar implements DanielAvatarOutput {
   isConnected = true;
   audio: string[] = [];
   failSpeech = false;
+  failInterrupt = false;
   connectCount = 0;
   disconnectCount = 0;
   interruptCount = 0;
@@ -36,6 +37,9 @@ class FakeAvatar implements DanielAvatarOutput {
   async disconnect() {
     this.disconnectCount += 1;
     this.isConnected = false;
+  }
+  async dispose() {
+    await this.disconnect();
   }
   attach() {}
   startListening() {
@@ -57,6 +61,7 @@ class FakeAvatar implements DanielAvatarOutput {
   }
   interrupt() {
     this.interruptCount += 1;
+    if (this.failInterrupt) throw new Error("Session not found");
   }
   subscribe(listener: LiveAvatarStateListener) {
     void listener;
@@ -194,6 +199,28 @@ test("LiveAvatar is interrupted before MP3 fallback begins", async () => {
       guideId: "daniel",
     },
   ]);
+});
+
+test("a stale interrupt cannot block the current answer's MP3 fallback", async () => {
+  callbacks.reset();
+  const avatar = new FakeAvatar();
+  avatar.failSpeech = true;
+  avatar.failInterrupt = true;
+  const fallback = new FakeFallback();
+  const provider = new LiveAvatarSpeechSynthesisProvider({
+    avatar,
+    fallback,
+    fetcher: async () =>
+      new Response(Uint8Array.from([1, 2, 3]), { status: 200 }),
+  });
+
+  provider.speak("Current answer", "daniel", callbacks.value());
+  await flushPromises();
+
+  assert.deepEqual(fallback.spoken, [
+    { text: "Current answer", guideId: "daniel" },
+  ]);
+  assert.equal(callbacks.errors, 0);
 });
 
 test("Emily always uses the existing speech provider", () => {
