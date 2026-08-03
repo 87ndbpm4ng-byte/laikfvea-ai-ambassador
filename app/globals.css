@@ -2298,6 +2298,111 @@ h1 {
   }
 }
 
+/* Contextual product presenter */
+.conversation-response-presentation {
+  display: grid;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.conversation-response-presentation:has(.presentation-panel) {
+  grid-template-columns: minmax(0, 1.15fr) minmax(13rem, 0.85fr);
+  align-items: stretch;
+}
+
+.presentation-panel {
+  display: grid;
+  min-width: 0;
+  min-height: 12rem;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 1.5rem;
+  background: #f7f9fa;
+  grid-template-rows: minmax(0, 1fr) auto;
+  opacity: 0;
+  transform: translateY(0.5rem);
+  transition:
+    opacity 240ms var(--ease-enter),
+    transform 240ms var(--ease-enter);
+}
+
+.presentation-panel[data-visible="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.presentation-panel-image {
+  position: relative;
+  min-height: 9.5rem;
+  overflow: hidden;
+}
+
+.presentation-panel-image img {
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+}
+
+.presentation-panel figcaption {
+  display: grid;
+  padding: 0.8rem 1rem 0.95rem;
+  border-top: 1px solid rgba(15, 24, 30, 0.07);
+  gap: 0.12rem;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.presentation-panel figcaption span {
+  color: var(--color-text-secondary);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.presentation-panel figcaption strong {
+  color: var(--color-text-primary);
+  font-size: 0.94rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+@media (orientation: portrait), (max-width: 63.999rem) {
+  .conversation-response-presentation:has(.presentation-panel) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .presentation-panel {
+    min-height: 16rem;
+    grid-row: 1;
+  }
+
+  .presentation-panel-image {
+    min-height: 12rem;
+  }
+
+  .conversation-response-presentation .response-area {
+    grid-row: 2;
+  }
+}
+
+@media (max-width: 47.999rem) {
+  .presentation-panel {
+    min-height: 14rem;
+    border-radius: 1.25rem;
+  }
+
+  .presentation-panel-image {
+    min-height: 10rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .presentation-panel {
+    transform: none;
+    transition: opacity 1ms linear;
+  }
+}
+
 .liveavatar-ambassador-placeholder > .specialist-silhouette {
   width: 7rem;
   height: 7rem;

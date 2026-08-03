@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="610" viewBox="0 0 1920 610" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="title desc">
+  <title id="title">How molecular hydrogen relates to free radicals</title>
+  <desc id="desc">A four-step explanation of free radicals, hydrogen entering the body, neutralisation and reduced oxidative stress.</desc>
+
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&amp;display=swap');
+      .type { font-family: "Montserrat", sans-serif; }
+      .step { fill: #FFFFFF; font-size: 17px; font-weight: 600; }
+      .heading { fill: #17191B; font-size: 19px; font-weight: 700; letter-spacing: 0.25px; }
+      .body { fill: #51575B; font-size: 16px; font-weight: 400; }
+      .icon { fill: none; stroke: #24282A; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+      .fine { fill: none; stroke: #899196; stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+      .accent { fill: none; stroke: #7EAFC3; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+      .accent-fill { fill: #7EAFC3; }
+      .dark-fill { fill: #17191B; }
+      .chevron { fill: none; stroke: #7EAFC3; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+    </style>
+  </defs>
+
+  <!-- Step 1 header -->
+  <circle class="dark-fill" cx="92" cy="66" r="23"/>
+  <text class="type step" x="92" y="72" text-anchor="middle">1</text>
+  <text class="type heading" x="130" y="58">
+    <tspan x="130" dy="0">WHAT ARE</tspan>
+    <tspan x="130" dy="25">FREE RADICALS?</tspan>
+  </text>
+
+  <!-- Step 1 atom -->
+  <g transform="translate(165 142)" aria-label="Free radical atom">
+    <ellipse class="icon" cx="85" cy="84" rx="76" ry="30" transform="rotate(30 85 84)"/>
+    <ellipse class="icon" cx="85" cy="84" rx="76" ry="30" transform="rotate(-30 85 84)"/>
+    <ellipse class="icon" cx="85" cy="84" rx="30" ry="76"/>
+    <circle class="dark-fill" cx="85" cy="84" r="15"/>
+    <circle class="dark-fill" cx="147" cy="111" r="6"/>
+    <circle class="accent-fill" cx="32" cy="40" r="4"/>
+    <circle class="accent-fill" cx="82" cy="9" r="3.5"/>
+    <circle class="accent-fill" cx="38" cy="132" r="3"/>
+  </g>
+
+  <text class="type body" x="92" y="376">
+    <tspan x="92" dy="0">Free radicals are unstable</tspan>
+    <tspan x="92" dy="25">molecules with an unpaired</tspan>
+    <tspan x="92" dy="25">electron. They damage cells,</tspan>
+    <tspan x="92" dy="25">proteins and DNA, leading to</tspan>
+    <tspan x="92" dy="25">oxidative stress, inflammation</tspan>
+    <tspan x="92" dy="25">and aging.</tspan>
+  </text>
+
+  <!-- Chevron 1 -->
+  <path class="chevron" d="M475 214L493 232L475 250"/>
+
+  <!-- Step 2 header -->
+  <circle class="dark-fill" cx="562" cy="66" r="23"/>
+  <text class="type step" x="562" y="72" text-anchor="middle">2</text>
+  <text class="type heading" x="600" y="58">
+    <tspan x="600" dy="0">HYDROGEN</tspan>
+    <tspan x="600" dy="25">ENTERS THE BODY</tspan>
+  </text>
+
+  <!-- Step 2 hydrogen droplet -->
+  <g transform="translate(635 134)" aria-label="Molecular hydrogen droplet">
+    <path class="icon" d="M85 8C85 8 28 78 28 118C28 151 53 173 85 173C117 173 142 151 142 118C142 78 85 8 85 8Z"/>
+    <text class="type" x="85" y="126" fill="#17191B" font-size="38" font-weight="500" text-anchor="middle">H<tspan baseline-shift="sub" font-size="22">2</tspan></text>
+    <path class="accent" d="M146 128C146 128 164 150 164 162C164 173 156 180 146 180C136 180 128 173 128 162C128 150 146 128 146 128Z"/>
+    <circle class="accent-fill" cx="37" cy="83" r="3"/>
+    <circle class="accent-fill" cx="130" cy="86" r="3"/>
+  </g>
+
+  <text class="type body" x="562" y="376">
+    <tspan x="562" dy="0">When you drink hydrogen-</tspan>
+    <tspan x="562" dy="25">rich water, molecular</tspan>
+    <tspan x="562" dy="25">hydrogen (H₂) is absorbed</tspan>
+    <tspan x="562" dy="25">rapidly and spreads</tspan>
+    <tspan x="562" dy="25">throughout your body.</tspan>
+  </text>
+
+  <!-- Chevron 2 -->
+  <path class="chevron" d="M945 214L963 232L945 250"/>
+
+  <!-- Step 3 header -->
+  <circle class="dark-fill" cx="1032" cy="66" r="23"/>
+  <text class="type step" x="1032" y="72" text-anchor="middle">3</text>
+  <text class="type heading" x="1070" y="58">
+    <tspan x="1070" dy="0">HYDROGEN NEUTRALIZES</tspan>
+    <tspan x="1070" dy="25">HARMFUL FREE RADICALS</tspan>
+  </text>
+
+  <!-- Step 3 reaction -->
+  <g transform="translate(1038 145) scale(.9)" aria-label="Hydrogen neutralising a harmful free radical">
+    <g aria-label="Unstable free-radical molecule">
+      <path class="icon" d="M27 54L45 69M66 64L76 41M68 78L87 81M48 89L40 108"/>
+      <path class="fine" d="M31 49L49 64M70 68L82 45"/>
+      <circle class="icon" cx="18" cy="47" r="10"/>
+      <circle class="icon" cx="79" cy="30" r="10"/>
+      <circle class="icon" cx="97" cy="83" r="11"/>
+      <circle class="icon" cx="36" cy="118" r="10"/>
+      <circle class="icon" cx="56" cy="77" r="15"/>
+      <path class="accent" stroke-dasharray="4 6" d="M88 35L101 43"/>
+      <circle class="accent" cx="109" cy="49" r="6"/>
+      <circle class="accent-fill" cx="109" cy="49" r="2.4"/>
+    </g>
+    <text class="type" x="142" y="83" fill="#17191B" font-size="36" font-weight="400" text-anchor="middle">+</text>
+    <circle class="icon" cx="194" cy="75" r="35"/>
+    <text class="type" x="194" y="84" fill="#17191B" font-size="25" font-weight="500" text-anchor="middle">H<tspan baseline-shift="sub" font-size="15">2</tspan></text>
+    <path class="accent" d="M245 75H298"/>
+    <path class="accent" d="M286 63L298 75L286 87"/>
+    <path class="icon" d="M356 18C356 18 316 68 316 96C316 119 334 135 356 135C378 135 396 119 396 96C396 68 356 18 356 18Z"/>
+    <text class="type" x="356" y="104" fill="#17191B" font-size="22" font-weight="500" text-anchor="middle">H<tspan baseline-shift="sub" font-size="13">2</tspan>O</text>
+    <circle class="accent-fill" cx="269" cy="49" r="3"/>
+    <circle class="accent-fill" cx="280" cy="101" r="2.5"/>
+  </g>
+
+  <text class="type body" x="1032" y="376">
+    <tspan x="1032" dy="0">Hydrogen (H₂) selectively attaches</tspan>
+    <tspan x="1032" dy="25">to the most harmful free radicals</tspan>
+    <tspan x="1032" dy="25">and neutralizes them, turning them</tspan>
+    <tspan x="1032" dy="25">into harmless water (H₂O).</tspan>
+  </text>
+
+  <!-- Chevron 3 -->
+  <path class="chevron" d="M1422 214L1440 232L1422 250"/>
+
+  <!-- Step 4 header -->
+  <circle class="dark-fill" cx="1502" cy="66" r="23"/>
+  <text class="type step" x="1502" y="72" text-anchor="middle">4</text>
+  <text class="type heading" x="1540" y="58">
+    <tspan x="1540" dy="0">LESS OXIDATIVE STRESS,</tspan>
+    <tspan x="1540" dy="25">BETTER HEALTH</tspan>
+  </text>
+
+  <!-- Step 4 body / wellbeing figure -->
+  <g transform="translate(1600 137)" aria-label="Wellbeing figure">
+    <circle class="icon" cx="80" cy="36" r="18"/>
+    <path class="icon" d="M80 57V150M80 86L29 35M80 86L131 35"/>
+    <path class="icon" d="M29 35C23 29 14 29 9 35C4 41 5 49 11 55L54 98"/>
+    <path class="icon" d="M131 35C137 29 146 29 151 35C156 41 155 49 149 55L106 98"/>
+    <path class="accent" d="M80 99C71 88 56 96 58 108C60 121 80 132 80 132C80 132 100 121 102 108C104 96 89 88 80 99Z"/>
+    <path class="fine" d="M0 96H-14M6 74L-5 66M160 96H174M154 74L165 66M7 121L-6 128M153 121L166 128"/>
+  </g>
+
+  <text class="type body" x="1502" y="376">
+    <tspan x="1502" dy="0">With fewer harmful free radicals,</tspan>
+    <tspan x="1502" dy="25">your cells are protected, inflammation</tspan>
+    <tspan x="1502" dy="25">is reduced, and your body can</tspan>
+    <tspan x="1502" dy="25">function and heal more efficiently.</tspan>
+  </text>
+
+  <!-- Quiet baseline -->
+  <path class="fine" d="M72 570H1848"/>
+</svg>

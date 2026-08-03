@@ -2,6 +2,7 @@
 
 import { FormEvent, KeyboardEvent, useState } from "react";
 import { LiveAvatarRenderer } from "@/components/liveavatar/liveavatar-renderer";
+import { PresentationPanel } from "@/components/presentation/presentation-panel";
 import { GuideCard } from "@/components/ui/guide-card";
 import { PrimaryButton } from "@/components/ui/primary-button";
 import { VoiceControls } from "@/components/ui/voice-controls";
@@ -10,6 +11,7 @@ import { useLiveAvatarIdleTimeout } from "@/hooks/use-liveavatar-idle-timeout";
 import { guides } from "@/lib/data/guides";
 import { productComparisonRows, products } from "@/lib/data/products";
 import { suggestedQuestions } from "@/lib/data/suggested-questions";
+import { presentationManager } from "@/lib/presentation/presentation-manager";
 import type { SpeechSynthesisProvider } from "@/lib/voice/voice-types";
 import type { DanielAvatarOutput } from "@/lib/liveavatar/liveavatar-types";
 import type {
@@ -202,6 +204,7 @@ export function ConversationScreen({
   }));
   const [draft, setDraft] = useState("");
   const conversationTurns = createConversationTurns(messages);
+  const presentation = presentationManager.resolve({ messages });
   const latestVisitorMessage = [...messages]
     .reverse()
     .find((message) => message.role === "visitor");
@@ -356,50 +359,53 @@ export function ConversationScreen({
         </aside>
 
         <main className="conversation-dialogue">
-          <div
-            className="response-area"
-            aria-live="polite"
-            aria-label="Conversation"
-            aria-busy={isLoading}
-          >
-            {conversationTurns.length === 0 ? (
-              <div className="response-welcome">
-                <strong>What would you like to understand?</strong>
-                <p>
-                  Ask {guide.name} directly, or begin with one of the topics
-                  below.
-                </p>
-              </div>
-            ) : (
-              <ol className="conversation-history">
-                {conversationTurns.map((turn) => (
-                  <li className="conversation-entry" key={turn.visitor.id}>
-                    <div className="visitor-question">
-                      <span>You asked</span>
-                      <p>{turn.visitor.content}</p>
-                    </div>
-                    {turn.guide ? (
-                      <div className="guide-response">
-                        <span>{guide.name}</span>
-                        <p>{turn.guide.content}</p>
+          <div className="conversation-response-presentation">
+            <div
+              className="response-area"
+              aria-live="polite"
+              aria-label="Conversation"
+              aria-busy={isLoading}
+            >
+              {conversationTurns.length === 0 ? (
+                <div className="response-welcome">
+                  <strong>What would you like to understand?</strong>
+                  <p>
+                    Ask {guide.name} directly, or begin with one of the topics
+                    below.
+                  </p>
+                </div>
+              ) : (
+                <ol className="conversation-history">
+                  {conversationTurns.map((turn) => (
+                    <li className="conversation-entry" key={turn.visitor.id}>
+                      <div className="visitor-question">
+                        <span>You asked</span>
+                        <p>{turn.visitor.content}</p>
                       </div>
-                    ) : (
-                      <div className="guide-response is-preparing">
-                        <span>{guide.name}</span>
-                        <p>
-                          <span className="thinking-dots" aria-hidden="true">
-                            <i />
-                            <i />
-                            <i />
-                          </span>
-                          <span className="sr-only">Preparing response</span>
-                        </p>
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ol>
-            )}
+                      {turn.guide ? (
+                        <div className="guide-response">
+                          <span>{guide.name}</span>
+                          <p>{turn.guide.content}</p>
+                        </div>
+                      ) : (
+                        <div className="guide-response is-preparing">
+                          <span>{guide.name}</span>
+                          <p>
+                            <span className="thinking-dots" aria-hidden="true">
+                              <i />
+                              <i />
+                              <i />
+                            </span>
+                            <span className="sr-only">Preparing response</span>
+                          </p>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+            <PresentationPanel presentation={presentation} />
           </div>
 
           <section
