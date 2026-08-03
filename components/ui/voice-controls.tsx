@@ -92,7 +92,7 @@ export function VoiceControls({
           type="button"
           role="switch"
           aria-checked={enabled}
-          aria-label={`${enabled ? "Disable" : "Enable"} Voice Mode`}
+          aria-label={`${enabled ? "Disable" : "Enable"} voice conversation with ${guideName}`}
           onClick={() => onEnabledChange(!enabled)}
         >
           <span aria-hidden="true" />
@@ -130,10 +130,10 @@ export function VoiceControls({
               aria-pressed={isListening}
               aria-label={
                 isListening
-                  ? "Stop listening"
+                  ? `Stop listening and send your question to ${guideName}`
                   : isSpeaking
-                    ? "Interrupt guide and start listening"
-                    : "Start listening"
+                    ? `Interrupt ${guideName} and talk`
+                    : `Speak with ${guideName}`
               }
               onClick={isListening ? onStopListening : onStartListening}
             >
@@ -146,9 +146,7 @@ export function VoiceControls({
               <div className="voice-status-line">
                 <span
                   className={`voice-state-indicator ${
-                    isListening || isSpeaking || isProcessing
-                      ? "is-active"
-                      : ""
+                    isListening || isSpeaking || isProcessing ? "is-active" : ""
                   }`}
                   data-state={
                     isListening
@@ -220,7 +218,9 @@ export function VoiceControls({
               {error.message}
             </p>
           ) : (
-            <p className="voice-hint">Press Escape at any time to stop audio.</p>
+            <p className="voice-hint">
+              Press Escape at any time to stop audio.
+            </p>
           )}
         </>
       ) : null}

@@ -116,8 +116,14 @@ export function LiveAvatarRenderer({
         />
         {snapshot.state === "disconnected" ? (
           <div className="liveavatar-ambassador-placeholder">
-            <span aria-hidden="true">D</span>
-            <p>Daniel will appear here when the visual session is ready.</p>
+            <span className="specialist-silhouette" aria-hidden="true">
+              <i />
+              <i />
+            </span>
+            <p>
+              Visual session unavailable. Voice conversation remains
+              available.
+            </p>
           </div>
         ) : null}
       </div>

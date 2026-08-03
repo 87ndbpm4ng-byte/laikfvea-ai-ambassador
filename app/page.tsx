@@ -28,8 +28,7 @@ export default function Home() {
   const [screen, setScreen] = useState<JourneyScreen>("idle");
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const [selectedGuideId, setSelectedGuideId] = useState<GuideId | null>(null);
-  const [selectedProduct, setSelectedProduct] =
-    useState<ProductId>("everyday");
+  const [selectedProduct, setSelectedProduct] = useState<ProductId>("everyday");
   const selectedGuide = selectedGuideId ? guides[selectedGuideId] : null;
   const conversation = useConversation(selectedGuide, selectedLanguage);
   const liveAvatarService = useMemo(() => new LiveAvatarService(), []);
@@ -99,45 +98,48 @@ export default function Home() {
             aria-labelledby="idle-heading"
           >
             <header className="idle-header">
-              <p className="idle-eyebrow">Hydrogen technology, made clear</p>
-              <h1 id="idle-heading">Choose your AI specialist.</h1>
+              <p className="idle-eyebrow">A guided product conversation</p>
+              <h1 id="idle-heading">Meet your AI specialists</h1>
               <p className="idle-support">
-                Meet the guide whose perspective best matches what you would
-                like to explore.
+                Choose who you would like to speak with.
               </p>
             </header>
 
-            <div
-              className="idle-specialist-grid"
-              role="group"
-              aria-label="AI specialists"
-            >
+            <div className="idle-specialist-grid" aria-label="AI specialists">
               {Object.values(guides).map((guide) => (
-                <button
-                  className="idle-specialist-card"
-                  type="button"
-                  key={guide.id}
-                  onClick={() => {
-                    setSelectedGuideId(guide.id);
-                    setScreen("language");
-                  }}
-                >
-                  <span className="idle-specialist-portrait" aria-hidden="true">
-                    {guide.initial}
-                  </span>
-                  <span className="idle-specialist-copy">
-                    <strong>{guide.name}</strong>
-                    <span>{guide.role}</span>
-                    <small>
+                <article className="idle-specialist-card" key={guide.id}>
+                  <div
+                    className="idle-specialist-portrait"
+                    role="img"
+                    aria-label={`${guide.name} visual preview unavailable`}
+                  >
+                    <span className="specialist-silhouette" aria-hidden="true">
+                      <i />
+                      <i />
+                    </span>
+                    <small>Visual preview</small>
+                  </div>
+                  <div className="idle-specialist-copy">
+                    <h2>{guide.name}</h2>
+                    <p>{guide.role}</p>
+                    <span>
                       {guide.id === "daniel"
-                        ? "Explains technology, engineering and product features."
-                        : "Explains wellness, hydration and everyday routines."}
-                    </small>
-                  </span>
-                  <span className="idle-specialist-action">
-                    Select {guide.name}
-                  </span>
-                </button>
+                        ? "Explains product technology, engineering, materials and technical features."
+                        : "Explains everyday use, hydration, wellness and how the products fit into daily life."}
+                    </span>
+                    <button
+                      className="idle-specialist-action"
+                      type="button"
+                      onClick={() => {
+                        setSelectedGuideId(guide.id);
+                        setScreen("language");
+                      }}
+                      aria-label={`Speak with ${guide.name}, ${guide.role}`}
+                    >
+                      Speak with {guide.name}
+                    </button>
+                  </div>
+                </article>
               ))}
             </div>
           </section>
@@ -156,7 +158,11 @@ export default function Home() {
 
             <div className="language-panel">
               <h1 id="language-heading">Choose your language</h1>
-              <div className="language-grid" role="group" aria-label="Languages">
+              <div
+                className="language-grid"
+                role="group"
+                aria-label="Languages"
+              >
                 {languages.map((language) => (
                   <button
                     className="language-option"
@@ -164,9 +170,7 @@ export default function Home() {
                     key={language}
                     onClick={() => {
                       setSelectedLanguage(language);
-                      setScreen(
-                        selectedGuideId ? "introduction" : "guide",
-                      );
+                      setScreen(selectedGuideId ? "introduction" : "guide");
                     }}
                     lang={
                       language === "中文"

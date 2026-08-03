@@ -8,10 +8,7 @@ import { VoiceControls } from "@/components/ui/voice-controls";
 import { useVoiceMode } from "@/hooks/use-voice-mode";
 import { useLiveAvatarIdleTimeout } from "@/hooks/use-liveavatar-idle-timeout";
 import { guides } from "@/lib/data/guides";
-import {
-  productComparisonRows,
-  products,
-} from "@/lib/data/products";
+import { productComparisonRows, products } from "@/lib/data/products";
 import { suggestedQuestions } from "@/lib/data/suggested-questions";
 import type { SpeechSynthesisProvider } from "@/lib/voice/voice-types";
 import type { DanielAvatarOutput } from "@/lib/liveavatar/liveavatar-types";
@@ -51,11 +48,7 @@ export function GuideSelectionScreen({
         </p>
       </header>
 
-      <div
-        className="guide-grid"
-        role="group"
-        aria-label="Product specialists"
-      >
+      <div className="guide-grid" role="group" aria-label="Product specialists">
         {Object.values(guides).map((guide) => (
           <GuideCard
             {...guide}
@@ -126,56 +119,47 @@ type ConversationScreenProps = {
   liveAvatarService?: DanielAvatarOutput;
 };
 
-const quickTopics = [
-  {
-    id: "hydrogen-technology",
-    suggestedQuestionId: "hydrogen-water-overview",
-    marker: "HT",
-    title: "Hydrogen Technology",
-    description: "Understand the core principles.",
-    question: "How does hydrogen water work?",
+const topicPresentation: Record<
+  GuideId,
+  Record<string, { title: string; description: string }>
+> = {
+  daniel: {
+    "hydrogen-water-overview": {
+      title: "Hydrogen technology",
+      description: "Understand the core principles.",
+    },
+    "product-comparison": {
+      title: "Product comparison",
+      description: "Review the documented differences.",
+    },
+    "product-guidance": {
+      title: "Choosing a product",
+      description: "Explore which option may suit your needs.",
+    },
+    "hydrogen-inhalation": {
+      title: "Hydrogen inhalation",
+      description: "Explore the documented capability.",
+    },
   },
-  {
-    id: "product-comparison",
-    suggestedQuestionId: "product-comparison",
-    marker: "PC",
-    title: "Product Comparison",
-    description: "See the meaningful differences.",
-    question: "Compare the available products",
+  emily: {
+    "hydrogen-water-overview": {
+      title: "Hydrogen water",
+      description: "Start with a clear introduction.",
+    },
+    "product-comparison": {
+      title: "Product differences",
+      description: "Understand the options simply.",
+    },
+    "product-guidance": {
+      title: "Choosing a product",
+      description: "Consider everyday routines and needs.",
+    },
+    "hydrogen-inhalation": {
+      title: "Hydrogen inhalation",
+      description: "Ask about the available information.",
+    },
   },
-  {
-    id: "hydrogen-inhalation",
-    suggestedQuestionId: "hydrogen-inhalation",
-    marker: "HI",
-    title: "Hydrogen Inhalation",
-    description: "Explore the documented capability.",
-    question: "Explain hydrogen inhalation",
-  },
-  {
-    id: "charging-maintenance",
-    suggestedQuestionId: null,
-    marker: "CM",
-    title: "Charging & Maintenance",
-    description: "Learn about everyday care.",
-    question: "How do I charge and maintain the Advanced Bottle?",
-  },
-  {
-    id: "materials",
-    suggestedQuestionId: null,
-    marker: "MT",
-    title: "Materials",
-    description: "Ask what the documentation confirms.",
-    question: "What materials are used in the products?",
-  },
-  {
-    id: "warranty",
-    suggestedQuestionId: null,
-    marker: "WR",
-    title: "Warranty",
-    description: "Check the available warranty information.",
-    question: "What warranty information is available?",
-  },
-] as const;
+};
 
 type ConversationTurn = {
   visitor: ConversationMessage;
@@ -212,6 +196,10 @@ export function ConversationScreen({
   liveAvatarService,
 }: ConversationScreenProps) {
   const guide = guides[guideId];
+  const quickTopics = suggestedQuestions.map((question) => ({
+    question,
+    ...topicPresentation[guideId][question.id],
+  }));
   const [draft, setDraft] = useState("");
   const conversationTurns = createConversationTurns(messages);
   const latestVisitorMessage = [...messages]
@@ -222,9 +210,9 @@ export function ConversationScreen({
     .find((message) => message.relatedProduct)?.relatedProduct;
   const isComparisonContext = Boolean(
     latestVisitorMessage &&
-      /\b(compare|comparison|both|products)\b/i.test(
-        latestVisitorMessage.content,
-      ),
+    /\b(compare|comparison|both|products)\b/i.test(
+      latestVisitorMessage.content,
+    ),
   );
   const contextualProductIds: ProductId[] = isComparisonContext
     ? ["everyday", "advanced"]
@@ -272,12 +260,9 @@ export function ConversationScreen({
     >
       <header className="conversation-header">
         <div>
-          <p className="guide-context">AI Product Specialist</p>
+          <p className="guide-context">{guide.role}</p>
           <h1 id="conversation-heading">Conversation with {guide.name}</h1>
         </div>
-        <button className="text-action" type="button" onClick={onEnd}>
-          End Session
-        </button>
       </header>
 
       {idleTimeout.showWarning && idleTimeout.remainingSeconds !== null ? (
@@ -310,12 +295,20 @@ export function ConversationScreen({
           ) : (
             <div
               className="specialist-static-stage"
-              aria-label={`${guide.name}, ${guide.role}`}
+              role="img"
+              aria-label={`${guide.name}, ${guide.role}. Visual session unavailable. Voice conversation remains available.`}
             >
-              <span aria-hidden="true">{guide.initial}</span>
+              <span className="specialist-silhouette" aria-hidden="true">
+                <i />
+                <i />
+              </span>
               <div>
                 <strong>{guide.name}</strong>
                 <p>{guide.role}</p>
+                <small>
+                  Visual session unavailable. Voice conversation remains
+                  available.
+                </small>
               </div>
             </div>
           )}
@@ -330,6 +323,36 @@ export function ConversationScreen({
               <span>Ready</span>
             </div>
           ) : null}
+
+          <VoiceControls
+            enabled={voice.isEnabled}
+            inputState={voice.inputState}
+            outputState={voice.outputState}
+            playbackProvider={voice.playbackProvider}
+            playbackBlocked={voice.isPlaybackBlocked}
+            audioSessionActivated={voice.isAudioSessionActivated}
+            activationFailed={voice.activationFailed}
+            guideName={guide.name}
+            transcript={voice.transcript}
+            error={voice.error}
+            recognitionSupported={voice.isRecognitionSupported}
+            synthesisSupported={voice.isSynthesisSupported}
+            disabled={isLoading}
+            onEnabledChange={voice.setEnabled}
+            onActivateAudioSession={voice.activateAudioSession}
+            onStartListening={voice.startListening}
+            onStopListening={voice.stopListening}
+            onStopSpeaking={voice.stopSpeaking}
+            onRetryPlayback={voice.retryPlayback}
+          />
+
+          <button
+            className="specialist-end-action"
+            type="button"
+            onClick={onEnd}
+          >
+            End session
+          </button>
         </aside>
 
         <main className="conversation-dialogue">
@@ -379,31 +402,50 @@ export function ConversationScreen({
             )}
           </div>
 
-          <VoiceControls
-            enabled={voice.isEnabled}
-            inputState={voice.inputState}
-            outputState={voice.outputState}
-            playbackProvider={voice.playbackProvider}
-            playbackBlocked={voice.isPlaybackBlocked}
-            audioSessionActivated={voice.isAudioSessionActivated}
-            activationFailed={voice.activationFailed}
-            guideName={guide.name}
-            transcript={voice.transcript}
-            error={voice.error}
-            recognitionSupported={voice.isRecognitionSupported}
-            synthesisSupported={voice.isSynthesisSupported}
-            disabled={isLoading}
-            onEnabledChange={voice.setEnabled}
-            onActivateAudioSession={voice.activateAudioSession}
-            onStartListening={voice.startListening}
-            onStopListening={voice.stopListening}
-            onStopSpeaking={voice.stopSpeaking}
-            onRetryPlayback={voice.retryPlayback}
-          />
+          <section
+            className="conversation-topics"
+            aria-labelledby="quick-topics-heading"
+          >
+            <div className="context-heading">
+              <p id="quick-topics-heading">Quick topics</p>
+              <span>Choose a starting point</span>
+            </div>
+            <div className="quick-topic-list">
+              {quickTopics.map(({ question, title, description }) => (
+                <button
+                  className="quick-topic-card"
+                  type="button"
+                  key={question.id}
+                  disabled={isLoading}
+                  onClick={() => onAskSuggested(question)}
+                >
+                  <span>
+                    <strong>{title}</strong>
+                    <small>{description}</small>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <div className="conversation-product-actions">
+            {contextualProductIds.map((productId) => (
+              <button
+                type="button"
+                key={productId}
+                onClick={() => onOpenProduct(productId)}
+              >
+                View {products[productId].name}
+              </button>
+            ))}
+            <button type="button" onClick={onProducts}>
+              Explore products
+            </button>
+          </div>
 
           <form className="composer" onSubmit={submitQuestion}>
             <label className="sr-only" htmlFor="visitor-question">
-              Ask your guide
+              Ask {guide.name} a question
             </label>
             <input
               id="visitor-question"
@@ -422,79 +464,6 @@ export function ConversationScreen({
             </button>
           </form>
         </main>
-
-        <aside className="conversation-context" aria-label="Conversation context">
-          <section className="context-section">
-            <div className="context-heading">
-              <p>Quick topics</p>
-              <span>Choose a starting point</span>
-            </div>
-            <div className="quick-topic-list">
-              {quickTopics.map((topic) => (
-                <button
-                  className="quick-topic-card"
-                  type="button"
-                  key={topic.id}
-                  disabled={isLoading}
-                  onClick={() => {
-                    const suggestedQuestion = topic.suggestedQuestionId
-                      ? suggestedQuestions.find(
-                          (question) =>
-                            question.id === topic.suggestedQuestionId,
-                        )
-                      : undefined;
-
-                    return suggestedQuestion
-                      ? onAskSuggested(suggestedQuestion)
-                      : onAskText(topic.question);
-                  }}
-                >
-                  <span className="quick-topic-marker" aria-hidden="true">
-                    {topic.marker}
-                  </span>
-                  <span>
-                    <strong>{topic.title}</strong>
-                    <small>{topic.description}</small>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="context-section product-context-section">
-            <div className="context-heading">
-              <p>Related products</p>
-              <span>
-                {contextualProductIds.length
-                  ? "Based on this conversation"
-                  : "Explore when you’re ready"}
-              </span>
-            </div>
-            {contextualProductIds.length ? (
-              <div className="context-product-list">
-                {contextualProductIds.map((productId) => (
-                  <button
-                    className="context-product-card"
-                    type="button"
-                    key={productId}
-                    onClick={() => onOpenProduct(productId)}
-                  >
-                    <span aria-hidden="true">{products[productId].shortName}</span>
-                    <strong>{products[productId].name}</strong>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <button
-                className="context-explore-action"
-                type="button"
-                onClick={onProducts}
-              >
-                Explore products
-              </button>
-            )}
-          </section>
-        </aside>
       </div>
     </section>
   );
@@ -606,11 +575,7 @@ export function ProductDetailScreen({
 
       <div className="screen-actions">
         <PrimaryButton onClick={onCompare}>Compare</PrimaryButton>
-        <button
-          className="secondary-action"
-          type="button"
-          onClick={onAskGuide}
-        >
+        <button className="secondary-action" type="button" onClick={onAskGuide}>
           Ask the guide
         </button>
       </div>

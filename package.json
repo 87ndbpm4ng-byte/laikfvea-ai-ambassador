@@ -16,7 +16,8 @@
     "test:session-context": "tsx --test lib/session/tests/conversation-context.test.ts",
     "test:multi-source": "tsx --test lib/retrieval/tests/multi-source.test.ts",
     "test:voice": "tsx --test lib/voice/tests/*.test.ts",
-    "test:liveavatar": "tsx --test lib/liveavatar/tests/*.test.ts"
+    "test:liveavatar": "tsx --test lib/liveavatar/tests/*.test.ts",
+    "test:frontend": "tsx --test lib/ui/tests/*.test.tsx"
   },
   "dependencies": {
     "@heygen/liveavatar-web-sdk": "^0.0.18",
