@@ -20,7 +20,7 @@
     "test:frontend": "tsx --test lib/ui/tests/*.test.tsx"
   },
   "dependencies": {
-    "@heygen/liveavatar-web-sdk": "^0.0.18",
+    "@heygen/liveavatar-web-sdk": "0.0.18",
     "next": "^16.2.12",
     "openai": "^7.1.0",
     "react": "^19.2.8",

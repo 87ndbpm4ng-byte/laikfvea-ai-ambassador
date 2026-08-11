@@ -50,12 +50,46 @@ test("prompt builder applies natural visitor-answer rules to supported questions
 
     assert.match(rendered, /VISITOR ANSWER STYLE/);
     assert.match(rendered, /Rewrite source material into concise, natural/);
+    assert.match(rendered, /45–75 spoken words/);
+    assert.match(rendered, /20–35 seconds/);
+    assert.match(rendered, /25–55 words/);
+    assert.match(rendered, /direct answer, two to four useful points/);
     assert.match(rendered, /plain-text numbered list only when order matters/);
     assert.match(rendered, /plain 'Important:' label at the end/);
     assert.match(rendered, /Ask no more than one concise follow-up question/);
+    assert.match(rendered, /Do not end every answer/);
     assert.match(rendered, /Persona changes tone only/);
     assert.match(rendered, new RegExp(question.message.replace(/[?.]/g, "\\$&")));
   }
+});
+
+test("visitor answer rules distinguish concise defaults from requested detail", () => {
+  const rendered = VISITOR_ANSWER_RULES.join("\n");
+
+  assert.match(rendered, /simple answer should usually be 25–55 words/);
+  assert.match(rendered, /explicitly asks for a detailed or technical explanation/);
+  assert.match(rendered, /full comparison/);
+  assert.match(rendered, /complete instructions/);
+  assert.match(rendered, /says 'tell me more'/);
+  assert.match(rendered, /Begin a longer answer with a concise summary/);
+});
+
+test("Daniel and Emily share facts while differing only in delivery emphasis", () => {
+  const rendered = VISITOR_ANSWER_RULES.join("\n");
+
+  assert.match(rendered, /Daniel should sound precise, calm, confident/);
+  assert.match(rendered, /Emily should sound warm, approachable, practical/);
+  assert.match(rendered, /Persona changes tone only/);
+  assert.match(rendered, /must never add, omit or alter factual meaning/);
+});
+
+test("short follow-ups rely on the existing conversation context", () => {
+  const rendered = VISITOR_ANSWER_RULES.join("\n");
+
+  for (const followUp of ["Which one?", "Tell me more", "Explain it technically"]) {
+    assert.match(rendered, new RegExp(followUp.replace(/[?.]/g, "\\$&"), "i"));
+  }
+  assert.match(rendered, /without making the visitor repeat an obvious topic/i);
 });
 
 test("comparison instructions forbid filling an unsupported product side", () => {
@@ -69,6 +103,16 @@ test("comparison instructions forbid filling an unsupported product side", () =>
     rendered,
     /say when the approved context does not support one side/i,
   );
+});
+
+test("recommendations require approved use-case evidence", () => {
+  const rendered = VISITOR_ANSWER_RULES.join("\n");
+
+  assert.match(rendered, /recommend a product only when approved facts support/i);
+  assert.match(rendered, /Never infer suitability from the product name/i);
+  assert.match(rendered, /missing information/i);
+  assert.match(rendered, /cannot recommend one reliably/i);
+  assert.match(rendered, /do not select an option/i);
 });
 
 test("prompt builder source includes private session context and ambiguity rules", async () => {

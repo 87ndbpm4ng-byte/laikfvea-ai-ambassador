@@ -16,11 +16,25 @@ export type ConversationMessage = {
   timestamp: string;
   relatedProduct?: ProductId;
   questionId?: string;
+  source?: QuestionSubmissionSource;
 };
 
 export type ConversationHistoryItem = {
   role: Extract<ConversationRole, "visitor" | "guide">;
   content: string;
+};
+
+export type QuestionSubmissionSource =
+  | "typed"
+  | "voice"
+  | "quick-topic"
+  | "product";
+
+export type QuestionSubmission = {
+  content: string;
+  source: QuestionSubmissionSource;
+  questionId?: string;
+  relatedProduct?: ProductId;
 };
 
 export type ConversationApiRequest = {
@@ -70,8 +84,6 @@ export type SuggestedQuestion = {
 export type JourneyScreen =
   | "idle"
   | "language"
-  | "guide"
-  | "introduction"
   | "conversation"
   | "products"
   | "product-detail"

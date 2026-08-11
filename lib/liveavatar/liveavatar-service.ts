@@ -13,6 +13,14 @@ import type {
   LiveAvatarStateListener,
 } from "@/lib/liveavatar/liveavatar-types";
 import { classifyLiveAvatarError } from "@/lib/liveavatar/liveavatar-errors";
+import { LiveAvatarStreamingAdapter } from "@/lib/liveavatar/liveavatar-streaming-adapter";
+import type { LiveAvatarSpeechMetadata } from "@/lib/liveavatar/liveavatar-types";
+import {
+  markAvatarSpeakingEnded,
+  markAvatarSpeakingStarted,
+  markRepeatAudioAccepted,
+  markRepeatAudioInvoked,
+} from "@/lib/voice/lip-sync-diagnostics";
 
 type SessionApiResponse =
   | {
@@ -81,6 +89,7 @@ export class LiveAvatarService implements DanielAvatarOutput {
     idleTimeoutSeconds: 120,
   };
   private session: AvatarSession | null = null;
+  private streamingAdapter: LiveAvatarStreamingAdapter | null = null;
   private video: HTMLVideoElement | null = null;
   private connectPromise: Promise<boolean> | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -92,7 +101,12 @@ export class LiveAvatarService implements DanielAvatarOutput {
   private reconnectAttemptCount = 0;
   private readonly maxAutomaticReconnects: number;
   private pendingSpeech:
-    | { resolve: () => void; reject: (error: Error) => void }
+    | {
+        resolve: () => void;
+        reject: (error: Error) => void;
+        diagnosticId?: string;
+        onPlaybackStarted?: () => void;
+      }
     | null = null;
   private readonly handlePageHide = () => {
     void this.dispose();
@@ -127,6 +141,10 @@ export class LiveAvatarService implements DanielAvatarOutput {
 
   get isConnected() {
     return this.getValidSession() !== null;
+  }
+
+  get supportsStreamingAudio() {
+    return this.isConnected;
   }
 
   connect() {
@@ -175,6 +193,13 @@ export class LiveAvatarService implements DanielAvatarOutput {
   attach(element: HTMLVideoElement | null) {
     this.video = element;
 
+    if (process.env.NODE_ENV === "development") {
+      console.info("[liveavatar] Renderer attachment changed.", {
+        elementPresent: Boolean(element),
+        connected: this.isConnected,
+      });
+    }
+
     const session = this.getValidSession();
     if (element && session) {
       this.attachStream(session);
@@ -182,6 +207,7 @@ export class LiveAvatarService implements DanielAvatarOutput {
   }
 
   startListening() {
+    this.resumeVideoPlayback();
     this.runSessionAction("start-listening", (session) => {
       session.startListening();
       this.update("listening");
@@ -200,6 +226,7 @@ export class LiveAvatarService implements DanielAvatarOutput {
   }
 
   setThinking() {
+    this.resumeVideoPlayback();
     if (this.isConnected) this.update("thinking");
   }
 
@@ -212,19 +239,29 @@ export class LiveAvatarService implements DanielAvatarOutput {
     );
   }
 
-  speakAudio(audioBase64: string) {
+  speakAudio(audioBase64: string, metadata?: LiveAvatarSpeechMetadata) {
     const session = this.getValidSession();
     if (!session) {
       return Promise.reject(new Error("LiveAvatar is not connected."));
     }
 
     this.interruptPendingSpeech();
-
     return new Promise<void>((resolve, reject) => {
-      this.pendingSpeech = { resolve, reject };
+      this.pendingSpeech = {
+        resolve,
+        reject,
+        diagnosticId: metadata?.diagnosticId,
+        onPlaybackStarted: metadata?.onPlaybackStarted,
+      };
 
       try {
+        if (metadata?.diagnosticId) {
+          markRepeatAudioInvoked(metadata.diagnosticId);
+        }
         session.repeatAudio(audioBase64);
+        if (metadata?.diagnosticId) {
+          markRepeatAudioAccepted(metadata.diagnosticId);
+        }
       } catch (error) {
         this.pendingSpeech = null;
         void this.handleProviderFailure(error);
@@ -237,10 +274,76 @@ export class LiveAvatarService implements DanielAvatarOutput {
     });
   }
 
+  beginAudioStream(eventId: string, metadata?: LiveAvatarSpeechMetadata) {
+    const session = this.getValidSession();
+    if (!session) {
+      return Promise.reject(new Error("LiveAvatar streaming is unavailable."));
+    }
+
+    let adapter = this.streamingAdapter;
+    if (!adapter) {
+      try {
+        // Experimental access occurs only after the server explicitly selects
+        // streaming mode. Buffered repeatAudio() never touches SDK internals.
+        adapter = new LiveAvatarStreamingAdapter(session);
+        this.streamingAdapter = adapter;
+      } catch (error) {
+        return Promise.reject(
+          error instanceof Error
+            ? error
+            : new Error("LiveAvatar streaming adapter is unavailable."),
+        );
+      }
+    }
+
+    this.interruptPendingSpeech();
+    try {
+      adapter.beginAudioStream(eventId);
+    } catch (error) {
+      return Promise.reject(
+        error instanceof Error
+          ? error
+          : new Error("LiveAvatar audio stream could not begin."),
+      );
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      this.pendingSpeech = {
+        resolve,
+        reject,
+        diagnosticId: metadata?.diagnosticId,
+        onPlaybackStarted: metadata?.onPlaybackStarted,
+      };
+    });
+  }
+
+  sendAudioChunk(eventId: string, pcm: Uint8Array) {
+    if (!this.getValidSession() || !this.streamingAdapter) {
+      throw new Error("LiveAvatar streaming session is unavailable.");
+    }
+    this.streamingAdapter.sendAudioChunk(eventId, pcm);
+  }
+
+  endAudioStream(eventId: string) {
+    if (!this.getValidSession() || !this.streamingAdapter) {
+      throw new Error("LiveAvatar streaming session is unavailable.");
+    }
+    this.streamingAdapter.endAudioStream(eventId);
+  }
+
+  interruptAudioStream() {
+    this.streamingAdapter?.interruptAudioStream();
+    this.interruptPendingSpeech();
+  }
+
   interrupt() {
     this.interruptPendingSpeech();
     this.runSessionAction("interrupt", (session) => {
-      session.interrupt();
+      if (this.streamingAdapter?.isStreaming) {
+        this.streamingAdapter.interruptAudioStream();
+      } else {
+        session.interrupt();
+      }
       this.update("listening");
     });
   }
@@ -334,10 +437,18 @@ export class LiveAvatarService implements DanielAvatarOutput {
       }
     });
     session.on(SessionEvent.SESSION_STREAM_READY, () => {
+      if (process.env.NODE_ENV === "development") {
+        console.info("[liveavatar] WebRTC stream ready.", {
+          rendererPresent: Boolean(this.video),
+          activeSession: this.session === session,
+        });
+      }
       if (this.session === session) this.attachStream(session);
     });
     session.on(SessionEvent.SESSION_DISCONNECTED, () => {
       if (this.session !== session) return;
+      this.streamingAdapter?.interruptAudioStream();
+      this.streamingAdapter = null;
       this.session = null;
       this.activeSessionGeneration = 0;
       this.sessionGeneration += 1;
@@ -348,10 +459,18 @@ export class LiveAvatarService implements DanielAvatarOutput {
       this.scheduleReconnect();
     });
     session.on(AgentEventsEnum.AVATAR_SPEAK_STARTED, () => {
-      if (this.session === session) this.update("speaking");
+      if (this.session !== session) return;
+      if (this.pendingSpeech?.diagnosticId) {
+        markAvatarSpeakingStarted(this.pendingSpeech.diagnosticId);
+      }
+      this.pendingSpeech?.onPlaybackStarted?.();
+      this.update("speaking");
     });
     session.on(AgentEventsEnum.AVATAR_SPEAK_ENDED, () => {
       if (this.session !== session) return;
+      if (this.pendingSpeech?.diagnosticId) {
+        markAvatarSpeakingEnded(this.pendingSpeech.diagnosticId);
+      }
       this.pendingSpeech?.resolve();
       this.pendingSpeech = null;
       this.update("listening");
@@ -362,10 +481,23 @@ export class LiveAvatarService implements DanielAvatarOutput {
     if (!this.video) return;
     try {
       session.attach(this.video);
+      if (process.env.NODE_ENV === "development") {
+        console.info("[liveavatar] WebRTC stream attached to renderer.");
+      }
     } catch (error) {
       void this.handleProviderFailure(error);
       return;
     }
+    this.resumeVideoPlayback();
+  }
+
+  /**
+   * Retries the already-attached WebRTC element from direct visitor actions.
+   * Safari can reject the initial mount-time play call even when the session
+   * itself connected successfully.
+   */
+  private resumeVideoPlayback() {
+    if (!this.video) return;
     void this.video.play().catch((error: unknown) => {
       console.warn("[liveavatar] Avatar stream playback was blocked.", {
         name: error instanceof Error ? error.name : "UnknownError",
@@ -455,6 +587,8 @@ export class LiveAvatarService implements DanielAvatarOutput {
   private async releaseSession() {
     this.stopKeepAlive();
     this.interruptPendingSpeech();
+    this.streamingAdapter?.interruptAudioStream();
+    this.streamingAdapter = null;
     const session = this.session;
     this.session = null;
     this.activeSessionGeneration = 0;

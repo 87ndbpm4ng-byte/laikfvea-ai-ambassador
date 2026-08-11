@@ -18,8 +18,14 @@ export type LiveAvatarSnapshot = {
 
 export type LiveAvatarStateListener = (snapshot: LiveAvatarSnapshot) => void;
 
+export type LiveAvatarSpeechMetadata = {
+  diagnosticId?: string;
+  onPlaybackStarted?: () => void;
+};
+
 export interface DanielAvatarOutput {
   readonly isConnected: boolean;
+  readonly supportsStreamingAudio: boolean;
   connect(): Promise<boolean>;
   reconnect(): Promise<boolean>;
   disconnect(): Promise<void>;
@@ -30,7 +36,17 @@ export interface DanielAvatarOutput {
   setReady(): void;
   setThinking(): void;
   markFallback(): void;
-  speakAudio(audioBase64: string): Promise<void>;
+  speakAudio(
+    audioBase64: string,
+    metadata?: LiveAvatarSpeechMetadata,
+  ): Promise<void>;
+  beginAudioStream(
+    eventId: string,
+    metadata?: LiveAvatarSpeechMetadata,
+  ): Promise<void>;
+  sendAudioChunk(eventId: string, pcm: Uint8Array): void;
+  endAudioStream(eventId: string): void;
+  interruptAudioStream(): void;
   interrupt(): void;
   subscribe(listener: LiveAvatarStateListener): () => void;
 }

@@ -2,12 +2,12 @@
 
 import { useCallback, useRef, useState } from "react";
 import { generateConversationResponse } from "@/lib/conversation/response-engine";
+import { logVoiceDiagnostic } from "@/lib/voice/voice-diagnostics";
 import type {
   ConversationMessage,
-  SuggestedQuestion,
+  QuestionSubmission,
 } from "@/types/conversation";
 import type { Guide } from "@/types/guide";
-import type { ProductId } from "@/types/product";
 
 let fallbackMessageSequence = 0;
 
@@ -26,16 +26,13 @@ export function useConversation(guide: Guide | null, language?: string | null) {
   const loadingRef = useRef(false);
   const sessionIdRef = useRef<string | undefined>(undefined);
 
-  const submit = useCallback(
+  const submitQuestion = useCallback(
     async ({
       content,
+      source,
       questionId,
       relatedProduct,
-    }: {
-      content: string;
-      questionId?: string;
-      relatedProduct?: ProductId;
-    }) => {
+    }: QuestionSubmission) => {
       const normalizedContent = content.trim();
 
       if (!guide || !normalizedContent || loadingRef.current) {
@@ -44,6 +41,9 @@ export function useConversation(guide: Guide | null, language?: string | null) {
 
       loadingRef.current = true;
       setIsLoading(true);
+      logVoiceDiagnostic("question-submitted", {
+        questionSource: source,
+      });
 
       const visitorMessage: ConversationMessage = {
         id: createMessageId("visitor"),
@@ -52,6 +52,7 @@ export function useConversation(guide: Guide | null, language?: string | null) {
         timestamp: new Date().toISOString(),
         relatedProduct,
         questionId,
+        source,
       };
 
       setMessages((currentMessages) => [
@@ -80,7 +81,6 @@ export function useConversation(guide: Guide | null, language?: string | null) {
           language: language ?? undefined,
           questionId,
           relatedProduct,
-          demoFallback: questionId ? "suggested-question" : undefined,
           sessionId: sessionIdRef.current,
         });
         sessionIdRef.current = response.sessionId;
@@ -92,7 +92,13 @@ export function useConversation(guide: Guide | null, language?: string | null) {
           timestamp: new Date().toISOString(),
           relatedProduct: response.relatedProduct,
           questionId,
+          source,
         };
+
+        logVoiceDiagnostic("assistant-response", {
+          questionSource: source,
+          responseReceived: true,
+        });
 
         setMessages((currentMessages) => [
           ...currentMessages,
@@ -107,22 +113,6 @@ export function useConversation(guide: Guide | null, language?: string | null) {
     [guide, language, messages],
   );
 
-  const submitSuggestedQuestion = useCallback(
-    (question: SuggestedQuestion) =>
-      submit({
-        content: question.label,
-        questionId: question.id,
-        relatedProduct: question.relatedProduct,
-      }),
-    [submit],
-  );
-
-  const submitText = useCallback(
-    (content: string, relatedProduct?: ProductId) =>
-      submit({ content, relatedProduct }),
-    [submit],
-  );
-
   const clearHistory = useCallback(() => {
     loadingRef.current = false;
     setIsLoading(false);
@@ -133,8 +123,7 @@ export function useConversation(guide: Guide | null, language?: string | null) {
   return {
     messages,
     isLoading,
-    submitSuggestedQuestion,
-    submitText,
+    submitQuestion,
     clearHistory,
   };
 }

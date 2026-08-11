@@ -28,11 +28,62 @@ type ElevenLabsSpeechOptions = {
   voiceId?: string;
   fetcher?: typeof fetch;
   output?: ElevenLabsSpeechOutput;
+  onTiming?: (timing: ElevenLabsSpeechTiming) => void;
+  signal?: AbortSignal;
+};
+
+export type ElevenLabsProgressiveSpeech = {
+  body: ReadableStream<Uint8Array>;
+  firstByteMs: number;
+  contentType: string | null;
+};
+
+export type ElevenLabsSpeechTiming = {
+  firstByteMs: number;
+  completeMs: number;
 };
 
 export async function generateElevenLabsSpeech(
   request: SpeechApiRequest,
   options: ElevenLabsSpeechOptions = {},
+): Promise<ArrayBuffer> {
+  const { response, requestStartedAt, firstByteAt, voiceId } =
+    await requestElevenLabsSpeech(request, options);
+  const audio = await response.arrayBuffer();
+  const completedAt = performance.now();
+  options.onTiming?.({
+    firstByteMs: firstByteAt - requestStartedAt,
+    completeMs: completedAt - requestStartedAt,
+  });
+
+  console.info("[speech-api] Daniel ElevenLabs audio buffered.", {
+    provider: "elevenlabs",
+    voiceIdSuffix: voiceId.slice(-4),
+    status: response.status,
+    contentType: response.headers.get("content-type"),
+    audioByteLength: audio.byteLength,
+  });
+
+  return audio;
+}
+
+export async function streamElevenLabsSpeech(
+  request: SpeechApiRequest,
+  options: ElevenLabsSpeechOptions = {},
+): Promise<ElevenLabsProgressiveSpeech> {
+  const { response, requestStartedAt, firstByteAt } =
+    await requestElevenLabsSpeech(request, options);
+  if (!response.body) throw new ElevenLabsSpeechError(response.status);
+  return {
+    body: response.body,
+    firstByteMs: firstByteAt - requestStartedAt,
+    contentType: response.headers.get("content-type"),
+  };
+}
+
+async function requestElevenLabsSpeech(
+  request: SpeechApiRequest,
+  options: ElevenLabsSpeechOptions,
 ) {
   const apiKey = options.apiKey ?? process.env.ELEVENLABS_API_KEY;
   const voiceId =
@@ -46,19 +97,20 @@ export async function generateElevenLabsSpeech(
 
   console.info("[speech-api] Daniel speech provider selected.", {
     provider: "elevenlabs",
-    voiceId: voiceId || "missing",
+    voiceIdSuffix: voiceId ? voiceId.slice(-4) : "missing",
   });
 
   if (!apiKey || !voiceId) {
     console.error("[speech-api] Daniel ElevenLabs configuration missing.", {
       provider: "elevenlabs",
-      voiceId: voiceId || "missing",
+      voiceIdSuffix: voiceId ? voiceId.slice(-4) : "missing",
       apiKeyConfigured: Boolean(apiKey),
     });
     throw new MissingElevenLabsConfigError();
   }
 
   const fetcher = options.fetcher ?? fetch;
+  const requestStartedAt = performance.now();
   const response = await fetcher(
     `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(
       voiceId,
@@ -75,13 +127,19 @@ export async function generateElevenLabsSpeech(
         model_id: ELEVENLABS_TTS_MODEL,
         voice_settings: ELEVENLABS_DANIEL_SETTINGS,
       }),
-      signal: AbortSignal.timeout(ELEVENLABS_REQUEST_TIMEOUT_MS),
+      signal: options.signal
+        ? AbortSignal.any([
+            options.signal,
+            AbortSignal.timeout(ELEVENLABS_REQUEST_TIMEOUT_MS),
+          ])
+        : AbortSignal.timeout(ELEVENLABS_REQUEST_TIMEOUT_MS),
     },
   );
+  const firstByteAt = performance.now();
 
   console.info("[speech-api] Daniel ElevenLabs response received.", {
     provider: "elevenlabs",
-    voiceId,
+    voiceIdSuffix: voiceId.slice(-4),
     status: response.status,
     contentType: response.headers.get("content-type"),
   });
@@ -90,15 +148,5 @@ export async function generateElevenLabsSpeech(
     throw new ElevenLabsSpeechError(response.status);
   }
 
-  const audio = await response.arrayBuffer();
-
-  console.info("[speech-api] Daniel ElevenLabs audio buffered.", {
-    provider: "elevenlabs",
-    voiceId,
-    status: response.status,
-    contentType: response.headers.get("content-type"),
-    audioByteLength: audio.byteLength,
-  });
-
-  return audio;
+  return { response, requestStartedAt, firstByteAt, voiceId };
 }

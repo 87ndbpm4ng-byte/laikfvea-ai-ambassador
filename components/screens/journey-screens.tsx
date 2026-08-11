@@ -2,8 +2,7 @@
 
 import { FormEvent, KeyboardEvent, useState } from "react";
 import { LiveAvatarRenderer } from "@/components/liveavatar/liveavatar-renderer";
-import { PresentationPanel } from "@/components/presentation/presentation-panel";
-import { GuideCard } from "@/components/ui/guide-card";
+import { PresentationLayer } from "@/components/presentation/presentation-layer";
 import { PrimaryButton } from "@/components/ui/primary-button";
 import { VoiceControls } from "@/components/ui/voice-controls";
 import { useVoiceMode } from "@/hooks/use-voice-mode";
@@ -11,97 +10,70 @@ import { useLiveAvatarIdleTimeout } from "@/hooks/use-liveavatar-idle-timeout";
 import { guides } from "@/lib/data/guides";
 import { productComparisonRows, products } from "@/lib/data/products";
 import { suggestedQuestions } from "@/lib/data/suggested-questions";
-import { presentationManager } from "@/lib/presentation/presentation-manager";
 import type { SpeechSynthesisProvider } from "@/lib/voice/voice-types";
 import type { DanielAvatarOutput } from "@/lib/liveavatar/liveavatar-types";
 import type {
   ConversationMessage,
+  QuestionSubmission,
   SuggestedQuestion,
 } from "@/types/conversation";
 import type { GuideId } from "@/types/guide";
 import type { ProductId } from "@/types/product";
 
-type GuideSelectionScreenProps = {
-  selectedGuide: GuideId | null;
-  onSelect: (guide: GuideId) => void;
-  onBack: () => void;
-  onContinue: () => void;
-};
-
-export function GuideSelectionScreen({
-  selectedGuide,
+export function SpecialistSelectionScreen({
   onSelect,
   onBack,
-  onContinue,
-}: GuideSelectionScreenProps) {
+}: {
+  onSelect: (guideId: GuideId) => void;
+  onBack: () => void;
+}) {
   return (
     <section
-      className="screen-content guide-content"
-      aria-labelledby="guide-heading"
+      className="screen-content idle-content"
+      aria-labelledby="specialist-heading"
     >
       <button className="back-action" type="button" onClick={onBack}>
         Back
       </button>
-
-      <header className="guide-header">
-        <h1 id="guide-heading">Meet your guide</h1>
-        <p>
-          Choose the specialist who will introduce you to hydrogen technology.
-        </p>
+      <header className="idle-header">
+        <p className="idle-eyebrow">A guided product conversation</p>
+        <h1 id="specialist-heading">Meet your AI specialists</h1>
+        <p className="idle-support">Choose who you would like to speak with.</p>
       </header>
 
-      <div className="guide-grid" role="group" aria-label="Product specialists">
+      <div className="idle-specialist-grid" aria-label="AI specialists">
         {Object.values(guides).map((guide) => (
-          <GuideCard
-            {...guide}
-            key={guide.id}
-            selected={selectedGuide === guide.id}
-            onSelect={() => onSelect(guide.id)}
-          />
+          <article className="idle-specialist-card" key={guide.id}>
+            <div
+              className="idle-specialist-portrait"
+              role="img"
+              aria-label={`${guide.name} visual preview unavailable`}
+            >
+              <span className="specialist-silhouette" aria-hidden="true">
+                <i />
+                <i />
+              </span>
+              <small>Visual preview</small>
+            </div>
+            <div className="idle-specialist-copy">
+              <h2>{guide.name}</h2>
+              <p>{guide.role}</p>
+              <span>
+                {guide.id === "daniel"
+                  ? "Explains product technology, engineering, materials and technical features."
+                  : "Explains everyday use, hydration, wellness and how the products fit into daily life."}
+              </span>
+              <button
+                className="idle-specialist-action"
+                type="button"
+                onClick={() => onSelect(guide.id)}
+                aria-label={`Speak with ${guide.name}, ${guide.role}`}
+              >
+                Speak with {guide.name}
+              </button>
+            </div>
+          </article>
         ))}
-      </div>
-
-      <div className="guide-action">
-        <PrimaryButton disabled={!selectedGuide} onClick={onContinue}>
-          Continue
-        </PrimaryButton>
-      </div>
-    </section>
-  );
-}
-
-type GuideIntroductionScreenProps = {
-  guideId: GuideId;
-  onBack: () => void;
-  onBegin: () => void;
-};
-
-export function GuideIntroductionScreen({
-  guideId,
-  onBack,
-  onBegin,
-}: GuideIntroductionScreenProps) {
-  const guide = guides[guideId];
-
-  return (
-    <section
-      className="screen-content introduction-content"
-      aria-labelledby="introduction-heading"
-    >
-      <button className="back-action" type="button" onClick={onBack}>
-        Back
-      </button>
-
-      <div className="introduction-layout">
-        <div className="introduction-portrait" aria-hidden="true">
-          {guide.initial}
-        </div>
-        <div className="introduction-copy">
-          <p className="introduction-role">{guide.role}</p>
-          <h1 id="introduction-heading">Hello, I’m {guide.name}.</h1>
-          <p>{guide.introduction}</p>
-          <PrimaryButton onClick={onBegin}>Begin conversation</PrimaryButton>
-        </div>
       </div>
     </section>
   );
@@ -111,13 +83,14 @@ type ConversationScreenProps = {
   guideId: GuideId;
   messages: ConversationMessage[];
   isLoading: boolean;
-  onAskSuggested: (question: SuggestedQuestion) => Promise<boolean>;
-  onAskText: (question: string) => Promise<boolean>;
+  onSubmitQuestion: (question: QuestionSubmission) => Promise<boolean>;
   onProducts: () => void;
   onOpenProduct: (product: ProductId) => void;
   onEnd: () => void;
   onIdleTimeout: () => void;
   synthesisProvider?: SpeechSynthesisProvider;
+  audioActivationProvider?: SpeechSynthesisProvider;
+  voiceActivationPromise?: Promise<boolean> | null;
   liveAvatarService?: DanielAvatarOutput;
 };
 
@@ -188,13 +161,14 @@ export function ConversationScreen({
   guideId,
   messages,
   isLoading,
-  onAskSuggested,
-  onAskText,
+  onSubmitQuestion,
   onProducts,
   onOpenProduct,
   onEnd,
   onIdleTimeout,
   synthesisProvider,
+  audioActivationProvider,
+  voiceActivationPromise,
   liveAvatarService,
 }: ConversationScreenProps) {
   const guide = guides[guideId];
@@ -204,7 +178,6 @@ export function ConversationScreen({
   }));
   const [draft, setDraft] = useState("");
   const conversationTurns = createConversationTurns(messages);
-  const presentation = presentationManager.resolve({ messages });
   const latestVisitorMessage = [...messages]
     .reverse()
     .find((message) => message.role === "visitor");
@@ -226,15 +199,20 @@ export function ConversationScreen({
     guideId,
     messages,
     isConversationLoading: isLoading,
-    submitTranscript: onAskText,
+    submitTranscript: (content) =>
+      onSubmitQuestion({ content, source: "voice" }),
     synthesisProvider,
+    audioActivationProvider,
+    activationPromise: voiceActivationPromise,
+    enabledByDefault: true,
   });
   const idleTimeout = useLiveAvatarIdleTimeout({
     service: guideId === "daniel" ? liveAvatarService : undefined,
+    active: true,
     onTimeout: onIdleTimeout,
   });
 
-  async function submitQuestion(event: FormEvent<HTMLFormElement>) {
+  async function submitTypedQuestion(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const question = draft.trim();
 
@@ -242,11 +220,29 @@ export function ConversationScreen({
       return;
     }
 
-    const submitted = await onAskText(question);
+    voice.prepareQuestionSubmission();
+    const submitted = await onSubmitQuestion({
+      content: question,
+      source: "typed",
+    });
 
     if (submitted) {
       setDraft("");
+    } else {
+      voice.cancelQuestionSubmission();
     }
+  }
+
+  async function submitQuickTopic(question: SuggestedQuestion) {
+    voice.prepareQuestionSubmission();
+    const submitted = await onSubmitQuestion({
+      content: question.label,
+      source: "quick-topic",
+      questionId: question.id,
+      relatedProduct: question.relatedProduct,
+    });
+
+    if (!submitted) voice.cancelQuestionSubmission();
   }
 
   function submitOnEnter(event: KeyboardEvent<HTMLInputElement>) {
@@ -261,13 +257,6 @@ export function ConversationScreen({
       className="screen-content conversation-content"
       aria-labelledby="conversation-heading"
     >
-      <header className="conversation-header">
-        <div>
-          <p className="guide-context">{guide.role}</p>
-          <h1 id="conversation-heading">Conversation with {guide.name}</h1>
-        </div>
-      </header>
-
       {idleTimeout.showWarning && idleTimeout.remainingSeconds !== null ? (
         <div
           className="liveavatar-idle-warning"
@@ -328,12 +317,11 @@ export function ConversationScreen({
           ) : null}
 
           <VoiceControls
-            enabled={voice.isEnabled}
             inputState={voice.inputState}
             outputState={voice.outputState}
-            playbackProvider={voice.playbackProvider}
             playbackBlocked={voice.isPlaybackBlocked}
             audioSessionActivated={voice.isAudioSessionActivated}
+            preparingVoice={voice.isPreparingVoice}
             activationFailed={voice.activationFailed}
             guideName={guide.name}
             transcript={voice.transcript}
@@ -341,11 +329,8 @@ export function ConversationScreen({
             recognitionSupported={voice.isRecognitionSupported}
             synthesisSupported={voice.isSynthesisSupported}
             disabled={isLoading}
-            onEnabledChange={voice.setEnabled}
-            onActivateAudioSession={voice.activateAudioSession}
             onStartListening={voice.startListening}
             onStopListening={voice.stopListening}
-            onStopSpeaking={voice.stopSpeaking}
             onRetryPlayback={voice.retryPlayback}
           />
 
@@ -359,6 +344,13 @@ export function ConversationScreen({
         </aside>
 
         <main className="conversation-dialogue">
+          <header className="conversation-header">
+            <div>
+              <p className="guide-context">{guide.role}</p>
+              <h1 id="conversation-heading">Conversation with {guide.name}</h1>
+            </div>
+          </header>
+
           <div className="conversation-response-presentation">
             <div
               className="response-area"
@@ -405,7 +397,7 @@ export function ConversationScreen({
                 </ol>
               )}
             </div>
-            <PresentationPanel presentation={presentation} />
+            <PresentationLayer conversationState={{ messages }} />
           </div>
 
           <section
@@ -423,7 +415,7 @@ export function ConversationScreen({
                   type="button"
                   key={question.id}
                   disabled={isLoading}
-                  onClick={() => onAskSuggested(question)}
+                  onClick={() => void submitQuickTopic(question)}
                 >
                   <span>
                     <strong>{title}</strong>
@@ -449,7 +441,7 @@ export function ConversationScreen({
             </button>
           </div>
 
-          <form className="composer" onSubmit={submitQuestion}>
+          <form className="composer" onSubmit={submitTypedQuestion}>
             <label className="sr-only" htmlFor="visitor-question">
               Ask {guide.name} a question
             </label>

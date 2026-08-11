@@ -46,11 +46,12 @@ export function PresentationPanel({ presentation }: PresentationPanelProps) {
       className="presentation-panel"
       data-visible={isVisible}
       data-presentation-type={displayed.type}
+      data-presentation-placement={displayed.placement}
       aria-label={`Now showing: ${asset.title}`}
     >
       <div className="presentation-panel-image">
         <Image
-          src={asset.src}
+          src={asset.media.src}
           alt={asset.alt}
           fill
           sizes="(max-width: 767px) 92vw, (max-width: 1180px) 38vw, 25vw"

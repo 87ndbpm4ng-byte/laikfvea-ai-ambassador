@@ -5,6 +5,10 @@ import type {
   VoiceError,
 } from "@/lib/voice/voice-types";
 import type { GuideId } from "@/types/guide";
+import {
+  logVoiceDiagnostic,
+  logVoiceDiagnosticError,
+} from "@/lib/voice/voice-diagnostics";
 
 type AudioPlayback = {
   src: string;
@@ -280,8 +284,19 @@ export class OpenAISpeechSynthesisProvider
       }
 
       try {
+        logVoiceDiagnostic("browser-audio-play", {
+          guideId,
+          selectedProvider: serverProvider,
+          audioPlayAttempted: true,
+        });
         await audio.play();
+        logVoiceDiagnostic("browser-audio-play", {
+          guideId,
+          selectedProvider: serverProvider,
+          audioPlayFulfilled: true,
+        });
       } catch (error) {
+        logVoiceDiagnosticError("browser-audio-play-rejected", error);
         if (isPlaybackBlocked(error)) {
           console.error(
             "[voice-output] Activated audio session was unexpectedly blocked.",

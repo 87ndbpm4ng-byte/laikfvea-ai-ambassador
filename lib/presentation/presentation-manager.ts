@@ -38,7 +38,12 @@ export class PresentationManager {
     );
 
     if (matchedRule) {
-      return { type: matchedRule.type, asset: matchedRule.asset };
+      return {
+        type: matchedRule.type,
+        asset: matchedRule.asset,
+        placement: matchedRule.placement,
+        duration: matchedRule.duration,
+      };
     }
 
     const relatedProduct = currentTurn.findLast(
@@ -46,11 +51,21 @@ export class PresentationManager {
     )?.relatedProduct;
 
     if (relatedProduct === "everyday") {
-      return { type: "product", asset: "go-bottle" };
+      return {
+        type: "product",
+        asset: "go-bottle",
+        placement: "conversation-support",
+        duration: "until-topic-change",
+      };
     }
 
     if (relatedProduct === "advanced") {
-      return { type: "product", asset: "pro-bottle" };
+      return {
+        type: "product",
+        asset: "pro-bottle",
+        placement: "conversation-support",
+        duration: "until-topic-change",
+      };
     }
 
     return null;

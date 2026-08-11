@@ -6,6 +6,21 @@ export type PresentationType =
   | "infographic"
   | "feature";
 
+export type PresentationPlacement = "conversation-support";
+
+export type PresentationDuration = "until-topic-change";
+
+export type PresentationLayout =
+  | "product-portrait"
+  | "wide-comparison"
+  | "diagram"
+  | "feature-detail";
+
+export type PresentationMedia = {
+  kind: "image";
+  src: string;
+};
+
 export type PresentationAssetId =
   | "go-bottle"
   | "pro-bottle"
@@ -22,12 +37,18 @@ export type PresentationAssetId =
 export type Presentation = {
   type: PresentationType;
   asset: PresentationAssetId;
+  placement: PresentationPlacement;
+  duration: PresentationDuration;
 };
 
-export type PresentationAsset = Presentation & {
+export type PresentationAsset = {
+  id: PresentationAssetId;
   title: string;
+  category: PresentationType;
+  layout: PresentationLayout;
+  tags: readonly string[];
   alt: string;
-  src: string;
+  media: PresentationMedia;
   fit: "contain" | "cover";
 };
 

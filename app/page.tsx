@@ -4,18 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 import { ScreenContainer } from "@/components/layout/screen-container";
 import {
   ConversationScreen,
-  GuideIntroductionScreen,
-  GuideSelectionScreen,
   ProductComparisonScreen,
   ProductDetailScreen,
   ProductExplorerScreen,
-  SessionEndScreen,
+  SpecialistSelectionScreen,
 } from "@/components/screens/journey-screens";
 import { useConversation } from "@/hooks/use-conversation";
 import { guides } from "@/lib/data/guides";
 import { products } from "@/lib/data/products";
 import { getSuggestedQuestion } from "@/lib/data/suggested-questions";
 import { LiveAvatarService } from "@/lib/liveavatar/liveavatar-service";
+import { activateVoiceSession } from "@/lib/voice/audio-session";
 import { LiveAvatarSpeechSynthesisProvider } from "@/lib/voice/liveavatar-speech-synthesis";
 import { OpenAISpeechSynthesisProvider } from "@/lib/voice/openai-speech-synthesis";
 import type { JourneyScreen } from "@/types/conversation";
@@ -25,10 +24,12 @@ import type { ProductId } from "@/types/product";
 const languages = ["English", "中文", "Русский", "Español"] as const;
 
 export default function Home() {
-  const [screen, setScreen] = useState<JourneyScreen>("idle");
+  const [screen, setScreen] = useState<JourneyScreen>("language");
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const [selectedGuideId, setSelectedGuideId] = useState<GuideId | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<ProductId>("everyday");
+  const [voiceActivation, setVoiceActivation] =
+    useState<Promise<boolean> | null>(null);
   const selectedGuide = selectedGuideId ? guides[selectedGuideId] : null;
   const conversation = useConversation(selectedGuide, selectedLanguage);
   const liveAvatarService = useMemo(() => new LiveAvatarService(), []);
@@ -58,10 +59,11 @@ export default function Home() {
 
   async function askAboutProduct() {
     const product = products[selectedProduct];
-    await conversation.submitText(
-      `Tell me about ${product.name}`,
-      selectedProduct,
-    );
+    await conversation.submitQuestion({
+      content: `Tell me about ${product.name}`,
+      source: "product",
+      relatedProduct: selectedProduct,
+    });
     setScreen("conversation");
   }
 
@@ -69,7 +71,12 @@ export default function Home() {
     const comparisonQuestion = getSuggestedQuestion("product-comparison");
 
     if (comparisonQuestion) {
-      await conversation.submitSuggestedQuestion(comparisonQuestion);
+      await conversation.submitQuestion({
+        content: comparisonQuestion.label,
+        source: "product",
+        questionId: comparisonQuestion.id,
+        relatedProduct: comparisonQuestion.relatedProduct,
+      });
     }
 
     setScreen("conversation");
@@ -77,85 +84,40 @@ export default function Home() {
 
   function restartSession() {
     speechSynthesis.reset();
+    fallbackSpeechSynthesis.reset();
     setSelectedLanguage(null);
     setSelectedGuideId(null);
     setSelectedProduct("everyday");
+    setVoiceActivation(null);
     conversation.clearHistory();
-    setScreen("idle");
+    setScreen("language");
   }
 
   function endSession() {
-    speechSynthesis.reset();
-    setScreen("end");
+    restartSession();
+  }
+
+  function selectSpecialist(guideId: GuideId) {
+    // Audio unlock starts synchronously inside the visitor's direct tap.
+    const activation = activateVoiceSession(fallbackSpeechSynthesis);
+    setVoiceActivation(activation);
+    setSelectedGuideId(guideId);
+    setScreen("conversation");
+
+    if (guideId === "daniel") {
+      // The visual session prepares in parallel and never blocks conversation.
+      void liveAvatarService.connect();
+    }
   }
 
   return (
     <main>
       <ScreenContainer>
-        {screen === "idle" ? (
-          <section
-            className="screen-content idle-content"
-            aria-labelledby="idle-heading"
-          >
-            <header className="idle-header">
-              <p className="idle-eyebrow">A guided product conversation</p>
-              <h1 id="idle-heading">Meet your AI specialists</h1>
-              <p className="idle-support">
-                Choose who you would like to speak with.
-              </p>
-            </header>
-
-            <div className="idle-specialist-grid" aria-label="AI specialists">
-              {Object.values(guides).map((guide) => (
-                <article className="idle-specialist-card" key={guide.id}>
-                  <div
-                    className="idle-specialist-portrait"
-                    role="img"
-                    aria-label={`${guide.name} visual preview unavailable`}
-                  >
-                    <span className="specialist-silhouette" aria-hidden="true">
-                      <i />
-                      <i />
-                    </span>
-                    <small>Visual preview</small>
-                  </div>
-                  <div className="idle-specialist-copy">
-                    <h2>{guide.name}</h2>
-                    <p>{guide.role}</p>
-                    <span>
-                      {guide.id === "daniel"
-                        ? "Explains product technology, engineering, materials and technical features."
-                        : "Explains everyday use, hydration, wellness and how the products fit into daily life."}
-                    </span>
-                    <button
-                      className="idle-specialist-action"
-                      type="button"
-                      onClick={() => {
-                        setSelectedGuideId(guide.id);
-                        setScreen("language");
-                      }}
-                      aria-label={`Speak with ${guide.name}, ${guide.role}`}
-                    >
-                      Speak with {guide.name}
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        ) : screen === "language" ? (
+        {screen === "language" ? (
           <section
             className="screen-content language-content"
             aria-labelledby="language-heading"
           >
-            <button
-              className="back-action"
-              type="button"
-              onClick={() => setScreen("idle")}
-            >
-              Back
-            </button>
-
             <div className="language-panel">
               <h1 id="language-heading">Choose your language</h1>
               <div
@@ -170,7 +132,7 @@ export default function Home() {
                     key={language}
                     onClick={() => {
                       setSelectedLanguage(language);
-                      setScreen(selectedGuideId ? "introduction" : "guide");
+                      setScreen("idle");
                     }}
                     lang={
                       language === "中文"
@@ -188,31 +150,28 @@ export default function Home() {
               </div>
             </div>
           </section>
-        ) : screen === "guide" ? (
-          <GuideSelectionScreen
-            selectedGuide={selectedGuideId}
-            onSelect={setSelectedGuideId}
+        ) : screen === "idle" ? (
+          <SpecialistSelectionScreen
+            onSelect={selectSpecialist}
             onBack={() => setScreen("language")}
-            onContinue={() => setScreen("introduction")}
-          />
-        ) : screen === "introduction" && selectedGuideId ? (
-          <GuideIntroductionScreen
-            guideId={selectedGuideId}
-            onBack={() => setScreen("language")}
-            onBegin={() => setScreen("conversation")}
           />
         ) : screen === "conversation" && selectedGuideId ? (
           <ConversationScreen
             guideId={selectedGuideId}
             messages={conversation.messages}
             isLoading={conversation.isLoading}
-            onAskSuggested={conversation.submitSuggestedQuestion}
-            onAskText={conversation.submitText}
+            onSubmitQuestion={conversation.submitQuestion}
             onProducts={() => setScreen("products")}
             onOpenProduct={openProduct}
             onEnd={endSession}
             onIdleTimeout={restartSession}
-            synthesisProvider={speechSynthesis}
+            synthesisProvider={
+              selectedGuideId === "daniel"
+                ? speechSynthesis
+                : fallbackSpeechSynthesis
+            }
+            audioActivationProvider={fallbackSpeechSynthesis}
+            voiceActivationPromise={voiceActivation}
             liveAvatarService={liveAvatarService}
           />
         ) : screen === "products" ? (
@@ -233,17 +192,10 @@ export default function Home() {
             onAsk={askAboutComparison}
             onBack={() => setScreen("products")}
           />
-        ) : screen === "end" ? (
-          <SessionEndScreen
-            onRestart={restartSession}
-            onReturn={() => setScreen("conversation")}
-          />
         ) : (
-          <GuideSelectionScreen
-            selectedGuide={selectedGuideId}
-            onSelect={setSelectedGuideId}
+          <SpecialistSelectionScreen
+            onSelect={selectSpecialist}
             onBack={() => setScreen("language")}
-            onContinue={() => setScreen("introduction")}
           />
         )}
       </ScreenContainer>

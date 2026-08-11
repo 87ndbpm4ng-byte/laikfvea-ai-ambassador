@@ -17,9 +17,16 @@ function flushPromises() {
 
 class FakeAvatar implements DanielAvatarOutput {
   isConnected = true;
+  supportsStreamingAudio = false;
+  streamingChunks: Uint8Array[] = [];
+  streamingEventIds: string[] = [];
+  streamEnded = false;
+  streamPlaybackStarted: (() => void) | null = null;
+  connectResult: boolean | null = null;
   audio: string[] = [];
   failSpeech = false;
   failInterrupt = false;
+  failStreaming = false;
   connectCount = 0;
   disconnectCount = 0;
   interruptCount = 0;
@@ -29,6 +36,7 @@ class FakeAvatar implements DanielAvatarOutput {
 
   async connect() {
     this.connectCount += 1;
+    if (this.connectResult !== null) this.isConnected = this.connectResult;
     return this.isConnected;
   }
   async reconnect() {
@@ -59,6 +67,25 @@ class FakeAvatar implements DanielAvatarOutput {
     if (this.failSpeech) throw new Error("avatar failed");
     this.audio.push(audioBase64);
   }
+  async beginAudioStream(
+    eventId: string,
+    metadata?: { onPlaybackStarted?: () => void },
+  ) {
+    this.streamingEventIds.push(eventId);
+    this.streamPlaybackStarted = metadata?.onPlaybackStarted ?? null;
+  }
+  sendAudioChunk(eventId: string, pcm: Uint8Array) {
+    if (this.failStreaming) throw new Error("streaming backpressure");
+    this.streamPlaybackStarted?.();
+    this.streamPlaybackStarted = null;
+    this.streamingEventIds.push(eventId);
+    this.streamingChunks.push(pcm);
+  }
+  endAudioStream(eventId: string) {
+    this.streamingEventIds.push(eventId);
+    this.streamEnded = true;
+  }
+  interruptAudioStream() {}
   interrupt() {
     this.interruptCount += 1;
     if (this.failInterrupt) throw new Error("Session not found");
@@ -145,6 +172,70 @@ test("Daniel uses ElevenLabs PCM through LiveAvatar when connected", async () =>
   assert.equal(callbacks.ends, 1);
 });
 
+test("Daniel progressively forwards streaming PCM with one event ID", async () => {
+  callbacks.reset();
+  const avatar = new FakeAvatar();
+  avatar.supportsStreamingAudio = true;
+  const fallback = new FakeFallback();
+  const first = new Uint8Array(28_800).fill(1);
+  const second = new Uint8Array(48_000).fill(2);
+  const provider = new LiveAvatarSpeechSynthesisProvider({
+    avatar,
+    fallback,
+    fetcher: async () =>
+      new Response(
+        new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(first);
+            controller.enqueue(second);
+            controller.close();
+          },
+        }),
+        {
+          status: 200,
+          headers: { "X-LiveAvatar-Speech-Mode": "streaming" },
+        },
+      ),
+  });
+
+  provider.speak("Streaming answer", "daniel", callbacks.value());
+  await flushPromises();
+
+  assert.equal(avatar.streamingChunks.length, 2);
+  assert.equal(new Set(avatar.streamingEventIds).size, 1);
+  assert.equal(avatar.streamEnded, true);
+  assert.equal(avatar.audio.length, 0);
+  assert.equal(fallback.spoken.length, 0);
+  assert.equal(callbacks.starts, 1);
+  assert.equal(callbacks.ends, 1);
+});
+
+test("progressive transport failure stops avatar output and uses MP3 once", async () => {
+  callbacks.reset();
+  const avatar = new FakeAvatar();
+  avatar.supportsStreamingAudio = true;
+  avatar.failStreaming = true;
+  const fallback = new FakeFallback();
+  const provider = new LiveAvatarSpeechSynthesisProvider({
+    avatar,
+    fallback,
+    fetcher: async () =>
+      new Response(new Uint8Array(30_000), {
+        status: 200,
+        headers: { "X-LiveAvatar-Speech-Mode": "streaming" },
+      }),
+  });
+
+  provider.speak("Restart once through fallback", "daniel", callbacks.value());
+  await flushPromises();
+
+  assert.equal(avatar.audio.length, 0);
+  assert.equal(avatar.fallbackCount, 1);
+  assert.equal(fallback.spoken.length, 1);
+  assert.equal(callbacks.starts, 1);
+  assert.equal(callbacks.ends, 1);
+});
+
 test("session creation starts only after explicit voice activation", async () => {
   const avatar = new FakeAvatar();
   const fallback = new FakeFallback();
@@ -168,12 +259,36 @@ test("Daniel preserves existing speech output when LiveAvatar is disconnected", 
     fallback,
   });
 
+  avatar.connectResult = false;
   provider.speak("Fallback answer", "daniel", callbacks.value());
 
-  assert.deepEqual(fallback.spoken, [
-    { text: "Fallback answer", guideId: "daniel" },
-  ]);
-  assert.equal(avatar.fallbackCount, 1);
+  return flushPromises().then(() => {
+    assert.deepEqual(fallback.spoken, [
+      { text: "Fallback answer", guideId: "daniel" },
+    ]);
+    assert.equal(avatar.fallbackCount, 1);
+  });
+});
+
+test("Daniel waits for the in-flight visual session before selecting fallback", async () => {
+  callbacks.reset();
+  const avatar = new FakeAvatar();
+  avatar.isConnected = false;
+  avatar.connectResult = true;
+  const fallback = new FakeFallback();
+  const provider = new LiveAvatarSpeechSynthesisProvider({
+    avatar,
+    fallback,
+    fetcher: async () =>
+      new Response(Uint8Array.from([1, 2, 3]), { status: 200 }),
+  });
+
+  provider.speak("Visual answer", "daniel", callbacks.value());
+  await flushPromises();
+
+  assert.equal(avatar.connectCount, 1);
+  assert.equal(avatar.audio.length, 1);
+  assert.equal(fallback.spoken.length, 0);
 });
 
 test("LiveAvatar is interrupted before MP3 fallback begins", async () => {

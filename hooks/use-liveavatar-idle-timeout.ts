@@ -9,15 +9,20 @@ import type {
 
 export function useLiveAvatarIdleTimeout({
   service,
+  active = Boolean(service),
+  timeoutSeconds = 120,
   onTimeout,
 }: {
   service?: DanielAvatarOutput;
+  active?: boolean;
+  timeoutSeconds?: number;
   onTimeout: () => void;
 }) {
   const timerRef = useRef<LiveAvatarIdleTimer | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
   const [showWarning, setShowWarning] = useState(false);
   const timeoutRef = useRef(onTimeout);
+  const configuredTimeoutRef = useRef(timeoutSeconds);
 
   useEffect(() => {
     timeoutRef.current = onTimeout;
@@ -29,39 +34,27 @@ export function useLiveAvatarIdleTimeout({
   }, []);
 
   useEffect(() => {
-    if (!service) return;
+    if (!active) return;
 
-    return service.subscribe((snapshot: LiveAvatarSnapshot) => {
-      const activeProductionSession =
-        snapshot.environment === "production" &&
-        snapshot.state !== "disconnected" &&
-        snapshot.state !== "connecting";
+    function startTimer(nextTimeoutSeconds: number) {
+      timerRef.current?.stop();
+      configuredTimeoutRef.current = nextTimeoutSeconds;
+      timerRef.current = new LiveAvatarIdleTimer({
+        timeoutSeconds: nextTimeoutSeconds,
+        warningSeconds: 15,
+        onTick: setRemainingSeconds,
+        onWarning: () => setShowWarning(true),
+        onTimeout: () => timeoutRef.current(),
+      });
+      timerRef.current.start();
+    }
 
-      if (!activeProductionSession) {
-        timerRef.current?.stop();
-        timerRef.current = null;
-        setRemainingSeconds(null);
-        setShowWarning(false);
-        return;
-      }
-
-      if (!timerRef.current) {
-        timerRef.current = new LiveAvatarIdleTimer({
-          timeoutSeconds: snapshot.idleTimeoutSeconds,
-          warningSeconds: 15,
-          onTick: setRemainingSeconds,
-          onWarning: () => setShowWarning(true),
-          onTimeout: () => timeoutRef.current(),
-        });
-        timerRef.current.start();
-      } else {
-        recordActivity();
+    startTimer(timeoutSeconds);
+    const unsubscribe = service?.subscribe((snapshot: LiveAvatarSnapshot) => {
+      if (snapshot.idleTimeoutSeconds !== configuredTimeoutRef.current) {
+        startTimer(snapshot.idleTimeoutSeconds);
       }
     });
-  }, [recordActivity, service]);
-
-  useEffect(() => {
-    if (!service) return;
     const events = ["pointerdown", "keydown", "touchstart", "input"] as const;
     events.forEach((event) =>
       window.addEventListener(event, recordActivity, { passive: true }),
@@ -70,10 +63,13 @@ export function useLiveAvatarIdleTimeout({
       events.forEach((event) =>
         window.removeEventListener(event, recordActivity),
       );
+      unsubscribe?.();
       timerRef.current?.stop();
       timerRef.current = null;
+      setRemainingSeconds(null);
+      setShowWarning(false);
     };
-  }, [recordActivity, service]);
+  }, [active, recordActivity, service, timeoutSeconds]);
 
   return {
     remainingSeconds,

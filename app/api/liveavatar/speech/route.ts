@@ -1,6 +1,11 @@
-import { generateElevenLabsSpeech } from "@/lib/voice/elevenlabs-speech-service";
+import {
+  generateElevenLabsSpeech,
+  streamElevenLabsSpeech,
+} from "@/lib/voice/elevenlabs-speech-service";
+import { isLiveAvatarStreamingSpeechEnabled } from "@/lib/liveavatar/liveavatar-streaming-config";
 import { SpeechRateLimiter } from "@/lib/voice/speech-rate-limit";
 import { validateSpeechRequest } from "@/lib/voice/speech-request";
+import type { ElevenLabsSpeechTiming } from "@/lib/voice/elevenlabs-speech-service";
 
 export const runtime = "nodejs";
 
@@ -41,8 +46,31 @@ export async function POST(request: Request) {
   }
 
   try {
+    if (isLiveAvatarStreamingSpeechEnabled()) {
+      const speech = await streamElevenLabsSpeech(speechRequest, {
+        output: "liveavatar",
+        signal: request.signal,
+      });
+      return new Response(speech.body, {
+        status: 200,
+        headers: {
+          "Cache-Control": "no-store",
+          "Content-Type": "audio/pcm",
+          "X-Audio-Format": "pcm_s16le_24000_mono",
+          "X-LiveAvatar-Speech-Mode": "streaming",
+          "X-TTS-First-Byte-Ms": String(speech.firstByteMs),
+          "X-Content-Type-Options": "nosniff",
+          "X-Speech-Provider": "elevenlabs",
+        },
+      });
+    }
+
+    let timing: ElevenLabsSpeechTiming = { firstByteMs: 0, completeMs: 0 };
     const audio = await generateElevenLabsSpeech(speechRequest, {
       output: "liveavatar",
+      onTiming: (value) => {
+        timing = value;
+      },
     });
 
     return new Response(audio, {
@@ -52,6 +80,9 @@ export async function POST(request: Request) {
         "Content-Length": String(audio.byteLength),
         "Content-Type": "audio/pcm",
         "X-Audio-Format": "pcm_s16le_24000_mono",
+        "X-LiveAvatar-Speech-Mode": "buffered",
+        "X-TTS-First-Byte-Ms": String(timing.firstByteMs),
+        "X-TTS-Complete-Ms": String(timing.completeMs),
         "X-Content-Type-Options": "nosniff",
         "X-Speech-Provider": "elevenlabs",
       },

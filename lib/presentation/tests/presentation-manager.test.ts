@@ -23,7 +23,12 @@ test("matches the requested concept with specific topics before products", () =>
     message("Open the charging cover.", "guide", "advanced"),
   ] });
 
-  assert.deepEqual(visual, { type: "feature", asset: "charging" });
+  assert.deepEqual(visual, {
+    type: "feature",
+    asset: "charging",
+    placement: "conversation-support",
+    duration: "until-topic-change",
+  });
 });
 
 test("connects every supported presenter subject", () => {
@@ -59,11 +64,21 @@ test("connects every supported presenter subject", () => {
 test("supports the extended infographic and feature registry", () => {
   assert.deepEqual(
     presentationManager.resolve({ messages: [message("Explain oxidative stress")] }),
-    { type: "infographic", asset: "oxidative-stress" },
+    {
+      type: "infographic",
+      asset: "oxidative-stress",
+      placement: "conversation-support",
+      duration: "until-topic-change",
+    },
   );
   assert.deepEqual(
     presentationManager.resolve({ messages: [message("How does mineralisation work?")] }),
-    { type: "feature", asset: "mineralisation" },
+    {
+      type: "feature",
+      asset: "mineralisation",
+      placement: "conversation-support",
+      duration: "until-topic-change",
+    },
   );
 });
 

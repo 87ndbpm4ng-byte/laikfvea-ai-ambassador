@@ -2403,6 +2403,106 @@ h1 {
   }
 }
 
+/* Exhibition voice flow: one primary Talk interaction */
+.conversation-specialist .voice-panel {
+  padding: var(--space-5);
+}
+
+.conversation-specialist .voice-panel-header {
+  display: block;
+}
+
+.conversation-specialist .voice-panel-support {
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.conversation-specialist .voice-interaction {
+  display: grid;
+  margin-top: var(--space-4);
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.conversation-specialist .voice-microphone {
+  display: inline-flex;
+  width: 100%;
+  height: 5.25rem;
+  min-height: 5.25rem;
+  padding: 0 var(--space-6);
+  border: 1px solid var(--color-action-primary);
+  border-radius: 1.25rem;
+  background: var(--color-action-primary);
+  color: var(--color-text-inverse);
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-instant) var(--ease-standard);
+}
+
+.conversation-specialist .voice-microphone:hover {
+  border-color: #242424;
+  background: #242424;
+}
+
+.conversation-specialist .voice-microphone:active {
+  transform: scale(0.985);
+}
+
+.conversation-specialist .voice-microphone[aria-pressed="true"],
+.voice-panel[data-voice-state="speaking"] .voice-microphone,
+.voice-panel[data-voice-state="thinking"] .voice-microphone {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-text-primary);
+}
+
+.conversation-specialist .voice-microphone:disabled {
+  border-color: var(--color-disabled-bg);
+  background: var(--color-disabled-bg);
+  color: var(--color-disabled-text);
+  opacity: 1;
+}
+
+.voice-microphone-icon {
+  display: inline-grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  place-items: center;
+}
+
+.voice-microphone-icon svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.75;
+}
+
+.conversation-specialist .voice-microphone-mark {
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.conversation-specialist .voice-status {
+  min-height: 4.5rem;
+}
+
+@media (max-width: 47.999rem) {
+  .conversation-specialist .voice-microphone {
+    height: 4.75rem;
+    min-height: 4.75rem;
+  }
+}
+
 .liveavatar-ambassador-placeholder > .specialist-silhouette {
   width: 7rem;
   height: 7rem;
@@ -2574,11 +2674,14 @@ h1 {
 .conversation-content {
   width: min(100%, 82rem);
   max-height: calc(100dvh - 3rem);
+  gap: 0;
 }
 
 .conversation-header {
-  min-height: 3.75rem;
+  min-height: 0;
+  padding: 0 0 var(--space-4);
   border-bottom: 0;
+  align-items: flex-start;
 }
 
 .conversation-workspace {
@@ -2586,13 +2689,26 @@ h1 {
   min-height: 0;
   grid-template-columns: minmax(19rem, 0.9fr) minmax(28rem, 1.35fr);
   gap: clamp(2rem, 4vw, 4.5rem);
+  align-items: stretch;
 }
 
 .conversation-specialist {
+  width: 100%;
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+.conversation-specialist > .liveavatar-ambassador,
+.conversation-specialist .liveavatar-ambassador-stage,
+.conversation-specialist .liveavatar-ambassador-status,
+.conversation-specialist .specialist-static-stage,
+.conversation-specialist .specialist-identity,
+.conversation-specialist .voice-panel,
+.conversation-specialist .specialist-end-action {
+  width: 100%;
+  max-width: none;
 }
 
 .conversation-specialist .liveavatar-ambassador-stage,
@@ -2925,7 +3041,7 @@ h1 {
   }
 
   .quick-topic-list {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .visitor-question,
@@ -3704,7 +3820,7 @@ h1 {
 }
 
 .specialist-identity {
-  display: none;
+  display: grid;
 }
 
 .conversation-specialist .voice-panel {
@@ -3713,18 +3829,71 @@ h1 {
   padding: var(--space-4);
 }
 
-.conversation-specialist .voice-panel-support,
-.conversation-specialist .voice-hint {
+.conversation-specialist .voice-panel-support {
   display: none;
 }
 
 .conversation-specialist .voice-interaction {
-  grid-template-columns: auto minmax(0, 1fr);
+  margin-top: var(--space-4);
+  grid-template-columns: 9rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-4);
 }
 
 .conversation-specialist .voice-microphone {
-  width: 4.5rem;
-  height: 4.5rem;
+  width: 9rem;
+  height: 3.75rem;
+  min-height: 3.75rem;
+  padding: 0 var(--space-4);
+  border-radius: 1rem;
+}
+
+.conversation-specialist .voice-status {
+  display: grid;
+  min-height: 0;
+  align-content: center;
+  text-align: left;
+}
+
+.conversation-specialist .voice-status-line {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.conversation-specialist .voice-state-indicator {
+  width: 1.25rem;
+}
+
+.conversation-specialist .voice-status p {
+  margin-top: var(--space-2);
+  margin-left: calc(1.25rem + var(--space-2));
+  overflow: visible;
+  line-height: 1.45;
+  text-overflow: initial;
+  white-space: normal;
+}
+
+.conversation-specialist .voice-hint,
+.conversation-specialist .voice-message,
+.conversation-specialist .voice-retry {
+  margin-top: var(--space-4);
+}
+
+.conversation-specialist .voice-hint,
+.conversation-specialist .voice-message {
+  display: block;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.conversation-specialist .specialist-end-action {
+  min-height: 3.5rem;
+  margin-top: 0;
+  padding: 0 var(--space-4);
+  align-self: stretch;
+  text-align: left;
 }
 
 .conversation-dialogue {
@@ -3734,6 +3903,14 @@ h1 {
   padding: 0;
   border: 0;
   flex-direction: column;
+}
+
+.conversation-dialogue > .conversation-header,
+.conversation-dialogue > .conversation-response-presentation,
+.conversation-dialogue > .conversation-topics,
+.conversation-dialogue > .conversation-product-actions,
+.conversation-dialogue > .composer {
+  width: 100%;
 }
 
 .response-area {
@@ -3768,9 +3945,11 @@ h1 {
   overflow: visible;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-2);
+  grid-auto-rows: 1fr;
 }
 
 .quick-topic-card {
+  height: 100%;
   min-height: 4.5rem;
   padding: 0.875rem 1rem;
   border-color: var(--color-border-subtle);
@@ -3842,6 +4021,17 @@ h1 {
     max-height: 18rem;
   }
 
+  .conversation-specialist .voice-interaction {
+    grid-template-columns: 8rem minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  .conversation-specialist .voice-microphone {
+    width: 8rem;
+    height: 3.5rem;
+    min-height: 3.5rem;
+  }
+
   .response-area {
     max-height: min(19rem, 39vh);
   }
@@ -3860,7 +4050,10 @@ h1 {
 
   .conversation-specialist .liveavatar-ambassador-stage,
   .specialist-static-stage,
-  .conversation-specialist .voice-panel {
+  .conversation-specialist .liveavatar-ambassador-status,
+  .conversation-specialist .specialist-identity,
+  .conversation-specialist .voice-panel,
+  .conversation-specialist .specialist-end-action {
     width: min(100%, 38rem);
     max-height: none;
     align-self: center;
@@ -3905,12 +4098,102 @@ h1 {
   }
 
   .quick-topic-list {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .visitor-question,
   .guide-response {
     grid-template-columns: 1fr;
     gap: var(--space-2);
+  }
+
+  .conversation-specialist .voice-interaction {
+    grid-template-columns: 8rem minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  .conversation-specialist .voice-microphone {
+    width: 8rem;
+    height: 3.5rem;
+    min-height: 3.5rem;
+  }
+}
+
+/* Stable voice-control geometry across Ready, Listening, Thinking and Speaking. */
+.conversation-specialist .voice-interaction {
+  grid-template-columns: 9rem minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--space-4);
+}
+
+.conversation-specialist .voice-microphone {
+  display: inline-flex;
+  width: 9rem;
+  min-width: 9rem;
+  height: 3.75rem;
+  min-height: 3.75rem;
+  padding: 0 var(--space-4);
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  white-space: nowrap;
+}
+
+.conversation-specialist .voice-microphone-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: 0 0 1.5rem;
+}
+
+.conversation-specialist .voice-microphone-mark {
+  min-width: 2.75rem;
+  flex: 0 0 2.75rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.conversation-specialist .voice-status {
+  min-width: 0;
+  min-height: 4.75rem;
+  align-content: center;
+}
+
+.conversation-specialist .voice-status-line {
+  min-width: 0;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+}
+
+.conversation-specialist .voice-status-line strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 63.999rem) and (orientation: landscape) {
+  .conversation-specialist .voice-interaction {
+    grid-template-columns: 8rem minmax(0, 1fr);
+    column-gap: var(--space-3);
+  }
+
+  .conversation-specialist .voice-microphone {
+    width: 8rem;
+    min-width: 8rem;
+    height: 3.5rem;
+    min-height: 3.5rem;
+    padding-inline: var(--space-3);
+    gap: var(--space-2);
+  }
+}
+
+@media (max-width: 29.999rem) {
+  .conversation-specialist .voice-interaction {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    row-gap: var(--space-3);
+  }
+
+  .conversation-specialist .voice-microphone {
+    width: 100%;
+    min-width: 0;
   }
 }

@@ -5,6 +5,10 @@ import type {
   DanielAvatarOutput,
   LiveAvatarSnapshot,
 } from "@/lib/liveavatar/liveavatar-types";
+import {
+  subscribeLipSyncDiagnostics,
+  type LipSyncMeasurement,
+} from "@/lib/voice/lip-sync-diagnostics";
 
 const INITIAL_SNAPSHOT: LiveAvatarSnapshot = {
   state: "disconnected",
@@ -54,12 +58,18 @@ export function LiveAvatarRenderer({
     useState<LiveAvatarSnapshot>(INITIAL_SNAPSHOT);
   const [developmentStatus, setDevelopmentStatus] =
     useState<DevelopmentStatus | null>(null);
+  const [lipSync, setLipSync] = useState<LipSyncMeasurement | null>(null);
   const videoRef = useCallback(
     (video: HTMLVideoElement | null) => service.attach(video),
     [service],
   );
 
   useEffect(() => service.subscribe(setSnapshot), [service]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    return subscribeLipSyncDiagnostics(setLipSync);
+  }, []);
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") return;
@@ -92,7 +102,7 @@ export function LiveAvatarRenderer({
     snapshot.state === "disconnected"
       ? isUnavailable
         ? "Daniel is available by voice while the visual session is unavailable."
-        : "Enable Voice Mode when you’re ready to begin."
+        : "Ask a question when you’re ready."
       : STATE_DESCRIPTIONS[snapshot.state];
 
   return (
@@ -203,6 +213,63 @@ export function LiveAvatarRenderer({
                 : `${idleSecondsRemaining}s`}
             </dd>
           </div>
+          {lipSync ? (
+            <>
+              <div>
+                <dt>Speech provider</dt>
+                <dd>
+                  {lipSync.provider === "liveavatar"
+                    ? "LiveAvatar"
+                    : "ElevenLabs fallback"}
+                  {` / ${lipSync.mode}`}
+                </dd>
+              </div>
+              {lipSync.mode === "streaming" ? (
+                <div>
+                  <dt>PCM chunks</dt>
+                  <dd>
+                    {lipSync.chunkCount} / {lipSync.averageChunkBytes ?? "—"} bytes average
+                  </dd>
+                </div>
+              ) : null}
+              <div>
+                <dt>PCM format</dt>
+                <dd>{lipSync.pcmFormat}</dd>
+              </div>
+              <div>
+                <dt>PCM audio</dt>
+                <dd>
+                  {lipSync.audioDurationMs === null
+                    ? "Measuring…"
+                    : `${(lipSync.audioDurationMs / 1_000).toFixed(2)}s / ${lipSync.pcmByteLength} bytes`}
+                </dd>
+              </div>
+              <div>
+                <dt>Near-silence</dt>
+                <dd>
+                  {lipSync.leadingNearSilenceMs === null
+                    ? "Measuring…"
+                    : `${lipSync.leadingNearSilenceMs.toFixed(0)}ms leading / ${lipSync.trailingNearSilenceMs?.toFixed(0)}ms trailing`}
+                </dd>
+              </div>
+              <div>
+                <dt>TTS latency</dt>
+                <dd>
+                  {lipSync.ttsLatencyMs === null
+                    ? "Measuring…"
+                    : `${lipSync.ttsLatencyMs.toFixed(0)}ms total / ${lipSync.ttsFirstByteMs?.toFixed(0) ?? "—"}ms first byte / ${lipSync.ttsCompleteMs?.toFixed(0) ?? "—"}ms complete`}
+                </dd>
+              </div>
+              <div>
+                <dt>Avatar timing</dt>
+                <dd>
+                  {lipSync.avatarSpeakingDurationMs === null
+                    ? "Measuring…"
+                    : `${(lipSync.avatarSpeakingDurationMs / 1_000).toFixed(2)}s / start ${lipSync.startOffsetMs?.toFixed(0)}ms / end ${lipSync.endOffsetMs?.toFixed(0)}ms`}
+                </dd>
+              </div>
+            </>
+          ) : null}
         </dl>
       ) : null}
     </div>

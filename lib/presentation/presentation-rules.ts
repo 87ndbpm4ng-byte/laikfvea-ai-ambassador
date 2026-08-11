@@ -12,7 +12,13 @@ function rule(
   type: Presentation["type"],
   matches: readonly RegExp[],
 ): PresentationRule {
-  return { asset, type, matches };
+  return {
+    asset,
+    type,
+    placement: "conversation-support",
+    duration: "until-topic-change",
+    matches,
+  };
 }
 
 /** Ordered from the most specific subject to the broadest product match. */

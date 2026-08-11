@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BrowserSpeechRecognitionProvider } from "@/lib/voice/browser-speech-recognition";
 import { activateVoiceSession } from "@/lib/voice/audio-session";
+import { selectPendingGuideSpeech } from "@/lib/voice/conversation-speech";
+import { normalizeSpeechText } from "@/lib/voice/speech-text-normalizer";
 import { OpenAISpeechSynthesisProvider } from "@/lib/voice/openai-speech-synthesis";
+import { logVoiceDiagnostic } from "@/lib/voice/voice-diagnostics";
 import type {
   SpeechRecognitionProvider,
   SpeechPlaybackProvider,
@@ -22,6 +25,9 @@ type VoiceModeOptions = {
   submitTranscript: (transcript: string) => Promise<boolean>;
   recognitionProvider?: SpeechRecognitionProvider;
   synthesisProvider?: SpeechSynthesisProvider;
+  audioActivationProvider?: SpeechSynthesisProvider;
+  activationPromise?: Promise<boolean> | null;
+  enabledByDefault?: boolean;
 };
 
 export function useVoiceMode({
@@ -31,6 +37,9 @@ export function useVoiceMode({
   submitTranscript,
   recognitionProvider,
   synthesisProvider,
+  audioActivationProvider,
+  activationPromise,
+  enabledByDefault = false,
 }: VoiceModeOptions) {
   const recognition = useMemo(
     () => recognitionProvider ?? new BrowserSpeechRecognitionProvider(),
@@ -40,20 +49,27 @@ export function useVoiceMode({
     () => synthesisProvider ?? new OpenAISpeechSynthesisProvider(),
     [synthesisProvider],
   );
-  const [isEnabled, setIsEnabled] = useState(false);
+  const activationProvider = audioActivationProvider ?? synthesis;
+  const [isEnabled, setIsEnabled] = useState(enabledByDefault);
   const [inputState, setInputState] = useState<VoiceInputState>("idle");
   const [outputState, setOutputState] = useState<VoiceOutputState>("idle");
   const [playbackProvider, setPlaybackProvider] =
     useState<SpeechPlaybackProvider | null>(null);
   const [isPlaybackBlocked, setIsPlaybackBlocked] = useState(false);
   const [isAudioSessionActivated, setIsAudioSessionActivated] = useState(
-    () => synthesis.isActivated ?? false,
+    () => activationProvider.isActivated ?? false,
+  );
+  const [isPreparingVoice, setIsPreparingVoice] = useState(
+    Boolean(activationPromise) && !(activationProvider.isActivated ?? false),
   );
   const [activationFailed, setActivationFailed] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [error, setError] = useState<VoiceError | null>(null);
   const submittedTranscriptRef = useRef(false);
   const lastSpokenMessageRef = useRef<string | null>(null);
+  const activationPromiseRef = useRef<Promise<boolean> | null>(
+    activationPromise ?? null,
+  );
 
   const stopAll = useCallback(() => {
     recognition.abort();
@@ -80,21 +96,47 @@ export function useVoiceMode({
         setIsAudioSessionActivated(false);
         setActivationFailed(false);
       } else {
-        setIsAudioSessionActivated(synthesis.isActivated ?? false);
+        setIsAudioSessionActivated(activationProvider.isActivated ?? false);
       }
     },
-    [recognition, synthesis],
+    [activationProvider, recognition, synthesis],
   );
 
   const activateAudioSession = useCallback(() => {
-    const activation = activateVoiceSession(synthesis);
+    const activation =
+      activationPromiseRef.current ?? activateVoiceSession(activationProvider);
+    activationPromiseRef.current = activation;
+    setIsPreparingVoice(true);
 
     void activation.then((activated) => {
       setIsAudioSessionActivated(activated);
       setActivationFailed(!activated);
       setError(null);
+      setIsPreparingVoice(false);
+      if (!activated) setInputState("idle");
+      activationPromiseRef.current = null;
     });
-  }, [synthesis]);
+  }, [activationProvider]);
+
+  useEffect(() => {
+    if (!activationPromise) return;
+
+    activationPromiseRef.current = activationPromise;
+    let active = true;
+
+    void activationPromise.then((activated) => {
+      if (!active) return;
+      setIsAudioSessionActivated(activated);
+      setActivationFailed(!activated);
+      setIsPreparingVoice(false);
+      if (!activated) setInputState("idle");
+      activationPromiseRef.current = null;
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [activationPromise]);
 
   const handleError = useCallback(
     (voiceError: VoiceError) => {
@@ -111,15 +153,15 @@ export function useVoiceMode({
   );
 
   const startListening = useCallback(() => {
-    if (
-      !isEnabled ||
-      !isAudioSessionActivated ||
-      isConversationLoading
-    ) {
+    if (!isEnabled || isConversationLoading) {
       return;
     }
 
     synthesis.stop();
+    if (!isAudioSessionActivated) {
+      // This call begins audio unlock synchronously inside the Talk gesture.
+      activateAudioSession();
+    }
     synthesis.startListening?.();
     setOutputState("idle");
     setPlaybackProvider(null);
@@ -142,8 +184,9 @@ export function useVoiceMode({
         synthesis.stopListening?.();
         synthesis.setThinking?.();
         try {
-          await submitTranscript(finalTranscript);
-        } finally {
+          const submitted = await submitTranscript(finalTranscript);
+          if (!submitted) setInputState("idle");
+        } catch {
           setInputState("idle");
         }
       },
@@ -157,6 +200,7 @@ export function useVoiceMode({
     });
   }, [
     handleError,
+    activateAudioSession,
     isConversationLoading,
     isAudioSessionActivated,
     isEnabled,
@@ -170,36 +214,75 @@ export function useVoiceMode({
     synthesis.stopListening?.();
   }, [recognition, synthesis]);
 
+  const prepareQuestionSubmission = useCallback(() => {
+    if (!isEnabled || isConversationLoading) return false;
+
+    recognition.abort();
+    synthesis.stop();
+    if (!isAudioSessionActivated) activateAudioSession();
+    synthesis.setThinking?.();
+    setTranscript("");
+    setError(null);
+    setIsPlaybackBlocked(false);
+    setPlaybackProvider(null);
+    setOutputState("idle");
+    setInputState("processing");
+    return true;
+  }, [
+    activateAudioSession,
+    isAudioSessionActivated,
+    isConversationLoading,
+    isEnabled,
+    recognition,
+    synthesis,
+  ]);
+
+  const cancelQuestionSubmission = useCallback(() => {
+    synthesis.setReady?.();
+    setInputState("idle");
+  }, [synthesis]);
+
   useEffect(() => {
-    if (!isEnabled || !isAudioSessionActivated) {
+    if (!isEnabled) {
       return;
     }
 
-    const latestGuideMessage = messages.findLast(
-      (message) => message.role === "guide",
+    const latestGuideMessage = selectPendingGuideSpeech(
+      messages,
+      lastSpokenMessageRef.current,
     );
 
-    if (
-      !latestGuideMessage ||
-      latestGuideMessage.id === lastSpokenMessageRef.current
-    ) {
-      return;
-    }
+    if (!latestGuideMessage) return;
 
     lastSpokenMessageRef.current = latestGuideMessage.id;
-    synthesis.speak(latestGuideMessage.content, guideId, {
-      onProvider: setPlaybackProvider,
+    logVoiceDiagnostic("speech-trigger", {
+      questionSource: latestGuideMessage.source ?? "unknown",
+      speechTriggerCalled: true,
+      audioSessionActivated: isAudioSessionActivated,
+    });
+    synthesis.speak(normalizeSpeechText(latestGuideMessage.content), guideId, {
+      onProvider: (provider) => {
+        logVoiceDiagnostic("provider-selected", { provider });
+        setPlaybackProvider(provider);
+      },
       onActivationRequired: () => {
+        lastSpokenMessageRef.current = null;
+        logVoiceDiagnostic("audio-activation-required", {
+          questionSource: latestGuideMessage.source ?? "unknown",
+        });
         setIsAudioSessionActivated(false);
         setActivationFailed(true);
+        setInputState("idle");
       },
       onPlaybackBlocked: () => {
         setIsPlaybackBlocked(true);
+        setInputState("idle");
         setOutputState("idle");
         setError(null);
       },
       onStart: () => {
         setIsPlaybackBlocked(false);
+        setInputState("idle");
         setOutputState("speaking");
       },
       onEnd: () => setOutputState("idle"),
@@ -238,11 +321,14 @@ export function useVoiceMode({
     playbackProvider,
     isPlaybackBlocked,
     isAudioSessionActivated,
+    isPreparingVoice,
     activationFailed,
     transcript,
     error,
     setEnabled,
     activateAudioSession,
+    prepareQuestionSubmission,
+    cancelQuestionSubmission,
     startListening,
     stopListening,
     retryPlayback: async () => {

@@ -7,7 +7,12 @@ import { PresentationPanel } from "@/components/presentation/presentation-panel"
 test("panel appears for a registered presentation", () => {
   const markup = renderToStaticMarkup(
     <PresentationPanel
-      presentation={{ type: "feature", asset: "charging" }}
+      presentation={{
+        type: "feature",
+        asset: "charging",
+        placement: "conversation-support",
+        duration: "until-topic-change",
+      }}
     />,
   );
 

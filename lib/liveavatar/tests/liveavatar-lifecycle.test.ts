@@ -123,6 +123,24 @@ test("an explicit connect action creates exactly one session", async () => {
   await service.disconnect();
 });
 
+test("stable buffered connection never inspects private SDK streaming internals", async () => {
+  const session = new Proxy(new FakeSession(), {
+    has(target, property) {
+      if (property === "_sessionEventSocket") {
+        throw new Error("private streaming internals were inspected");
+      }
+      return property in target;
+    },
+  });
+  const service = new LiveAvatarService({
+    fetcher: async () => sessionResponse(),
+    createSession: () => session as never,
+  });
+
+  assert.equal(await service.connect(), true);
+  await service.disconnect();
+});
+
 test("concurrent connect calls cannot create duplicate sessions", async () => {
   let releaseResponse: (() => void) | undefined;
   let fetchCount = 0;
@@ -288,6 +306,36 @@ test("speech completion events remain available after production safeguards", as
   const speech = service.speakAudio("AQID");
   session.emit(AgentEventsEnum.AVATAR_SPEAK_ENDED, {});
   await speech;
+  await service.disconnect();
+});
+
+test("a direct conversation action retries blocked avatar media playback", async () => {
+  const session = new FakeSession();
+  let playCount = 0;
+  const video = {
+    play: () => {
+      playCount += 1;
+      return playCount === 1
+        ? Promise.reject(new DOMException("Autoplay blocked", "NotAllowedError"))
+        : Promise.resolve();
+    },
+    pause() {},
+    srcObject: null,
+    removeAttribute() {},
+    load() {},
+  } as unknown as HTMLVideoElement;
+  const service = new LiveAvatarService({
+    fetcher: async () => sessionResponse(),
+    createSession: () => session as never,
+  });
+
+  await service.connect();
+  service.attach(video);
+  await new Promise((resolve) => setImmediate(resolve));
+  service.setThinking();
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(playCount, 2);
   await service.disconnect();
 });
 
