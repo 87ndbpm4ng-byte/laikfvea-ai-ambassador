@@ -11,7 +11,7 @@ import { guides } from "@/lib/data/guides";
 import { productComparisonRows, products } from "@/lib/data/products";
 import { suggestedQuestions } from "@/lib/data/suggested-questions";
 import type { SpeechSynthesisProvider } from "@/lib/voice/voice-types";
-import type { DanielAvatarOutput } from "@/lib/liveavatar/liveavatar-types";
+import type { LiveAvatarOutput } from "@/lib/liveavatar/liveavatar-types";
 import type {
   ConversationMessage,
   QuestionSubmission,
@@ -91,7 +91,7 @@ type ConversationScreenProps = {
   synthesisProvider?: SpeechSynthesisProvider;
   audioActivationProvider?: SpeechSynthesisProvider;
   voiceActivationPromise?: Promise<boolean> | null;
-  liveAvatarService?: DanielAvatarOutput;
+  liveAvatarService?: LiveAvatarOutput;
 };
 
 const topicPresentation: Record<
@@ -207,7 +207,7 @@ export function ConversationScreen({
     enabledByDefault: true,
   });
   const idleTimeout = useLiveAvatarIdleTimeout({
-    service: guideId === "daniel" ? liveAvatarService : undefined,
+    service: liveAvatarService,
     active: true,
     onTimeout: onIdleTimeout,
   });
@@ -279,9 +279,10 @@ export function ConversationScreen({
 
       <div className="conversation-workspace">
         <aside className="conversation-specialist">
-          {guideId === "daniel" && liveAvatarService ? (
+          {liveAvatarService ? (
             <LiveAvatarRenderer
               service={liveAvatarService}
+              guideId={guideId}
               idleSecondsRemaining={idleTimeout.remainingSeconds}
             />
           ) : (
@@ -304,17 +305,6 @@ export function ConversationScreen({
               </div>
             </div>
           )}
-
-          {guideId === "emily" ? (
-            <div className="specialist-identity" role="status">
-              <span className="specialist-ready-mark" aria-hidden="true" />
-              <div>
-                <strong>{guide.name}</strong>
-                <p>{guide.role}</p>
-              </div>
-              <span>Ready</span>
-            </div>
-          ) : null}
 
           <VoiceControls
             inputState={voice.inputState}

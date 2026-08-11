@@ -7,7 +7,7 @@ import {
   SessionState,
 } from "@heygen/liveavatar-web-sdk";
 import type {
-  DanielAvatarOutput,
+  LiveAvatarOutput,
   LiveAvatarSnapshot,
   LiveAvatarState,
   LiveAvatarStateListener,
@@ -21,6 +21,7 @@ import {
   markRepeatAudioAccepted,
   markRepeatAudioInvoked,
 } from "@/lib/voice/lip-sync-diagnostics";
+import type { GuideId } from "@/types/guide";
 
 type SessionApiResponse =
   | {
@@ -55,10 +56,11 @@ type LiveAvatarServiceOptions = {
   reconnectDelayMs?: number;
   keepAliveIntervalMs?: number;
   maxAutomaticReconnects?: number;
+  guideId?: GuideId;
 };
 
 const SAFE_CONNECTION_ERROR =
-  "Daniel’s visual connection is unavailable. Voice playback will continue.";
+  "The visual connection is unavailable. Voice playback will continue.";
 const SAFE_CONFIGURATION_ERROR =
   "The avatar session could not be started. Voice-only mode is available.";
 
@@ -73,7 +75,7 @@ class LiveAvatarSessionRequestError extends Error {
   }
 }
 
-export class LiveAvatarService implements DanielAvatarOutput {
+export class LiveAvatarService implements LiveAvatarOutput {
   private readonly fetcher: typeof fetch;
   private readonly createSession: (token: string) => AvatarSession;
   private readonly reconnectDelayMs: number;
@@ -100,6 +102,7 @@ export class LiveAvatarService implements DanielAvatarOutput {
   private activeSessionGeneration = 0;
   private reconnectAttemptCount = 0;
   private readonly maxAutomaticReconnects: number;
+  private readonly guideId: GuideId;
   private pendingSpeech:
     | {
         resolve: () => void;
@@ -132,6 +135,7 @@ export class LiveAvatarService implements DanielAvatarOutput {
     this.reconnectDelayMs = options.reconnectDelayMs ?? 1_500;
     this.keepAliveIntervalMs = options.keepAliveIntervalMs ?? 30_000;
     this.maxAutomaticReconnects = options.maxAutomaticReconnects ?? 2;
+    this.guideId = options.guideId ?? "daniel";
 
     if (typeof window !== "undefined") {
       window.addEventListener("pagehide", this.handlePageHide);
@@ -361,7 +365,11 @@ export class LiveAvatarService implements DanielAvatarOutput {
     try {
       const response = await this.fetcher("/api/liveavatar/session", {
         method: "POST",
-        headers: { Accept: "application/json" },
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ guideId: this.guideId }),
         cache: "no-store",
       });
       const payload = (await response.json()) as SessionApiResponse;

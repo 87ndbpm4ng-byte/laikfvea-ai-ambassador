@@ -32,25 +32,40 @@ export default function Home() {
     useState<Promise<boolean> | null>(null);
   const selectedGuide = selectedGuideId ? guides[selectedGuideId] : null;
   const conversation = useConversation(selectedGuide, selectedLanguage);
-  const liveAvatarService = useMemo(() => new LiveAvatarService(), []);
+  const liveAvatarServices = useMemo(
+    () => ({
+      daniel: new LiveAvatarService({ guideId: "daniel" }),
+      emily: new LiveAvatarService({ guideId: "emily" }),
+    }),
+    [],
+  );
   const fallbackSpeechSynthesis = useMemo(
     () => new OpenAISpeechSynthesisProvider(),
     [],
   );
   const speechSynthesis = useMemo(
-    () =>
-      new LiveAvatarSpeechSynthesisProvider({
-        avatar: liveAvatarService,
+    () => ({
+      daniel: new LiveAvatarSpeechSynthesisProvider({
+        avatar: liveAvatarServices.daniel,
         fallback: fallbackSpeechSynthesis,
+        guideId: "daniel",
       }),
-    [fallbackSpeechSynthesis, liveAvatarService],
+      emily: new LiveAvatarSpeechSynthesisProvider({
+        avatar: liveAvatarServices.emily,
+        fallback: fallbackSpeechSynthesis,
+        guideId: "emily",
+      }),
+    }),
+    [fallbackSpeechSynthesis, liveAvatarServices],
   );
 
   useEffect(() => {
-    if (selectedGuideId !== "daniel") {
-      void liveAvatarService.disconnect();
+    for (const guideId of Object.keys(liveAvatarServices) as GuideId[]) {
+      if (guideId !== selectedGuideId) {
+        void liveAvatarServices[guideId].disconnect();
+      }
     }
-  }, [liveAvatarService, selectedGuideId]);
+  }, [liveAvatarServices, selectedGuideId]);
 
   function openProduct(product: ProductId) {
     setSelectedProduct(product);
@@ -83,7 +98,9 @@ export default function Home() {
   }
 
   function restartSession() {
-    speechSynthesis.reset();
+    if (selectedGuideId) speechSynthesis[selectedGuideId].reset();
+    void liveAvatarServices.daniel.disconnect();
+    void liveAvatarServices.emily.disconnect();
     fallbackSpeechSynthesis.reset();
     setSelectedLanguage(null);
     setSelectedGuideId(null);
@@ -104,10 +121,8 @@ export default function Home() {
     setSelectedGuideId(guideId);
     setScreen("conversation");
 
-    if (guideId === "daniel") {
-      // The visual session prepares in parallel and never blocks conversation.
-      void liveAvatarService.connect();
-    }
+    // The optional visual session prepares in parallel and never blocks voice.
+    void liveAvatarServices[guideId].connect();
   }
 
   return (
@@ -165,14 +180,10 @@ export default function Home() {
             onOpenProduct={openProduct}
             onEnd={endSession}
             onIdleTimeout={restartSession}
-            synthesisProvider={
-              selectedGuideId === "daniel"
-                ? speechSynthesis
-                : fallbackSpeechSynthesis
-            }
+            synthesisProvider={speechSynthesis[selectedGuideId]}
             audioActivationProvider={fallbackSpeechSynthesis}
             voiceActivationPromise={voiceActivation}
-            liveAvatarService={liveAvatarService}
+            liveAvatarService={liveAvatarServices[selectedGuideId]}
           />
         ) : screen === "products" ? (
           <ProductExplorerScreen

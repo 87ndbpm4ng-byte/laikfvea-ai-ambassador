@@ -184,7 +184,12 @@ test("active route bypasses introduction and separate voice activation", async (
   assert.match(source, /function selectSpecialist/);
   assert.match(source, /setScreen\("conversation"\)/);
   assert.match(source, /activateVoiceSession\(fallbackSpeechSynthesis\)/);
-  assert.match(source, /liveAvatarService\.connect\(\)/);
+  assert.match(source, /liveAvatarServices\[guideId\]\.connect\(\)/);
+  assert.match(
+    source,
+    /emily: new LiveAvatarService\(\{ guideId: "emily" \}\)/,
+  );
+  assert.match(source, /synthesisProvider=\{speechSynthesis\[selectedGuideId\]\}/);
   assert.doesNotMatch(source, /setScreen\("introduction"\)/);
   assert.doesNotMatch(source, /setScreen\("end"\)/);
   assert.doesNotMatch(source, /Start conversation|Enable Voice Mode/);

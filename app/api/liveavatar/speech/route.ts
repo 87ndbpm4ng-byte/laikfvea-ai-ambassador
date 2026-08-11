@@ -6,6 +6,7 @@ import { isLiveAvatarStreamingSpeechEnabled } from "@/lib/liveavatar/liveavatar-
 import { SpeechRateLimiter } from "@/lib/voice/speech-rate-limit";
 import { validateSpeechRequest } from "@/lib/voice/speech-request";
 import type { ElevenLabsSpeechTiming } from "@/lib/voice/elevenlabs-speech-service";
+import { generateOpenAISpeech } from "@/lib/voice/openai-speech-service";
 
 export const runtime = "nodejs";
 
@@ -41,12 +42,15 @@ export async function POST(request: Request) {
 
   const speechRequest = validateSpeechRequest(body);
 
-  if (!speechRequest || speechRequest.guideId !== "daniel") {
+  if (!speechRequest) {
     return jsonError("INVALID_REQUEST", "The voice request is invalid.", 400);
   }
 
   try {
-    if (isLiveAvatarStreamingSpeechEnabled()) {
+    if (
+      speechRequest.guideId === "daniel" &&
+      isLiveAvatarStreamingSpeechEnabled()
+    ) {
       const speech = await streamElevenLabsSpeech(speechRequest, {
         output: "liveavatar",
         signal: request.signal,
@@ -66,12 +70,22 @@ export async function POST(request: Request) {
     }
 
     let timing: ElevenLabsSpeechTiming = { firstByteMs: 0, completeMs: 0 };
-    const audio = await generateElevenLabsSpeech(speechRequest, {
-      output: "liveavatar",
-      onTiming: (value) => {
-        timing = value;
-      },
-    });
+    const startedAt = performance.now();
+    const audio =
+      speechRequest.guideId === "daniel"
+        ? await generateElevenLabsSpeech(speechRequest, {
+            output: "liveavatar",
+            onTiming: (value) => {
+              timing = value;
+            },
+          })
+        : await generateOpenAISpeech(speechRequest, {
+            output: "liveavatar",
+          });
+    if (speechRequest.guideId === "emily") {
+      const elapsed = Math.round(performance.now() - startedAt);
+      timing = { firstByteMs: elapsed, completeMs: elapsed };
+    }
 
     return new Response(audio, {
       status: 200,
@@ -84,12 +98,14 @@ export async function POST(request: Request) {
         "X-TTS-First-Byte-Ms": String(timing.firstByteMs),
         "X-TTS-Complete-Ms": String(timing.completeMs),
         "X-Content-Type-Options": "nosniff",
-        "X-Speech-Provider": "elevenlabs",
+        "X-Speech-Provider":
+          speechRequest.guideId === "daniel" ? "elevenlabs" : "openai",
       },
     });
   } catch (error) {
-    console.error("[liveavatar] Daniel PCM generation failed.", {
+    console.error("[liveavatar] Guide PCM generation failed.", {
       name: error instanceof Error ? error.name : "UnknownError",
+      guideId: speechRequest?.guideId,
     });
     return jsonError(
       "SERVICE_UNAVAILABLE",

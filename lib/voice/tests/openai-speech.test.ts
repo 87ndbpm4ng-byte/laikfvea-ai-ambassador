@@ -283,6 +283,31 @@ test("server speech generation uses the selected guide profile", async () => {
   assert.equal(receivedOptions?.input, "Hello");
 });
 
+test("Emily LiveAvatar speech requests direct 24 kHz-compatible PCM", async () => {
+  let responseFormat: string | undefined;
+  const client = {
+    audio: {
+      speech: {
+        async create(options: { response_format: "mp3" | "pcm" }) {
+          responseFormat = options.response_format;
+          return {
+            async arrayBuffer() {
+              return Uint8Array.from([1, 2]).buffer;
+            },
+          };
+        },
+      },
+    },
+  };
+
+  await generateOpenAISpeech(
+    { text: "Hello", guideId: "emily" },
+    { client: client as never, output: "liveavatar" },
+  );
+
+  assert.equal(responseFormat, "pcm");
+});
+
 test("missing API key fails safely before creating a client", async () => {
   await assert.rejects(
     generateOpenAISpeech(

@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type {
-  DanielAvatarOutput,
+  LiveAvatarOutput,
   LiveAvatarSnapshot,
 } from "@/lib/liveavatar/liveavatar-types";
+import { guides } from "@/lib/data/guides";
+import type { GuideId } from "@/types/guide";
 import {
   subscribeLipSyncDiagnostics,
   type LipSyncMeasurement,
@@ -42,18 +44,21 @@ const STATE_DESCRIPTIONS: Record<LiveAvatarSnapshot["state"], string> = {
   disconnected: "Voice-only mode remains available.",
   connecting: "Preparing the visual connection.",
   connected: "Ask a question when you’re ready.",
-  listening: "Daniel is paying attention.",
+  listening: "The specialist is paying attention.",
   thinking: "Considering your question.",
-  speaking: "Daniel is answering now.",
+  speaking: "The specialist is answering now.",
 };
 
 export function LiveAvatarRenderer({
   service,
+  guideId,
   idleSecondsRemaining,
 }: {
-  service: DanielAvatarOutput;
+  service: LiveAvatarOutput;
+  guideId: GuideId;
   idleSecondsRemaining?: number | null;
 }) {
+  const guide = guides[guideId];
   const [snapshot, setSnapshot] =
     useState<LiveAvatarSnapshot>(INITIAL_SNAPSHOT);
   const [developmentStatus, setDevelopmentStatus] =
@@ -101,7 +106,7 @@ export function LiveAvatarRenderer({
   const visibleStateDescription =
     snapshot.state === "disconnected"
       ? isUnavailable
-        ? "Daniel is available by voice while the visual session is unavailable."
+        ? `${guide.name} is available by voice while the visual session is unavailable.`
         : "Ask a question when you’re ready."
       : STATE_DESCRIPTIONS[snapshot.state];
 
@@ -109,7 +114,7 @@ export function LiveAvatarRenderer({
     <div
       className="liveavatar-ambassador"
       data-state={snapshot.state}
-      aria-label="Daniel visual guide"
+      aria-label={`${guide.name} visual guide`}
     >
       <div
         className="liveavatar-ambassador-stage"
@@ -122,7 +127,7 @@ export function LiveAvatarRenderer({
           className="liveavatar-ambassador-video"
           autoPlay
           playsInline
-          aria-label="Daniel’s LiveAvatar stream"
+          aria-label={`${guide.name}’s LiveAvatar stream`}
         />
         {snapshot.state === "disconnected" ? (
           <div className="liveavatar-ambassador-placeholder">
@@ -201,7 +206,9 @@ export function LiveAvatarRenderer({
             <dd>
               {snapshot.outputPath === "liveavatar"
                 ? "LiveAvatar"
-                : "ElevenLabs fallback"}
+                : guideId === "daniel"
+                  ? "ElevenLabs fallback"
+                  : "OpenAI voice fallback"}
             </dd>
           </div>
           <div>

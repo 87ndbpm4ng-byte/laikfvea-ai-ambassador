@@ -355,6 +355,54 @@ test("Emily always uses the existing speech provider", () => {
   assert.equal(avatar.audio.length, 0);
 });
 
+test("configured Emily uses OpenAI PCM through buffered LiveAvatar", async () => {
+  callbacks.reset();
+  const avatar = new FakeAvatar();
+  const fallback = new FakeFallback();
+  let requestBody: { guideId?: string } | undefined;
+  const provider = new LiveAvatarSpeechSynthesisProvider({
+    avatar,
+    fallback,
+    guideId: "emily",
+    fetcher: async (_input, init) => {
+      requestBody = JSON.parse(String(init?.body));
+      return new Response(Uint8Array.from([1, 2, 3, 4]), {
+        status: 200,
+        headers: { "X-LiveAvatar-Speech-Mode": "buffered" },
+      });
+    },
+  });
+
+  provider.speak("A warm practical answer", "emily", callbacks.value());
+  await flushPromises();
+
+  assert.equal(requestBody?.guideId, "emily");
+  assert.equal(avatar.audio.length, 1);
+  assert.equal(fallback.spoken.length, 0);
+  assert.deepEqual(callbacks.providers, ["liveavatar"]);
+});
+
+test("Emily avatar failure immediately preserves OpenAI voice fallback", async () => {
+  callbacks.reset();
+  const avatar = new FakeAvatar();
+  avatar.isConnected = false;
+  avatar.connectResult = false;
+  const fallback = new FakeFallback();
+  const provider = new LiveAvatarSpeechSynthesisProvider({
+    avatar,
+    fallback,
+    guideId: "emily",
+  });
+
+  provider.speak("Voice-only Emily answer", "emily", callbacks.value());
+  await flushPromises();
+
+  assert.deepEqual(fallback.spoken, [
+    { text: "Voice-only Emily answer", guideId: "emily" },
+  ]);
+  assert.equal(avatar.fallbackCount, 1);
+});
+
 test("Voice Mode off resets the LiveAvatar session and fallback audio", async () => {
   const avatar = new FakeAvatar();
   const fallback = new FakeFallback();

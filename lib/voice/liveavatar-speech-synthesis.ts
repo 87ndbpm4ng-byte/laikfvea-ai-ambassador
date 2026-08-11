@@ -1,6 +1,6 @@
 "use client";
 
-import type { DanielAvatarOutput } from "@/lib/liveavatar/liveavatar-types";
+import type { LiveAvatarOutput } from "@/lib/liveavatar/liveavatar-types";
 import type {
   SpeechSynthesisCallbacks,
   SpeechSynthesisProvider,
@@ -23,17 +23,19 @@ import {
 import { PcmStreamChunker } from "@/lib/voice/pcm-stream-chunker";
 
 type LiveAvatarSpeechOptions = {
-  avatar: DanielAvatarOutput;
+  avatar: LiveAvatarOutput;
   fallback: SpeechSynthesisProvider;
+  guideId?: GuideId;
   fetcher?: typeof fetch;
   language?: () => string | undefined;
 };
 
-const AVATAR_OUTPUT_ERROR: VoiceError = {
-  code: "synthesis-unavailable",
-  message:
-    "Daniel’s visual voice is unavailable. The answer remains visible on screen.",
-};
+function avatarOutputError(guideId: GuideId): VoiceError {
+  return {
+    code: "synthesis-unavailable",
+    message: `${guideId === "daniel" ? "Daniel" : "Emily"}’s visual voice is unavailable. The answer remains visible on screen.`,
+  };
+}
 
 function arrayBufferToBase64(buffer: ArrayBuffer) {
   const bytes = new Uint8Array(buffer);
@@ -50,10 +52,11 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
 export class LiveAvatarSpeechSynthesisProvider
   implements SpeechSynthesisProvider
 {
-  private readonly avatar: DanielAvatarOutput;
+  private readonly avatar: LiveAvatarOutput;
   private readonly fallback: SpeechSynthesisProvider;
   private readonly fetcher: typeof fetch;
   private readonly language: () => string | undefined;
+  private readonly guideId: GuideId;
   private activeRequest: AbortController | null = null;
   private sequence = 0;
   private activated = false;
@@ -67,6 +70,7 @@ export class LiveAvatarSpeechSynthesisProvider
       options.language ??
       (() =>
         typeof navigator === "undefined" ? undefined : navigator.language);
+    this.guideId = options.guideId ?? "daniel";
   }
 
   get isSupported() {
@@ -97,7 +101,7 @@ export class LiveAvatarSpeechSynthesisProvider
     const normalizedText = text.trim();
     if (!normalizedText) return;
 
-    if (guideId !== "daniel") {
+    if (guideId !== this.guideId) {
       logVoiceDiagnostic("speech-provider-route", {
         guideId,
         selectedProvider: "openai",
@@ -160,7 +164,7 @@ export class LiveAvatarSpeechSynthesisProvider
     controller: AbortController,
     requestId: number,
   ) {
-    const diagnosticId = `daniel-${requestId}-${Date.now()}`;
+    const diagnosticId = `${this.guideId}-${requestId}-${Date.now()}`;
     const ttsStartedAt = performance.now();
     beginLipSyncMeasurement(diagnosticId);
     try {
@@ -169,7 +173,7 @@ export class LiveAvatarSpeechSynthesisProvider
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text,
-          guideId: "daniel",
+          guideId: this.guideId,
           language: this.language(),
         }),
         signal: controller.signal,
@@ -240,7 +244,8 @@ export class LiveAvatarSpeechSynthesisProvider
     } catch (error) {
       if (controller.signal.aborted || requestId !== this.sequence) return;
 
-      console.warn("[liveavatar] Daniel visual speech failed; using audio fallback.", {
+      console.warn("[liveavatar] Guide visual speech failed; using audio fallback.", {
+        guideId: this.guideId,
         name: error instanceof Error ? error.name : "UnknownError",
       });
       logVoiceDiagnosticError("liveavatar-repeat-audio-failed", error);
@@ -254,13 +259,14 @@ export class LiveAvatarSpeechSynthesisProvider
 
       if (this.fallback.isSupported) {
         logVoiceDiagnostic("speech-provider-route", {
-          selectedProvider: "elevenlabs-mp3",
+          selectedProvider:
+            this.guideId === "daniel" ? "elevenlabs-mp3" : "openai",
           liveAvatarConnected: false,
           mp3FallbackCalled: true,
         });
-        this.fallback.speak(text, "daniel", callbacks);
+        this.fallback.speak(text, this.guideId, callbacks);
       } else {
-        callbacks.onError(AVATAR_OUTPUT_ERROR);
+        callbacks.onError(avatarOutputError(this.guideId));
       }
     } finally {
       if (this.activeRequest === controller) this.activeRequest = null;
@@ -279,7 +285,7 @@ export class LiveAvatarSpeechSynthesisProvider
     const eventId =
       typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
-        : `daniel-stream-${Date.now()}-${requestId}`;
+        : `${this.guideId}-stream-${Date.now()}-${requestId}`;
     let deliveredChunks = 0;
     let deliveredBytes = 0;
     let playbackStarted = false;
@@ -371,11 +377,12 @@ export class LiveAvatarSpeechSynthesisProvider
       if (!connected || !this.avatar.isConnected) {
         this.avatar.markFallback();
         logVoiceDiagnostic("speech-provider-route", {
-          selectedProvider: "elevenlabs-mp3",
+          selectedProvider:
+            this.guideId === "daniel" ? "elevenlabs-mp3" : "openai",
           liveAvatarConnected: false,
           mp3FallbackCalled: true,
         });
-        this.fallback.speak(text, "daniel", callbacks);
+        this.fallback.speak(text, this.guideId, callbacks);
         if (this.activeRequest === controller) this.activeRequest = null;
         return;
       }

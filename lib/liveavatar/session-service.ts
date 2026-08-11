@@ -1,5 +1,6 @@
 const LIVEAVATAR_API_URL = "https://api.liveavatar.com";
 const LIVEAVATAR_TOKEN_PATH = "/v1/sessions/token";
+import type { GuideId } from "@/types/guide";
 
 export const LIVEAVATAR_SESSION_MODE = "LITE" as const;
 export const LIVEAVATAR_SANDBOX_AVATAR_ID =
@@ -197,6 +198,7 @@ export function createLiveAvatarProviderErrorDetails({
 
 export function getLiveAvatarConfiguration(
   environment: Record<string, string | undefined> = process.env,
+  guideId: GuideId = "daniel",
 ): LiveAvatarConfiguration {
   const apiKey = environment.LIVEAVATAR_API_KEY?.trim();
   const configuredEnvironment = environment.LIVEAVATAR_ENVIRONMENT?.trim();
@@ -219,6 +221,12 @@ export function getLiveAvatarConfiguration(
   }
 
   if (configuredEnvironment === "sandbox") {
+    if (guideId === "emily") {
+      throw new LiveAvatarConfigurationError(
+        "Emily requires a configured production avatar.",
+        "AVATAR_ID_MISSING",
+      );
+    }
     return {
       apiKey,
       avatarId: LIVEAVATAR_SANDBOX_AVATAR_ID,
@@ -227,11 +235,15 @@ export function getLiveAvatarConfiguration(
     };
   }
 
-  const avatarId = environment.LIVEAVATAR_DANIEL_AVATAR_ID?.trim();
+  const avatarEnvironmentKey =
+    guideId === "emily"
+      ? "LIVEAVATAR_EMILY_AVATAR_ID"
+      : "LIVEAVATAR_DANIEL_AVATAR_ID";
+  const avatarId = environment[avatarEnvironmentKey]?.trim();
 
   if (!avatarId) {
     throw new LiveAvatarConfigurationError(
-      "LIVEAVATAR_DANIEL_AVATAR_ID is required in production.",
+      `${avatarEnvironmentKey} is required in production.`,
       "AVATAR_ID_MISSING",
     );
   }
@@ -289,11 +301,13 @@ export function isLiveAvatarEnabled(
 export async function createLiveAvatarSessionToken({
   environment = process.env,
   fetchImplementation = fetch,
+  guideId = "daniel",
 }: {
   environment?: Record<string, string | undefined>;
   fetchImplementation?: typeof fetch;
+  guideId?: GuideId;
 } = {}): Promise<LiveAvatarSessionToken> {
-  const configuration = getLiveAvatarConfiguration(environment);
+  const configuration = getLiveAvatarConfiguration(environment, guideId);
 
   const response = await fetchImplementation(
     `${LIVEAVATAR_API_URL}${LIVEAVATAR_TOKEN_PATH}`,

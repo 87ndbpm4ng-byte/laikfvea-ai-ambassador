@@ -22,7 +22,7 @@ export type SpeechClient = {
         voice: string;
         input: string;
         instructions: string;
-        response_format: "mp3";
+        response_format: "mp3" | "pcm";
         speed: number;
       }): Promise<{ arrayBuffer(): Promise<ArrayBuffer> }>;
     };
@@ -32,6 +32,7 @@ export type SpeechClient = {
 type SpeechServiceOptions = {
   apiKey?: string;
   client?: SpeechClient;
+  output?: "browser" | "liveavatar";
 };
 
 export async function generateOpenAISpeech(
@@ -57,7 +58,8 @@ export async function generateOpenAISpeech(
     voice: profile.voice,
     input: request.text,
     instructions: profile.instructions,
-    response_format: OPENAI_TTS_RESPONSE_FORMAT,
+    response_format:
+      options.output === "liveavatar" ? "pcm" : OPENAI_TTS_RESPONSE_FORMAT,
     speed: profile.speed,
   });
 

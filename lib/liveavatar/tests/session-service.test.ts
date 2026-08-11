@@ -58,6 +58,59 @@ test("builds production configuration without a sandbox override", () => {
   );
 });
 
+test("selects Emily's independent production avatar configuration", () => {
+  const configuration = getLiveAvatarConfiguration(
+    {
+      LIVEAVATAR_API_KEY: API_KEY,
+      LIVEAVATAR_ENVIRONMENT: "production",
+      LIVEAVATAR_DANIEL_AVATAR_ID: "daniel-avatar",
+      LIVEAVATAR_EMILY_AVATAR_ID: "emily-avatar",
+    },
+    "emily",
+  );
+
+  assert.equal(configuration.avatarId, "emily-avatar");
+  assert.equal(configuration.environment, "production");
+  assert.deepEqual(
+    createLiveAvatarTokenRequest(
+      configuration.avatarId,
+      configuration.environment,
+    ),
+    { mode: "LITE", avatar_id: "emily-avatar" },
+  );
+});
+
+test("Emily never reuses Daniel or sandbox avatar configuration", () => {
+  assert.throws(
+    () =>
+      getLiveAvatarConfiguration(
+        {
+          LIVEAVATAR_API_KEY: API_KEY,
+          LIVEAVATAR_ENVIRONMENT: "production",
+          LIVEAVATAR_DANIEL_AVATAR_ID: "daniel-avatar",
+        },
+        "emily",
+      ),
+    (error: unknown) =>
+      error instanceof LiveAvatarConfigurationError &&
+      error.code === "AVATAR_ID_MISSING",
+  );
+
+  assert.throws(
+    () =>
+      getLiveAvatarConfiguration(
+        {
+          LIVEAVATAR_API_KEY: API_KEY,
+          LIVEAVATAR_ENVIRONMENT: "sandbox",
+        },
+        "emily",
+      ),
+    (error: unknown) =>
+      error instanceof LiveAvatarConfigurationError &&
+      error.code === "AVATAR_ID_MISSING",
+  );
+});
+
 test("trims surrounding whitespace from server environment values", () => {
   const configuration = getLiveAvatarConfiguration({
     LIVEAVATAR_API_KEY: `  ${API_KEY}\n`,

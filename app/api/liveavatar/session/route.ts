@@ -5,6 +5,7 @@ import {
   LiveAvatarConfigurationError,
   LiveAvatarServiceError,
 } from "@/lib/liveavatar/session-service";
+import type { GuideId } from "@/types/guide";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -51,7 +52,11 @@ export async function GET() {
   );
 }
 
-export async function POST() {
+function isGuideId(value: unknown): value is GuideId {
+  return value === "daniel" || value === "emily";
+}
+
+export async function POST(request: Request) {
   if (!isLiveAvatarEnabled()) {
     return errorResponse(
       "LIVEAVATAR_DISABLED",
@@ -61,7 +66,23 @@ export async function POST() {
   }
 
   try {
-    const session = await createLiveAvatarSessionToken();
+    let body: unknown = null;
+    try {
+      body = await request.json();
+    } catch {
+      // Backwards compatibility: an empty request remains Daniel's session.
+    }
+    const requestedGuide =
+      body && typeof body === "object" && "guideId" in body
+        ? (body as { guideId?: unknown }).guideId
+        : "daniel";
+    if (!isGuideId(requestedGuide)) {
+      return errorResponse("INVALID_REQUEST", "The avatar request is invalid.", 400);
+    }
+
+    const session = await createLiveAvatarSessionToken({
+      guideId: requestedGuide,
+    });
 
     return Response.json(
       {

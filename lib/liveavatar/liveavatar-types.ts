@@ -23,7 +23,7 @@ export type LiveAvatarSpeechMetadata = {
   onPlaybackStarted?: () => void;
 };
 
-export interface DanielAvatarOutput {
+export interface LiveAvatarOutput {
   readonly isConnected: boolean;
   readonly supportsStreamingAudio: boolean;
   connect(): Promise<boolean>;
@@ -50,3 +50,6 @@ export interface DanielAvatarOutput {
   interrupt(): void;
   subscribe(listener: LiveAvatarStateListener): () => void;
 }
+
+/** @deprecated Use the guide-neutral LiveAvatarOutput name. */
+export type DanielAvatarOutput = LiveAvatarOutput;
