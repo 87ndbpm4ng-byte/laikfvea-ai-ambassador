@@ -6,6 +6,7 @@ import {
   ELEVENLABS_TTS_MODEL,
 } from "@/lib/voice/elevenlabs-voice-config";
 import type { SpeechApiRequest } from "@/lib/voice/speech-request";
+import { resolveSupportedLanguage } from "@/lib/i18n/languages";
 
 export class MissingElevenLabsConfigError extends Error {
   constructor() {
@@ -125,6 +126,7 @@ async function requestElevenLabsSpeech(
       body: JSON.stringify({
         text: request.text,
         model_id: ELEVENLABS_TTS_MODEL,
+        language_code: resolveSupportedLanguage(request.language),
         voice_settings: ELEVENLABS_DANIEL_SETTINGS,
       }),
       signal: options.signal

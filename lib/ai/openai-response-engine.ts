@@ -9,6 +9,7 @@ import {
 import { createSystemPrompt } from "@/lib/ai/system-prompt";
 import type { ConversationHistoryItem } from "@/types/conversation";
 import type { Guide } from "@/types/guide";
+import type { SupportedLanguage } from "@/types/language";
 
 export const MAX_OPENAI_HISTORY_MESSAGES = 10;
 
@@ -30,12 +31,14 @@ type OpenAIResponseRequest = {
   message: string;
   guide: Guide;
   history: ConversationHistoryItem[];
+  language?: SupportedLanguage;
 };
 
 export async function generateOpenAIResponse({
   message,
   guide,
   history,
+  language = "en",
 }: OpenAIResponseRequest) {
   const apiKey = process.env.OPENAI_API_KEY;
 
@@ -59,7 +62,7 @@ export async function generateOpenAIResponse({
 
   const response = await client.responses.create({
     model: OPENAI_MODEL,
-    instructions: createSystemPrompt(guide),
+    instructions: createSystemPrompt(guide, language),
     input,
     max_output_tokens: OPENAI_MAX_OUTPUT_TOKENS,
   });

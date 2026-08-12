@@ -12,6 +12,7 @@ import type {
   ConversationTopic,
   SessionReferenceResolution,
 } from "@/lib/session/session-types";
+import type { SupportedLanguage } from "@/types/language";
 
 export type OrchestratorMetadata = {
   requestId: string;
@@ -41,7 +42,7 @@ export type OrchestratorPrompt = {
     resolvedQuestion: string | null;
     referenceResolution: SessionReferenceResolution | null;
     summary: string;
-    language: string | null;
+    language: SupportedLanguage | null;
     discussedTopics: readonly string[];
     viewedProducts: readonly string[];
     visitorGoals: readonly string[];
@@ -56,7 +57,7 @@ export type OrchestrateMessageInput = {
   message: string;
   guide: Guide;
   sessionId?: string;
-  language?: string | null;
+  language?: SupportedLanguage | null;
   supplementalContext?: readonly PromptContextFragment[];
 };
 

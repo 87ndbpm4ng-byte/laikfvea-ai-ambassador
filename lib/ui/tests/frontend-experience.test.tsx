@@ -9,6 +9,7 @@ import {
 } from "@/components/screens/journey-screens";
 import { VoiceControls } from "@/components/ui/voice-controls";
 import type { SpeechSynthesisProvider } from "@/lib/voice/voice-types";
+import type { SupportedLanguage } from "@/types/language";
 
 const silentSpeechProvider: SpeechSynthesisProvider = {
   isSupported: true,
@@ -17,10 +18,14 @@ const silentSpeechProvider: SpeechSynthesisProvider = {
   stop: () => undefined,
 };
 
-function renderConversation(guideId: "daniel" | "emily") {
+function renderConversation(
+  guideId: "daniel" | "emily",
+  language: SupportedLanguage = "en",
+) {
   return renderToStaticMarkup(
     <ConversationScreen
       guideId={guideId}
+      language={language}
       messages={[]}
       isLoading={false}
       onSubmitQuestion={async () => true}
@@ -44,6 +49,7 @@ test("the visitor journey begins with language selection", () => {
 test("specialist selection presents Daniel and Emily as equal direct choices", () => {
   const markup = renderToStaticMarkup(
     <SpecialistSelectionScreen
+      language="en"
       onSelect={() => undefined}
       onBack={() => undefined}
     />,
@@ -55,6 +61,52 @@ test("specialist selection presents Daniel and Emily as equal direct choices", (
   assert.match(markup, /Speak with Emily/);
   assert.equal((markup.match(/idle-specialist-card/g) ?? []).length, 2);
   assert.doesNotMatch(markup, /Meet Daniel/);
+});
+
+test("Russian UI localizes specialist selection and the full conversation shell", () => {
+  const selection = renderToStaticMarkup(
+    <SpecialistSelectionScreen
+      language="ru"
+      onSelect={() => undefined}
+      onBack={() => undefined}
+    />,
+  );
+  const danielConversation = renderConversation("daniel", "ru");
+  const emilyConversation = renderConversation("emily", "ru");
+  assert.match(selection, /Познакомьтесь с AI-специалистами/);
+  assert.match(selection, /Поговорить с Дэниелом/);
+  assert.match(selection, /Поговорить с Эмили/);
+  assert.match(danielConversation, /Разговор с Дэниелом/);
+  assert.match(danielConversation, /Задайте вопрос Дэниелу/);
+  assert.match(danielConversation, /Технологический специалист/);
+  assert.match(emilyConversation, /Разговор с Эмили/);
+  assert.match(emilyConversation, /Задайте вопрос Эмили/);
+  assert.match(emilyConversation, /Быстрые вопросы/);
+  assert.match(emilyConversation, /Завершить разговор/);
+  assert.doesNotMatch(
+    `${danielConversation}${emilyConversation}`,
+    /Quick topics|End session|Ask Emily a question|Разговор с Daniel/,
+  );
+});
+
+test("Simplified Chinese UI localizes both specialists and the conversation shell", () => {
+  const selection = renderToStaticMarkup(
+    <SpecialistSelectionScreen language="zh" onSelect={() => undefined} onBack={() => undefined} />,
+  );
+  const danielConversation = renderConversation("daniel", "zh");
+  const emilyConversation = renderConversation("emily", "zh");
+
+  assert.match(selection, /认识您的 AI 专家/);
+  assert.match(selection, /与 Daniel 交流/);
+  assert.match(selection, /与 Emily 交流/);
+  assert.match(danielConversation, /与 Daniel 对话/);
+  assert.match(danielConversation, /向 Daniel 提问/);
+  assert.match(danielConversation, /技术专家/);
+  assert.match(emilyConversation, /与 Emily 对话/);
+  assert.match(emilyConversation, /健康生活专家/);
+  assert.match(emilyConversation, /快捷问题/);
+  assert.match(emilyConversation, /结束对话/);
+  assert.doesNotMatch(`${danielConversation}${emilyConversation}`, /Quick topics|End session|Ask Emily a question/);
 });
 
 test("shared conversation labels adapt to Daniel", () => {
@@ -99,6 +151,7 @@ test("one Talk control represents listening, thinking and speaking states", () =
     preparingVoice: false,
     activationFailed: false,
     guideName: "Daniel",
+    language: "en" as const,
     transcript: "",
     error: null,
     recognitionSupported: true,
@@ -147,6 +200,28 @@ test("one Talk control represents listening, thinking and speaking states", () =
   assert.doesNotMatch(ready, /role="switch"|Begin voice/);
 });
 
+test("voice-control geometry stays fixed across languages and states", async () => {
+  const css = await readFile(
+    new URL("../../../app/globals.css", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(
+    css,
+    /\.conversation-specialist \.voice-interaction \{[\s\S]*?grid-template-columns: 8\.5rem minmax\(0, 1fr\);/,
+  );
+  assert.match(
+    css,
+    /\.conversation-specialist \.voice-microphone \{[\s\S]*?width: 8\.5rem;[\s\S]*?height: 3\.5rem;/,
+  );
+  assert.match(css, /display: inline-flex;/);
+  assert.match(css, /gap: var\(--space-2\);/);
+  assert.match(
+    css,
+    /@media \(max-width: 29\.999rem\)[\s\S]*?\.conversation-specialist \.voice-interaction \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\);/,
+  );
+});
+
 test("microphone failure keeps the typed-question route visible", () => {
   const markup = renderToStaticMarkup(
     <VoiceControls
@@ -157,6 +232,7 @@ test("microphone failure keeps the typed-question route visible", () => {
       preparingVoice={false}
       activationFailed={false}
       guideName="Emily"
+      language="en"
       transcript=""
       error={{
         code: "recognition-unavailable",
@@ -261,11 +337,11 @@ test("responsive kiosk layout defines two areas without horizontal overflow", as
   );
   assert.match(
     css,
-    /\.conversation-specialist \.voice-interaction\s*{[^}]*grid-template-columns:\s*9rem minmax\(0, 1fr\)/s,
+    /\.conversation-specialist \.voice-interaction\s*{[^}]*grid-template-columns:\s*8\.5rem minmax\(0, 1fr\)/s,
   );
   assert.match(
     css,
-    /\.conversation-specialist \.voice-microphone\s*{[^}]*display:\s*inline-flex;[^}]*width:\s*9rem;[^}]*min-width:\s*9rem;[^}]*height:\s*3\.75rem/s,
+    /\.conversation-specialist \.voice-microphone\s*{[^}]*display:\s*inline-flex;[^}]*width:\s*8\.5rem;[^}]*min-width:\s*8\.5rem;[^}]*height:\s*3\.5rem/s,
   );
   assert.match(css, /\.voice-microphone-mark\s*{[^}]*white-space:\s*nowrap/s);
   assert.match(

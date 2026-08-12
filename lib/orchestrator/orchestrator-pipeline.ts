@@ -46,9 +46,21 @@ import {
 import type { KnowledgeRetriever } from "@/lib/retrieval/retrieval-types";
 import { createRetrievalDiagnostics } from "@/lib/retrieval/retrieval-diagnostics";
 import { validateGroundedResponse } from "@/lib/retrieval/retrieval-answer-validator";
+import { resolveSupportedLanguage } from "@/lib/i18n/languages";
 
 const INSUFFICIENT_KNOWLEDGE_RESPONSE =
   "The available product documentation does not give me enough information to answer that reliably.";
+
+function insufficientKnowledgeResponse(language: string | null) {
+  const resolvedLanguage = resolveSupportedLanguage(language);
+  if (resolvedLanguage === "ru") {
+    return "В доступной документации недостаточно информации, чтобы надёжно ответить на этот вопрос.";
+  }
+  if (resolvedLanguage === "zh") {
+    return "现有产品资料不足以可靠回答这个问题。";
+  }
+  return INSUFFICIENT_KNOWLEDGE_RESPONSE;
+}
 
 function defaultIdFactory() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -87,6 +99,7 @@ export class ExistingOpenAIProvider implements OrchestratorAIProvider {
       message: this.promptBuilder.renderForExistingService(prompt),
       guide,
       history: toOpenAIHistory(prompt),
+      language: resolveSupportedLanguage(prompt.sessionContext.language),
     });
   }
 }
@@ -161,7 +174,10 @@ export class OrchestratorPipeline {
         message: retrievalMessage,
         session: activeSession,
       });
-      const retrievalResult = shouldRunRetrieval(retrievalMessage)
+      const retrievalResult = shouldRunRetrieval(
+        retrievalMessage,
+        activeSession.language,
+      )
         ? await this.retrieval.search(retrievalQuery)
         : createSkippedRetrievalResult(retrievalQuery);
       const context = createOrchestratorContext({
@@ -184,13 +200,14 @@ export class OrchestratorPipeline {
         input.supplementalContext,
       );
       const retrievalContext = context.retrievalContext;
+      const failSafe = insufficientKnowledgeResponse(activeSession.language);
       let response = retrievalResult.insufficientKnowledge
-        ? INSUFFICIENT_KNOWLEDGE_RESPONSE
+        ? failSafe
         : sanitizeVisitorResponse(
             await this.requestResponse(prompt, input.guide),
           );
       if (!validateGroundedResponse(response, retrievalContext).valid) {
-        response = INSUFFICIENT_KNOWLEDGE_RESPONSE;
+        response = failSafe;
       }
       const updatedSession = this.sessionManager.recordAssistantMessage(
         activeSession.sessionId,

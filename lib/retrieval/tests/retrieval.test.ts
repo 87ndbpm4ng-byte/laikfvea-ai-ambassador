@@ -113,6 +113,38 @@ test("charging question retrieves the charging section", async () => {
   assert.equal(result.matchedChunks[0].chunk.heading, "Charging");
 });
 
+test("equivalent Russian and English questions retrieve the same approved charging section", async () => {
+  const { engine } = await setupKnowledge();
+  const english = await engine.search(createRetrievalQuery({
+    message: "How do I charge the Advanced Bottle?", session: session(),
+  }));
+  const russian = await engine.search(createRetrievalQuery({
+    message: "Как заряжать Advanced Bottle?",
+    session: session({ language: "ru" }),
+  }));
+  assert.equal(russian.matchedChunks[0].chunk.heading, "Charging");
+  assert.equal(
+    russian.matchedChunks[0].chunk.sourceReference,
+    english.matchedChunks[0].chunk.sourceReference,
+  );
+});
+
+test("equivalent Chinese and English questions retrieve the same approved charging section", async () => {
+  const { engine } = await setupKnowledge();
+  const english = await engine.search(createRetrievalQuery({
+    message: "How do I charge the Advanced Bottle?", session: session(),
+  }));
+  const chinese = await engine.search(createRetrievalQuery({
+    message: "如何给 Advanced Bottle 充电？",
+    session: session({ language: "zh" }),
+  }));
+  assert.equal(chinese.matchedChunks[0].chunk.heading, "Charging");
+  assert.equal(
+    chinese.matchedChunks[0].chunk.sourceReference,
+    english.matchedChunks[0].chunk.sourceReference,
+  );
+});
+
 test("advanced product filter excludes everyday-only content", async () => {
   const { engine } = await setupKnowledge();
   const result = await engine.search(
@@ -228,4 +260,6 @@ test("visitor-facing product names are neutralized", () => {
 test("greetings bypass retrieval", () => {
   assert.equal(shouldRunRetrieval("Hello"), false);
   assert.equal(shouldRunRetrieval("How do I clean the bottle?"), true);
+  assert.equal(shouldRunRetrieval("Привет", "ru"), false);
+  assert.equal(shouldRunRetrieval("Как заряжать бутылку?", "ru"), true);
 });

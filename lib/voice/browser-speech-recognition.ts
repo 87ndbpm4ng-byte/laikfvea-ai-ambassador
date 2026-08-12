@@ -62,6 +62,8 @@ export class BrowserSpeechRecognitionProvider
 {
   private recognition: BrowserSpeechRecognition | null = null;
 
+  constructor(private readonly locale = "en-US") {}
+
   get isSupported() {
     if (typeof window === "undefined") {
       return false;
@@ -96,7 +98,7 @@ export class BrowserSpeechRecognitionProvider
     const recognition = new Recognition();
     recognition.continuous = false;
     recognition.interimResults = true;
-    recognition.lang = "en-US";
+    recognition.lang = this.locale;
     recognition.maxAlternatives = 1;
     recognition.onresult = (event) => {
       let interimTranscript = "";

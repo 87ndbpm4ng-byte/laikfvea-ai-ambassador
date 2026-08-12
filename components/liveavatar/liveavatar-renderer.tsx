@@ -7,6 +7,8 @@ import type {
 } from "@/lib/liveavatar/liveavatar-types";
 import { guides } from "@/lib/data/guides";
 import type { GuideId } from "@/types/guide";
+import type { SupportedLanguage } from "@/types/language";
+import { getUiCopy } from "@/lib/i18n/ui-copy";
 import {
   subscribeLipSyncDiagnostics,
   type LipSyncMeasurement,
@@ -31,34 +33,20 @@ type DevelopmentStatus = {
     | "unavailable";
 };
 
-const STATE_LABELS: Record<LiveAvatarSnapshot["state"], string> = {
-  disconnected: "Ready",
-  connecting: "Getting ready…",
-  connected: "Ready",
-  listening: "Listening…",
-  thinking: "Preparing an answer…",
-  speaking: "Speaking…",
-};
-
-const STATE_DESCRIPTIONS: Record<LiveAvatarSnapshot["state"], string> = {
-  disconnected: "Voice-only mode remains available.",
-  connecting: "Preparing the visual connection.",
-  connected: "Ask a question when you’re ready.",
-  listening: "The specialist is paying attention.",
-  thinking: "Considering your question.",
-  speaking: "The specialist is answering now.",
-};
-
 export function LiveAvatarRenderer({
   service,
   guideId,
   idleSecondsRemaining,
+  language,
 }: {
   service: LiveAvatarOutput;
   guideId: GuideId;
   idleSecondsRemaining?: number | null;
+  language: SupportedLanguage;
 }) {
   const guide = guides[guideId];
+  const copy = getUiCopy(language);
+  const guideDisplayName = copy.guideDisplayName[guideId];
   const [snapshot, setSnapshot] =
     useState<LiveAvatarSnapshot>(INITIAL_SNAPSHOT);
   const [developmentStatus, setDevelopmentStatus] =
@@ -97,24 +85,40 @@ export function LiveAvatarRenderer({
 
   const isUnavailable =
     snapshot.state === "disconnected" && Boolean(snapshot.error);
+  const stateLabels = {
+    disconnected: copy.readyFor(guide.name),
+    connecting: copy.gettingReady(guide.name),
+    connected: copy.readyFor(guide.name),
+    listening: copy.listening,
+    thinking: copy.preparingResponse,
+    speaking: copy.speakingFor(guide.name),
+  } satisfies Record<LiveAvatarSnapshot["state"], string>;
+  const stateDescriptions = {
+    disconnected: copy.voiceRemainsAvailable,
+    connecting: copy.visualPreparing,
+    connected: copy.visualReady,
+    listening: copy.visualListening(guide.name),
+    thinking: copy.visualThinking,
+    speaking: copy.visualSpeaking(guide.name),
+  } satisfies Record<LiveAvatarSnapshot["state"], string>;
   const visibleStateLabel =
     snapshot.state === "disconnected"
       ? isUnavailable
-        ? "Voice-only mode"
-        : "Ready"
-      : STATE_LABELS[snapshot.state];
+        ? copy.voiceOnlyMode
+        : copy.readyFor(guide.name)
+      : stateLabels[snapshot.state];
   const visibleStateDescription =
     snapshot.state === "disconnected"
       ? isUnavailable
-        ? `${guide.name} is available by voice while the visual session is unavailable.`
-        : "Ask a question when you’re ready."
-      : STATE_DESCRIPTIONS[snapshot.state];
+        ? `${guideDisplayName}: ${copy.voiceRemainsAvailable}`
+        : copy.visualReady
+      : stateDescriptions[snapshot.state];
 
   return (
     <div
       className="liveavatar-ambassador"
       data-state={snapshot.state}
-      aria-label={`${guide.name} visual guide`}
+      aria-label={`${guideDisplayName}: ${copy.visualPreview}`}
     >
       <div
         className="liveavatar-ambassador-stage"
@@ -127,7 +131,7 @@ export function LiveAvatarRenderer({
           className="liveavatar-ambassador-video"
           autoPlay
           playsInline
-          aria-label={`${guide.name}’s LiveAvatar stream`}
+          aria-label={`${guideDisplayName}: ${copy.visualPreview}`}
         />
         {snapshot.state === "disconnected" ? (
           <div className="liveavatar-ambassador-placeholder">
@@ -136,8 +140,7 @@ export function LiveAvatarRenderer({
               <i />
             </span>
             <p>
-              Visual session unavailable. Voice conversation remains
-              available.
+              {copy.visualUnavailable}
             </p>
           </div>
         ) : null}
@@ -159,7 +162,7 @@ export function LiveAvatarRenderer({
         </span>
         {snapshot.state === "disconnected" && snapshot.error ? (
           <button type="button" onClick={() => void service.reconnect()}>
-            Reconnect
+            {copy.reconnect}
           </button>
         ) : null}
       </div>
@@ -195,7 +198,7 @@ export function LiveAvatarRenderer({
           </div>
           <div>
             <dt>Session state</dt>
-            <dd>{STATE_LABELS[snapshot.state]}</dd>
+            <dd>{stateLabels[snapshot.state]}</dd>
           </div>
           <div>
             <dt>Reconnect attempts</dt>

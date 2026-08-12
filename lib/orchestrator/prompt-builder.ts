@@ -7,6 +7,7 @@ import type {
 } from "@/lib/orchestrator/orchestrator-types";
 import { createSystemPrompt } from "@/lib/ai/system-prompt";
 import { VISITOR_ANSWER_RULES } from "@/lib/ai/visitor-answer-rules";
+import { resolveSupportedLanguage } from "@/lib/i18n/languages";
 
 export type BuildPromptInput = {
   context: OrchestratorContext;
@@ -74,7 +75,10 @@ export class PromptBuilder {
     }
 
     return {
-      systemInstructions: createSystemPrompt(context.metadata.guide),
+      systemInstructions: createSystemPrompt(
+        context.metadata.guide,
+        resolveSupportedLanguage(context.session.language),
+      ),
       responseDirectives: createResponseDirectives(context),
       sessionContext: {
         sessionId: context.session.sessionId,

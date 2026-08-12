@@ -17,9 +17,12 @@ import type {
 } from "@/lib/voice/voice-types";
 import type { ConversationMessage } from "@/types/conversation";
 import type { GuideId } from "@/types/guide";
+import type { SupportedLanguage } from "@/types/language";
+import { getLanguageConfiguration } from "@/lib/i18n/languages";
 
 type VoiceModeOptions = {
   guideId: GuideId;
+  language: SupportedLanguage;
   messages: ConversationMessage[];
   isConversationLoading: boolean;
   submitTranscript: (transcript: string) => Promise<boolean>;
@@ -32,6 +35,7 @@ type VoiceModeOptions = {
 
 export function useVoiceMode({
   guideId,
+  language,
   messages,
   isConversationLoading,
   submitTranscript,
@@ -42,8 +46,12 @@ export function useVoiceMode({
   enabledByDefault = false,
 }: VoiceModeOptions) {
   const recognition = useMemo(
-    () => recognitionProvider ?? new BrowserSpeechRecognitionProvider(),
-    [recognitionProvider],
+    () =>
+      recognitionProvider ??
+      new BrowserSpeechRecognitionProvider(
+        getLanguageConfiguration(language).speechRecognitionLocale,
+      ),
+    [language, recognitionProvider],
   );
   const synthesis: SpeechSynthesisProvider = useMemo(
     () => synthesisProvider ?? new OpenAISpeechSynthesisProvider(),

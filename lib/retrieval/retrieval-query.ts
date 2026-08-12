@@ -9,6 +9,7 @@ import type {
 } from "@/lib/retrieval/retrieval-types";
 import type { SessionConversationEntry } from "@/lib/session/conversation-history";
 import type { VisitorSession } from "@/lib/session/session-types";
+import { createKnowledgeQueryText } from "@/lib/i18n/knowledge-query";
 
 const STOP_WORDS = new Set([
   "a",
@@ -88,10 +89,14 @@ function sectionTypesFor(text: string): string[] {
   return types;
 }
 
-export function shouldRunRetrieval(message: string): boolean {
-  const terms = tokenizeRetrievalText(message);
+export function shouldRunRetrieval(
+  message: string,
+  language: VisitorSession["language"] = "en",
+): boolean {
+  const knowledgeText = createKnowledgeQueryText(message, language);
+  const terms = tokenizeRetrievalText(knowledgeText);
   if (terms.length === 1 && GREETING_TERMS.has(terms[0])) return false;
-  const normalized = message.toLocaleLowerCase("en");
+  const normalized = knowledgeText.toLocaleLowerCase("en");
   return RETRIEVAL_TOPIC_TERMS.some((term) => normalized.includes(term));
 }
 
@@ -99,21 +104,25 @@ export function createRetrievalQuery(input: {
   message: string;
   session: VisitorSession;
 }): RetrievalQuery {
+  const knowledgeText = createKnowledgeQueryText(
+    input.message,
+    input.session.language,
+  );
   const recentEntries: SessionConversationEntry[] = [
     ...input.session.conversationHistory,
   ].slice(-RETRIEVAL_CONFIG.maxRecentMessages);
   const recentContext = recentEntries
-    .map((entry) => entry.content)
+    .map((entry) => createKnowledgeQueryText(entry.content, input.session.language))
     .join(" ")
     .slice(-RETRIEVAL_CONFIG.maxRecentContextCharacters);
   return {
-    text: input.message.trim(),
-    normalizedTerms: tokenizeRetrievalText(input.message),
+    text: knowledgeText,
+    normalizedTerms: tokenizeRetrievalText(knowledgeText),
     activeProduct:
-      inferProduct(input.message) ?? productFromSession(input.session),
+      inferProduct(knowledgeText) ?? productFromSession(input.session),
     visitorIntent: input.session.currentIntent,
     conversationStage: input.session.currentConversationStage,
     recentContext,
-    sectionTypes: sectionTypesFor(input.message),
+    sectionTypes: sectionTypesFor(knowledgeText),
   };
 }

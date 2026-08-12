@@ -1,5 +1,6 @@
 import type { ProductId } from "@/types/product";
 import type { GuideId } from "@/types/guide";
+import type { SupportedLanguage } from "@/types/language";
 
 export type ConversationRole = "visitor" | "guide" | "system";
 
@@ -41,7 +42,7 @@ export type ConversationApiRequest = {
   message: string;
   guideId: GuideId;
   history: ConversationHistoryItem[];
-  language?: string;
+  language?: SupportedLanguage;
   sessionId?: string;
 };
 

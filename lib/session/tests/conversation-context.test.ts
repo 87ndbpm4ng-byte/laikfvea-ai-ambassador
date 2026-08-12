@@ -142,3 +142,39 @@ test("an unresolved pronoun is marked ambiguous instead of guessed", () => {
   assert.equal(result.referenceResolution?.resolvedTo, null);
   assert.match(result.resolvedQuestion ?? "", /requires a brief clarification/);
 });
+
+test("Russian questions and follow-ups retain charging context", () => {
+  const manager = createManager();
+  const session = manager.createSession({ language: "ru" });
+  const charging = manager.recordVisitorMessage(session.sessionId, {
+    content: "Как заряжать Advanced Bottle?",
+  });
+  assert.equal(charging.activeProduct, "advanced");
+  assert.equal(charging.activeTopic, "charging");
+  manager.recordAssistantMessage(session.sessionId, {
+    content: "Откройте заднюю крышку и подключите кабель.",
+  });
+  const followUp = manager.recordVisitorMessage(session.sessionId, {
+    content: "Можно ли использовать её во время зарядки?",
+  });
+  assert.equal(followUp.activeProduct, "advanced");
+  assert.equal(followUp.activeTopic, "charging");
+});
+
+test("Chinese questions and follow-ups retain charging context", () => {
+  const manager = createManager();
+  const session = manager.createSession({ language: "zh" });
+  const charging = manager.recordVisitorMessage(session.sessionId, {
+    content: "如何给 Advanced Bottle 充电？",
+  });
+  assert.equal(charging.activeProduct, "advanced");
+  assert.equal(charging.activeTopic, "charging");
+  manager.recordAssistantMessage(session.sessionId, {
+    content: "打开后盖，连接随附的充电线。",
+  });
+  const followUp = manager.recordVisitorMessage(session.sessionId, {
+    content: "充电时可以使用它吗？",
+  });
+  assert.equal(followUp.activeProduct, "advanced");
+  assert.equal(followUp.activeTopic, "charging");
+});

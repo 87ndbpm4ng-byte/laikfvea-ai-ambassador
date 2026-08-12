@@ -29,6 +29,7 @@ import type {
   VisitorIntentId,
 } from "@/types/experience";
 import type { ProductId } from "@/types/product";
+import { createKnowledgeQueryText } from "@/lib/i18n/knowledge-query";
 
 export type SessionManagerDependencies = {
   store: SessionStore;
@@ -84,7 +85,7 @@ export class SessionManager {
       resolvedQuestion: null,
       referenceResolution: null,
       comparisonProducts: [],
-      language: input.language?.trim() || null,
+      language: input.language ?? null,
       discussedTopics: [],
       viewedProducts: [],
       questionsAsked: [],
@@ -117,7 +118,7 @@ export class SessionManager {
       language:
         update.language === undefined
           ? session.language
-          : update.language?.trim() || null,
+          : update.language ?? null,
       visitorGoals:
         update.visitorGoals === undefined
           ? session.visitorGoals
@@ -142,7 +143,10 @@ export class SessionManager {
   ) {
     const session = this.requireActiveSession(sessionId);
     const question = input.content.trim();
-    const focus = resolveConversationFocus(question, session);
+    const focus = resolveConversationFocus(
+      createKnowledgeQueryText(question, session.language),
+      session,
+    );
     const focusedSession: VisitorSession = {
       ...session,
       ...focus,

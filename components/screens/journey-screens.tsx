@@ -19,57 +19,58 @@ import type {
 } from "@/types/conversation";
 import type { GuideId } from "@/types/guide";
 import type { ProductId } from "@/types/product";
+import type { SupportedLanguage } from "@/types/language";
+import { getUiCopy } from "@/lib/i18n/ui-copy";
 
 export function SpecialistSelectionScreen({
+  language,
   onSelect,
   onBack,
 }: {
+  language: SupportedLanguage;
   onSelect: (guideId: GuideId) => void;
   onBack: () => void;
 }) {
+  const copy = getUiCopy(language);
   return (
     <section
       className="screen-content idle-content"
       aria-labelledby="specialist-heading"
     >
       <button className="back-action" type="button" onClick={onBack}>
-        Back
+        {copy.back}
       </button>
       <header className="idle-header">
-        <p className="idle-eyebrow">A guided product conversation</p>
-        <h1 id="specialist-heading">Meet your AI specialists</h1>
-        <p className="idle-support">Choose who you would like to speak with.</p>
+        <p className="idle-eyebrow">{copy.guidedConversation}</p>
+        <h1 id="specialist-heading">{copy.specialistsHeading}</h1>
+        <p className="idle-support">{copy.specialistsSupport}</p>
       </header>
 
-      <div className="idle-specialist-grid" aria-label="AI specialists">
+      <div className="idle-specialist-grid" aria-label={copy.specialistsAria}>
         {Object.values(guides).map((guide) => (
           <article className="idle-specialist-card" key={guide.id}>
             <div
               className="idle-specialist-portrait"
               role="img"
-              aria-label={`${guide.name} visual preview unavailable`}
+              aria-label={copy.visualPreviewUnavailable(guide.name)}
             >
               <span className="specialist-silhouette" aria-hidden="true">
                 <i />
                 <i />
               </span>
-              <small>Visual preview</small>
+              <small>{copy.visualPreview}</small>
             </div>
             <div className="idle-specialist-copy">
-              <h2>{guide.name}</h2>
-              <p>{guide.role}</p>
-              <span>
-                {guide.id === "daniel"
-                  ? "Explains product technology, engineering, materials and technical features."
-                  : "Explains everyday use, hydration, wellness and how the products fit into daily life."}
-              </span>
+              <h2>{copy.guideDisplayName[guide.id]}</h2>
+              <p>{copy.guideRole[guide.id]}</p>
+              <span>{copy.guideDescription[guide.id]}</span>
               <button
                 className="idle-specialist-action"
                 type="button"
                 onClick={() => onSelect(guide.id)}
-                aria-label={`Speak with ${guide.name}, ${guide.role}`}
+                aria-label={`${copy.speakWith(guide.name)}, ${copy.guideRole[guide.id]}`}
               >
-                Speak with {guide.name}
+                {copy.speakWith(guide.name)}
               </button>
             </div>
           </article>
@@ -81,6 +82,7 @@ export function SpecialistSelectionScreen({
 
 type ConversationScreenProps = {
   guideId: GuideId;
+  language: SupportedLanguage;
   messages: ConversationMessage[];
   isLoading: boolean;
   onSubmitQuestion: (question: QuestionSubmission) => Promise<boolean>;
@@ -92,48 +94,6 @@ type ConversationScreenProps = {
   audioActivationProvider?: SpeechSynthesisProvider;
   voiceActivationPromise?: Promise<boolean> | null;
   liveAvatarService?: LiveAvatarOutput;
-};
-
-const topicPresentation: Record<
-  GuideId,
-  Record<string, { title: string; description: string }>
-> = {
-  daniel: {
-    "hydrogen-water-overview": {
-      title: "Hydrogen technology",
-      description: "Understand the core principles.",
-    },
-    "product-comparison": {
-      title: "Product comparison",
-      description: "Review the documented differences.",
-    },
-    "product-guidance": {
-      title: "Choosing a product",
-      description: "Explore which option may suit your needs.",
-    },
-    "hydrogen-inhalation": {
-      title: "Hydrogen inhalation",
-      description: "Explore the documented capability.",
-    },
-  },
-  emily: {
-    "hydrogen-water-overview": {
-      title: "Hydrogen water",
-      description: "Start with a clear introduction.",
-    },
-    "product-comparison": {
-      title: "Product differences",
-      description: "Understand the options simply.",
-    },
-    "product-guidance": {
-      title: "Choosing a product",
-      description: "Consider everyday routines and needs.",
-    },
-    "hydrogen-inhalation": {
-      title: "Hydrogen inhalation",
-      description: "Ask about the available information.",
-    },
-  },
 };
 
 type ConversationTurn = {
@@ -159,6 +119,7 @@ function createConversationTurns(messages: ConversationMessage[]) {
 
 export function ConversationScreen({
   guideId,
+  language,
   messages,
   isLoading,
   onSubmitQuestion,
@@ -172,9 +133,11 @@ export function ConversationScreen({
   liveAvatarService,
 }: ConversationScreenProps) {
   const guide = guides[guideId];
-  const quickTopics = suggestedQuestions.map((question) => ({
-    question,
-    ...topicPresentation[guideId][question.id],
+  const copy = getUiCopy(language);
+  const guideDisplayName = copy.guideDisplayName[guideId];
+  const quickTopics = suggestedQuestions.map((suggestedQuestion) => ({
+    suggestedQuestion,
+    ...copy.topics[guideId][suggestedQuestion.id],
   }));
   const [draft, setDraft] = useState("");
   const conversationTurns = createConversationTurns(messages);
@@ -205,6 +168,7 @@ export function ConversationScreen({
     audioActivationProvider,
     activationPromise: voiceActivationPromise,
     enabledByDefault: true,
+    language,
   });
   const idleTimeout = useLiveAvatarIdleTimeout({
     service: liveAvatarService,
@@ -265,13 +229,10 @@ export function ConversationScreen({
           aria-labelledby="liveavatar-idle-warning-title"
         >
           <div>
-            <h2 id="liveavatar-idle-warning-title">Still exploring?</h2>
-            <p>
-              This session will restart in {idleTimeout.remainingSeconds}{" "}
-              seconds.
-            </p>
+            <h2 id="liveavatar-idle-warning-title">{copy.stillExploring}</h2>
+            <p>{copy.restartCountdown(idleTimeout.remainingSeconds)}</p>
             <PrimaryButton onClick={idleTimeout.continueSession}>
-              Continue session
+              {copy.continueSession}
             </PrimaryButton>
           </div>
         </div>
@@ -283,24 +244,24 @@ export function ConversationScreen({
             <LiveAvatarRenderer
               service={liveAvatarService}
               guideId={guideId}
+              language={language}
               idleSecondsRemaining={idleTimeout.remainingSeconds}
             />
           ) : (
             <div
               className="specialist-static-stage"
               role="img"
-              aria-label={`${guide.name}, ${guide.role}. Visual session unavailable. Voice conversation remains available.`}
+              aria-label={`${guideDisplayName}, ${copy.guideRole[guideId]}. ${copy.visualUnavailable} ${copy.voiceRemainsAvailable}`}
             >
               <span className="specialist-silhouette" aria-hidden="true">
                 <i />
                 <i />
               </span>
               <div>
-                <strong>{guide.name}</strong>
-                <p>{guide.role}</p>
+                <strong>{guideDisplayName}</strong>
+                <p>{copy.guideRole[guideId]}</p>
                 <small>
-                  Visual session unavailable. Voice conversation remains
-                  available.
+                  {copy.visualUnavailable} {copy.voiceRemainsAvailable}
                 </small>
               </div>
             </div>
@@ -314,6 +275,7 @@ export function ConversationScreen({
             preparingVoice={voice.isPreparingVoice}
             activationFailed={voice.activationFailed}
             guideName={guide.name}
+            language={language}
             transcript={voice.transcript}
             error={voice.error}
             recognitionSupported={voice.isRecognitionSupported}
@@ -329,15 +291,15 @@ export function ConversationScreen({
             type="button"
             onClick={onEnd}
           >
-            End session
+            {copy.endSession}
           </button>
         </aside>
 
         <main className="conversation-dialogue">
           <header className="conversation-header">
             <div>
-              <p className="guide-context">{guide.role}</p>
-              <h1 id="conversation-heading">Conversation with {guide.name}</h1>
+              <p className="guide-context">{copy.guideRole[guideId]}</p>
+              <h1 id="conversation-heading">{copy.conversationWith(guide.name)}</h1>
             </div>
           </header>
 
@@ -345,40 +307,37 @@ export function ConversationScreen({
             <div
               className="response-area"
               aria-live="polite"
-              aria-label="Conversation"
+              aria-label={copy.conversationAria}
               aria-busy={isLoading}
             >
               {conversationTurns.length === 0 ? (
                 <div className="response-welcome">
-                  <strong>What would you like to understand?</strong>
-                  <p>
-                    Ask {guide.name} directly, or begin with one of the topics
-                    below.
-                  </p>
+                  <strong>{copy.whatToUnderstand}</strong>
+                  <p>{copy.welcomeSupport(guide.name)}</p>
                 </div>
               ) : (
                 <ol className="conversation-history">
                   {conversationTurns.map((turn) => (
                     <li className="conversation-entry" key={turn.visitor.id}>
                       <div className="visitor-question">
-                        <span>You asked</span>
+                        <span>{copy.youAsked}</span>
                         <p>{turn.visitor.content}</p>
                       </div>
                       {turn.guide ? (
                         <div className="guide-response">
-                          <span>{guide.name}</span>
+                          <span>{guideDisplayName}</span>
                           <p>{turn.guide.content}</p>
                         </div>
                       ) : (
                         <div className="guide-response is-preparing">
-                          <span>{guide.name}</span>
+                          <span>{guideDisplayName}</span>
                           <p>
                             <span className="thinking-dots" aria-hidden="true">
                               <i />
                               <i />
                               <i />
                             </span>
-                            <span className="sr-only">Preparing response</span>
+                            <span className="sr-only">{copy.preparingResponse}</span>
                           </p>
                         </div>
                       )}
@@ -395,24 +354,31 @@ export function ConversationScreen({
             aria-labelledby="quick-topics-heading"
           >
             <div className="context-heading">
-              <p id="quick-topics-heading">Quick topics</p>
-              <span>Choose a starting point</span>
+              <p id="quick-topics-heading">{copy.quickTopics}</p>
+              <span>{copy.chooseStartingPoint}</span>
             </div>
             <div className="quick-topic-list">
-              {quickTopics.map(({ question, title, description }) => (
+              {quickTopics.map(
+                ({ suggestedQuestion, question, title, description }) => (
                 <button
                   className="quick-topic-card"
                   type="button"
-                  key={question.id}
+                  key={suggestedQuestion.id}
                   disabled={isLoading}
-                  onClick={() => void submitQuickTopic(question)}
+                  onClick={() =>
+                    void submitQuickTopic({
+                      ...suggestedQuestion,
+                      label: question,
+                    })
+                  }
                 >
                   <span>
                     <strong>{title}</strong>
                     <small>{description}</small>
                   </span>
                 </button>
-              ))}
+                ),
+              )}
             </div>
           </section>
 
@@ -423,17 +389,17 @@ export function ConversationScreen({
                 key={productId}
                 onClick={() => onOpenProduct(productId)}
               >
-                View {products[productId].name}
+                {copy.viewProduct(products[productId].name)}
               </button>
             ))}
             <button type="button" onClick={onProducts}>
-              Explore products
+              {copy.exploreProducts}
             </button>
           </div>
 
           <form className="composer" onSubmit={submitTypedQuestion}>
             <label className="sr-only" htmlFor="visitor-question">
-              Ask {guide.name} a question
+              {copy.askQuestion(guide.name)}
             </label>
             <input
               id="visitor-question"
@@ -441,14 +407,14 @@ export function ConversationScreen({
               disabled={isLoading}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={submitOnEnter}
-              placeholder={`Ask ${guide.name} a question`}
+              placeholder={copy.askQuestion(guide.name)}
             />
             <button
               className="composer-send"
               type="submit"
               disabled={!draft.trim() || isLoading}
             >
-              {isLoading ? "Sending" : "Send"}
+              {isLoading ? copy.sending : copy.send}
             </button>
           </form>
         </main>
@@ -458,24 +424,27 @@ export function ConversationScreen({
 }
 
 type ProductExplorerScreenProps = {
+  language: SupportedLanguage;
   onOpenProduct: (product: ProductId) => void;
   onCompare: () => void;
   onBack: () => void;
 };
 
 export function ProductExplorerScreen({
+  language,
   onOpenProduct,
   onCompare,
   onBack,
 }: ProductExplorerScreenProps) {
+  const copy = getUiCopy(language);
   return (
     <section
       className="screen-content products-content"
       aria-labelledby="products-heading"
     >
       <header className="section-header">
-        <h1 id="products-heading">Product Explorer</h1>
-        <p>Explore the available products and their key capabilities.</p>
+        <h1 id="products-heading">{copy.productExplorer}</h1>
+        <p>{copy.productExplorerSupport}</p>
       </header>
 
       <div className="product-grid">
@@ -491,17 +460,17 @@ export function ProductExplorerScreen({
             </span>
             <span className="product-card-copy">
               <span className="product-name">{product.name}</span>
-              <span className="product-summary">{product.overview}</span>
-              <span className="product-link">View product</span>
+              <span className="product-summary">{copy.productOverview[product.id]}</span>
+              <span className="product-link">{copy.viewProductLabel}</span>
             </span>
           </button>
         ))}
       </div>
 
       <div className="screen-actions">
-        <PrimaryButton onClick={onCompare}>Compare Products</PrimaryButton>
+        <PrimaryButton onClick={onCompare}>{copy.compareProducts}</PrimaryButton>
         <button className="secondary-action" type="button" onClick={onBack}>
-          Back to Conversation
+          {copy.backToConversation}
         </button>
       </div>
     </section>
@@ -509,6 +478,7 @@ export function ProductExplorerScreen({
 }
 
 type ProductDetailScreenProps = {
+  language: SupportedLanguage;
   productId: ProductId;
   onBack: () => void;
   onCompare: () => void;
@@ -516,12 +486,14 @@ type ProductDetailScreenProps = {
 };
 
 export function ProductDetailScreen({
+  language,
   productId,
   onBack,
   onCompare,
   onAskGuide,
 }: ProductDetailScreenProps) {
   const product = products[productId];
+  const copy = getUiCopy(language);
 
   return (
     <section
@@ -529,7 +501,7 @@ export function ProductDetailScreen({
       aria-labelledby="product-detail-heading"
     >
       <button className="back-action" type="button" onClick={onBack}>
-        Back
+        {copy.back}
       </button>
 
       <div className="detail-grid">
@@ -538,21 +510,21 @@ export function ProductDetailScreen({
         </div>
         <div className="detail-copy">
           <h1 id="product-detail-heading">{product.name}</h1>
-          <p className="detail-overview">{product.overview}</p>
+          <p className="detail-overview">{copy.productOverview[product.id]}</p>
 
           <div className="detail-lists">
             <div>
-              <h2>Key features</h2>
+              <h2>{copy.keyFeatures}</h2>
               <ul>
-                {product.features.map((feature) => (
+                {copy.productFeatures[product.id].map((feature) => (
                   <li key={feature}>{feature}</li>
                 ))}
               </ul>
             </div>
             <div>
-              <h2>Use cases</h2>
+              <h2>{copy.useCases}</h2>
               <ul>
-                {product.useCases.map((useCase) => (
+                {copy.productUseCases[product.id].map((useCase) => (
                   <li key={useCase}>{useCase}</li>
                 ))}
               </ul>
@@ -562,9 +534,9 @@ export function ProductDetailScreen({
       </div>
 
       <div className="screen-actions">
-        <PrimaryButton onClick={onCompare}>Compare</PrimaryButton>
+        <PrimaryButton onClick={onCompare}>{copy.compare}</PrimaryButton>
         <button className="secondary-action" type="button" onClick={onAskGuide}>
-          Ask the guide
+          {copy.askGuide}
         </button>
       </div>
     </section>
@@ -572,29 +544,32 @@ export function ProductDetailScreen({
 }
 
 type ProductComparisonScreenProps = {
+  language: SupportedLanguage;
   onAsk: () => void;
   onBack: () => void;
 };
 
 export function ProductComparisonScreen({
+  language,
   onAsk,
   onBack,
 }: ProductComparisonScreenProps) {
+  const copy = getUiCopy(language);
   return (
     <section
       className="screen-content comparison-content"
       aria-labelledby="comparison-heading"
     >
       <header className="section-header">
-        <h1 id="comparison-heading">Compare the bottles</h1>
-        <p>A simple view of the listed capabilities.</p>
+        <h1 id="comparison-heading">{copy.compareBottles}</h1>
+        <p>{copy.comparisonSupport}</p>
       </header>
 
       <div className="comparison-table-wrap">
         <table className="comparison-table">
           <thead>
             <tr>
-              <th scope="col">Feature</th>
+              <th scope="col">{copy.feature}</th>
               <th scope="col">{products.everyday.name}</th>
               <th scope="col">{products.advanced.name}</th>
             </tr>
@@ -602,9 +577,9 @@ export function ProductComparisonScreen({
           <tbody>
             {productComparisonRows.map((row) => (
               <tr key={row.id}>
-                <th scope="row">{row.label}</th>
-                <td>{row.everyday}</td>
-                <td>{row.advanced}</td>
+                <th scope="row">{copy.comparisonRows[row.id].label}</th>
+                <td>{copy.comparisonRows[row.id].everyday}</td>
+                <td>{copy.comparisonRows[row.id].advanced}</td>
               </tr>
             ))}
           </tbody>
@@ -612,9 +587,9 @@ export function ProductComparisonScreen({
       </div>
 
       <div className="screen-actions">
-        <PrimaryButton onClick={onAsk}>Ask about this comparison</PrimaryButton>
+        <PrimaryButton onClick={onAsk}>{copy.askComparison}</PrimaryButton>
         <button className="secondary-action" type="button" onClick={onBack}>
-          Back to Products
+          {copy.backToProducts}
         </button>
       </div>
     </section>
@@ -622,14 +597,17 @@ export function ProductComparisonScreen({
 }
 
 type SessionEndScreenProps = {
+  language: SupportedLanguage;
   onRestart: () => void;
   onReturn: () => void;
 };
 
 export function SessionEndScreen({
+  language,
   onRestart,
   onReturn,
 }: SessionEndScreenProps) {
+  const copy = getUiCopy(language);
   return (
     <section
       className="screen-content end-content"
@@ -638,11 +616,11 @@ export function SessionEndScreen({
       <div className="end-mark" aria-hidden="true">
         <span />
       </div>
-      <h1 id="end-heading">Thank you for visiting.</h1>
+      <h1 id="end-heading">{copy.thankYou}</h1>
       <div className="screen-actions">
-        <PrimaryButton onClick={onRestart}>Start Again</PrimaryButton>
+        <PrimaryButton onClick={onRestart}>{copy.startAgain}</PrimaryButton>
         <button className="secondary-action" type="button" onClick={onReturn}>
-          Return to Conversation
+          {copy.returnToConversation}
         </button>
       </div>
     </section>

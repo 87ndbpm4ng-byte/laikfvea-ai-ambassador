@@ -5,6 +5,8 @@ import type {
   VoiceInputState,
   VoiceOutputState,
 } from "@/lib/voice/voice-types";
+import type { SupportedLanguage } from "@/types/language";
+import { getUiCopy } from "@/lib/i18n/ui-copy";
 
 type VoiceControlsProps = {
   inputState: VoiceInputState;
@@ -14,6 +16,7 @@ type VoiceControlsProps = {
   preparingVoice: boolean;
   activationFailed: boolean;
   guideName: string;
+  language: SupportedLanguage;
   transcript: string;
   error: VoiceError | null;
   recognitionSupported: boolean;
@@ -32,6 +35,7 @@ export function VoiceControls({
   preparingVoice,
   activationFailed,
   guideName,
+  language,
   transcript,
   error,
   recognitionSupported,
@@ -41,30 +45,31 @@ export function VoiceControls({
   onStopListening,
   onRetryPlayback,
 }: VoiceControlsProps) {
+  const copy = getUiCopy(language);
   const isListening = inputState === "listening";
   const isProcessing = inputState === "processing";
   const isSpeaking = outputState === "speaking";
   const status = isListening
-    ? "Listening…"
+    ? copy.listening
     : isProcessing
-      ? "Preparing an answer…"
+      ? copy.thinking
       : isSpeaking
-        ? "Speaking…"
+        ? copy.speakingFor(guideName)
         : preparingVoice
-          ? `${guideName} is getting ready…`
-          : "Ready";
-  const controlLabel = isListening ? "Stop" : "Talk";
+          ? copy.gettingReady(guideName)
+          : copy.voiceReadyFor(guideName);
+  const controlLabel = isListening ? copy.stop : copy.talk;
   const statusDescription = transcript
     ? transcript
     : isListening
-      ? "Your words will appear here."
+      ? copy.wordsAppear
       : isProcessing
-        ? `${guideName} is preparing a response.`
+        ? copy.preparingAnswer(guideName)
         : isSpeaking
-          ? `${guideName} is answering now.`
+          ? copy.answeringNow(guideName)
           : preparingVoice
-            ? "Voice is getting ready."
-            : "Tap Talk, then ask your question.";
+            ? copy.voiceGettingReady
+            : copy.talkHint;
 
   return (
     <div
@@ -81,8 +86,8 @@ export function VoiceControls({
     >
       <div className="voice-panel-header">
         <div>
-          <p className="voice-panel-title">Talk to {guideName}</p>
-          <p className="voice-panel-support">Tap and ask your question.</p>
+          <p className="voice-panel-title">{copy.talkTo(guideName)}</p>
+          <p className="voice-panel-support">{copy.tapAndAsk}</p>
         </div>
       </div>
 
@@ -94,10 +99,10 @@ export function VoiceControls({
           aria-pressed={isListening}
           aria-label={
             isListening
-              ? `Stop listening and send your question to ${guideName}`
+              ? copy.stopListeningAria(guideName)
               : isSpeaking
-                ? `Interrupt ${guideName} and talk`
-                : `Speak with ${guideName}`
+                ? copy.interruptAria(guideName)
+                : copy.speakAria(guideName)
           }
           onClick={isListening ? onStopListening : onStartListening}
         >
@@ -139,30 +144,32 @@ export function VoiceControls({
 
       {playbackBlocked && guideName === "Daniel" ? (
         <button className="voice-retry" type="button" onClick={onRetryPlayback}>
-          Play response
+          {copy.playResponse}
         </button>
       ) : !recognitionSupported ? (
         <p className="voice-message" role="status">
-          Voice input isn’t available in this browser. You can still type your
-          question.
+          {copy.recognitionUnavailable}
         </p>
       ) : !synthesisSupported ? (
         <p className="voice-message" role="status">
-          Spoken responses aren’t available here. Answers will remain visible
-          on screen.
+          {copy.synthesisUnavailable}
         </p>
       ) : error ? (
         <p className="voice-message" role="alert">
-          {error.message}
+          {error.code === "permission-denied"
+            ? copy.microphoneDenied
+            : error.code === "recognition-timeout"
+              ? copy.recognitionTimeout
+              : error.code === "recognition-failed"
+                ? copy.recognitionFailed
+                : error.message}
         </p>
       ) : activationFailed && !audioSessionActivated ? (
         <p className="voice-message" role="status">
-          Voice is available through Talk. You can still type below.
+          {copy.activationFailed}
         </p>
       ) : (
-        <p className="voice-hint">
-          Press Escape at any time to stop audio.
-        </p>
+        <p className="voice-hint">{copy.escapeHint}</p>
       )}
     </div>
   );

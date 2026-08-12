@@ -21,13 +21,13 @@ import type {
   ConversationHistoryItem,
 } from "@/types/conversation";
 import type { GuideId } from "@/types/guide";
+import { isSupportedLanguage } from "@/lib/i18n/languages";
 
 export const runtime = "nodejs";
 
 const MAX_MESSAGE_LENGTH = 1_000;
 const MAX_HISTORY_ITEM_LENGTH = 2_000;
 const MAX_RECEIVED_HISTORY_MESSAGES = 30;
-const MAX_LANGUAGE_LENGTH = 40;
 const MAX_SESSION_ID_LENGTH = 200;
 const sessionManager = new SessionManager({
   store: new InMemorySessionStore(),
@@ -88,10 +88,7 @@ function validateRequest(value: unknown): ConversationApiRequest | null {
     request.message.trim().length === 0 ||
     request.message.length > MAX_MESSAGE_LENGTH ||
     !isGuideId(request.guideId) ||
-    (request.language !== undefined &&
-      (typeof request.language !== "string" ||
-        request.language.trim().length === 0 ||
-        request.language.length > MAX_LANGUAGE_LENGTH)) ||
+    (request.language !== undefined && !isSupportedLanguage(request.language)) ||
     (request.sessionId !== undefined &&
       (typeof request.sessionId !== "string" ||
         request.sessionId.length === 0 ||
@@ -107,10 +104,9 @@ function validateRequest(value: unknown): ConversationApiRequest | null {
     message: request.message.trim(),
     guideId: request.guideId,
     history: request.history.slice(-MAX_OPENAI_HISTORY_MESSAGES),
-    language:
-      typeof request.language === "string"
-        ? request.language.trim()
-        : undefined,
+    language: isSupportedLanguage(request.language)
+      ? request.language
+      : undefined,
     sessionId:
       typeof request.sessionId === "string"
         ? request.sessionId

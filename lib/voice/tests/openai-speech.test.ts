@@ -246,6 +246,44 @@ test("Daniel speech uses the configured ElevenLabs voice endpoint", async () => 
   assert.match(requestedBody, /"model_id":"eleven_multilingual_v2"/);
 });
 
+test("Daniel keeps his multilingual voice model for Russian speech", async () => {
+  let requestedBody = "";
+  await generateElevenLabsSpeech(
+    { text: "Как заряжать бутылку?", guideId: "daniel", language: "ru-RU" },
+    {
+      apiKey: "test-key",
+      voiceId: "daniel-test-voice",
+      fetcher: async (_input, init) => {
+        requestedBody = String(init?.body);
+        return new Response(Uint8Array.from([1, 2]), { status: 200 });
+      },
+    },
+  );
+  assert.match(requestedBody, /"model_id":"eleven_multilingual_v2"/);
+  assert.match(requestedBody, /"language_code":"ru"/);
+});
+
+test("Daniel keeps his voice and multilingual model for Chinese speech", async () => {
+  let requestedURL = "";
+  let requestedBody = "";
+  await generateElevenLabsSpeech(
+    { text: "氢水是如何工作的？", guideId: "daniel", language: "zh-CN" },
+    {
+      apiKey: "test-key",
+      voiceId: "daniel-test-voice",
+      fetcher: async (input, init) => {
+        requestedURL = String(input);
+        requestedBody = String(init?.body);
+        return new Response(Uint8Array.from([1, 2]), { status: 200 });
+      },
+    },
+  );
+  assert.match(requestedURL, /daniel-test-voice/);
+  assert.match(requestedBody, /"model_id":"eleven_multilingual_v2"/);
+  assert.match(requestedBody, /"language_code":"zh"/);
+  assert.match(requestedBody, /氢水是如何工作的/);
+});
+
 test("missing Daniel configuration fails safely", async () => {
   await assert.rejects(
     generateElevenLabsSpeech(
@@ -281,6 +319,38 @@ test("server speech generation uses the selected guide profile", async () => {
   assert.equal(audio.byteLength, 3);
   assert.equal(receivedOptions?.voice, "marin");
   assert.equal(receivedOptions?.input, "Hello");
+});
+
+test("Emily preserves marin and Russian Cyrillic for speech", async () => {
+  let receivedOptions: Record<string, unknown> | undefined;
+  const client: SpeechClient = {
+    audio: { speech: { async create(options) {
+      receivedOptions = options;
+      return { async arrayBuffer() { return new ArrayBuffer(1); } };
+    } } },
+  };
+  await generateOpenAISpeech(
+    { text: "Расскажу коротко и понятно.", guideId: "emily", language: "ru-RU" },
+    { client },
+  );
+  assert.equal(receivedOptions?.voice, "marin");
+  assert.equal(receivedOptions?.input, "Расскажу коротко и понятно.");
+});
+
+test("Emily preserves marin and Chinese text for speech", async () => {
+  let receivedOptions: Record<string, unknown> | undefined;
+  const client: SpeechClient = {
+    audio: { speech: { async create(options) {
+      receivedOptions = options;
+      return { async arrayBuffer() { return new ArrayBuffer(1); } };
+    } } },
+  };
+  await generateOpenAISpeech(
+    { text: "我会用简短清晰的方式说明。", guideId: "emily", language: "zh-CN" },
+    { client },
+  );
+  assert.equal(receivedOptions?.voice, "marin");
+  assert.equal(receivedOptions?.input, "我会用简短清晰的方式说明。");
 });
 
 test("Emily LiveAvatar speech requests direct 24 kHz-compatible PCM", async () => {

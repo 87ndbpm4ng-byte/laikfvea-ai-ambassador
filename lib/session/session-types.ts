@@ -4,6 +4,7 @@ import type {
   VisitorIntentId,
 } from "@/types/experience";
 import type { ProductId } from "@/types/product";
+import type { SupportedLanguage } from "@/types/language";
 
 export type SessionId = string;
 
@@ -51,7 +52,7 @@ export type VisitorSession = {
   resolvedQuestion?: string | null;
   referenceResolution?: SessionReferenceResolution | null;
   comparisonProducts?: readonly ProductId[];
-  language: string | null;
+  language: SupportedLanguage | null;
   discussedTopics: readonly string[];
   viewedProducts: readonly ProductId[];
   questionsAsked: readonly string[];
@@ -63,13 +64,13 @@ export type VisitorSession = {
 
 export type CreateSessionInput = {
   sessionId?: SessionId;
-  language?: string | null;
+  language?: SupportedLanguage | null;
   initialStage?: ConversationStageId;
   initialIntent?: VisitorIntentId | null;
 };
 
 export type SessionUpdate = {
-  language?: string | null;
+  language?: SupportedLanguage | null;
   visitorGoals?: readonly string[];
 };
 

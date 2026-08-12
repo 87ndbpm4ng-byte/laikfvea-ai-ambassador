@@ -13,6 +13,11 @@ import { useConversation } from "@/hooks/use-conversation";
 import { guides } from "@/lib/data/guides";
 import { products } from "@/lib/data/products";
 import { getSuggestedQuestion } from "@/lib/data/suggested-questions";
+import {
+  getLanguageConfiguration,
+  SUPPORTED_LANGUAGES,
+} from "@/lib/i18n/languages";
+import { getUiCopy } from "@/lib/i18n/ui-copy";
 import { LiveAvatarService } from "@/lib/liveavatar/liveavatar-service";
 import { activateVoiceSession } from "@/lib/voice/audio-session";
 import { LiveAvatarSpeechSynthesisProvider } from "@/lib/voice/liveavatar-speech-synthesis";
@@ -20,17 +25,20 @@ import { OpenAISpeechSynthesisProvider } from "@/lib/voice/openai-speech-synthes
 import type { JourneyScreen } from "@/types/conversation";
 import type { GuideId } from "@/types/guide";
 import type { ProductId } from "@/types/product";
-
-const languages = ["English", "中文", "Русский", "Español"] as const;
+import type { SupportedLanguage } from "@/types/language";
 
 export default function Home() {
   const [screen, setScreen] = useState<JourneyScreen>("language");
-  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+  const [selectedLanguage, setSelectedLanguage] =
+    useState<SupportedLanguage | null>(null);
   const [selectedGuideId, setSelectedGuideId] = useState<GuideId | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<ProductId>("everyday");
   const [voiceActivation, setVoiceActivation] =
     useState<Promise<boolean> | null>(null);
   const selectedGuide = selectedGuideId ? guides[selectedGuideId] : null;
+  const activeLanguage = selectedLanguage ?? "en";
+  const languageConfiguration = getLanguageConfiguration(activeLanguage);
+  const copy = getUiCopy(activeLanguage);
   const conversation = useConversation(selectedGuide, selectedLanguage);
   const liveAvatarServices = useMemo(
     () => ({
@@ -40,8 +48,11 @@ export default function Home() {
     [],
   );
   const fallbackSpeechSynthesis = useMemo(
-    () => new OpenAISpeechSynthesisProvider(),
-    [],
+    () =>
+      new OpenAISpeechSynthesisProvider({
+        language: () => languageConfiguration.locale,
+      }),
+    [languageConfiguration.locale],
   );
   const speechSynthesis = useMemo(
     () => ({
@@ -49,15 +60,21 @@ export default function Home() {
         avatar: liveAvatarServices.daniel,
         fallback: fallbackSpeechSynthesis,
         guideId: "daniel",
+        language: () => languageConfiguration.locale,
       }),
       emily: new LiveAvatarSpeechSynthesisProvider({
         avatar: liveAvatarServices.emily,
         fallback: fallbackSpeechSynthesis,
         guideId: "emily",
+        language: () => languageConfiguration.locale,
       }),
     }),
-    [fallbackSpeechSynthesis, liveAvatarServices],
+    [fallbackSpeechSynthesis, languageConfiguration.locale, liveAvatarServices],
   );
+
+  useEffect(() => {
+    document.documentElement.lang = activeLanguage;
+  }, [activeLanguage]);
 
   useEffect(() => {
     for (const guideId of Object.keys(liveAvatarServices) as GuideId[]) {
@@ -75,7 +92,12 @@ export default function Home() {
   async function askAboutProduct() {
     const product = products[selectedProduct];
     await conversation.submitQuestion({
-      content: `Tell me about ${product.name}`,
+      content:
+        activeLanguage === "ru"
+          ? `Расскажи о ${product.name}`
+          : activeLanguage === "zh"
+            ? `请介绍一下 ${product.name}`
+          : `Tell me about ${product.name}`,
       source: "product",
       relatedProduct: selectedProduct,
     });
@@ -87,7 +109,9 @@ export default function Home() {
 
     if (comparisonQuestion) {
       await conversation.submitQuestion({
-        content: comparisonQuestion.label,
+        content:
+          copy.topics[selectedGuideId ?? "daniel"][comparisonQuestion.id]
+            ?.question ?? comparisonQuestion.label,
         source: "product",
         questionId: comparisonQuestion.id,
         relatedProduct: comparisonQuestion.relatedProduct,
@@ -134,32 +158,24 @@ export default function Home() {
             aria-labelledby="language-heading"
           >
             <div className="language-panel">
-              <h1 id="language-heading">Choose your language</h1>
+              <h1 id="language-heading">{copy.languageHeading}</h1>
               <div
                 className="language-grid"
                 role="group"
-                aria-label="Languages"
+                aria-label={copy.languagesAria}
               >
-                {languages.map((language) => (
+                {SUPPORTED_LANGUAGES.map((language) => (
                   <button
                     className="language-option"
                     type="button"
-                    key={language}
+                    key={language.code}
                     onClick={() => {
-                      setSelectedLanguage(language);
+                      setSelectedLanguage(language.code);
                       setScreen("idle");
                     }}
-                    lang={
-                      language === "中文"
-                        ? "zh"
-                        : language === "Русский"
-                          ? "ru"
-                          : language === "Español"
-                            ? "es"
-                            : "en"
-                    }
+                    lang={language.code}
                   >
-                    {language}
+                    {language.nativeName}
                   </button>
                 ))}
               </div>
@@ -167,12 +183,14 @@ export default function Home() {
           </section>
         ) : screen === "idle" ? (
           <SpecialistSelectionScreen
+            language={activeLanguage}
             onSelect={selectSpecialist}
             onBack={() => setScreen("language")}
           />
         ) : screen === "conversation" && selectedGuideId ? (
           <ConversationScreen
             guideId={selectedGuideId}
+            language={activeLanguage}
             messages={conversation.messages}
             isLoading={conversation.isLoading}
             onSubmitQuestion={conversation.submitQuestion}
@@ -187,12 +205,14 @@ export default function Home() {
           />
         ) : screen === "products" ? (
           <ProductExplorerScreen
+            language={activeLanguage}
             onOpenProduct={openProduct}
             onCompare={() => setScreen("comparison")}
             onBack={() => setScreen("conversation")}
           />
         ) : screen === "product-detail" ? (
           <ProductDetailScreen
+            language={activeLanguage}
             productId={selectedProduct}
             onBack={() => setScreen("products")}
             onCompare={() => setScreen("comparison")}
@@ -200,11 +220,13 @@ export default function Home() {
           />
         ) : screen === "comparison" ? (
           <ProductComparisonScreen
+            language={activeLanguage}
             onAsk={askAboutComparison}
             onBack={() => setScreen("products")}
           />
         ) : (
           <SpecialistSelectionScreen
+            language={activeLanguage}
             onSelect={selectSpecialist}
             onBack={() => setScreen("language")}
           />

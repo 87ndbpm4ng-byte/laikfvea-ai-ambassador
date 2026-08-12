@@ -8,6 +8,7 @@ import type {
   QuestionSubmission,
 } from "@/types/conversation";
 import type { Guide } from "@/types/guide";
+import type { SupportedLanguage } from "@/types/language";
 
 let fallbackMessageSequence = 0;
 
@@ -20,7 +21,10 @@ function createMessageId(role: ConversationMessage["role"]) {
   return `${role}-${Date.now()}-${fallbackMessageSequence}`;
 }
 
-export function useConversation(guide: Guide | null, language?: string | null) {
+export function useConversation(
+  guide: Guide | null,
+  language?: SupportedLanguage | null,
+) {
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const loadingRef = useRef(false);

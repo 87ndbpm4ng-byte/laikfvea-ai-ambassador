@@ -17,7 +17,8 @@
     "test:multi-source": "tsx --test lib/retrieval/tests/multi-source.test.ts",
     "test:voice": "tsx --test lib/voice/tests/*.test.ts",
     "test:liveavatar": "tsx --test lib/liveavatar/tests/*.test.ts",
-    "test:frontend": "tsx --test lib/ui/tests/*.test.tsx"
+    "test:frontend": "tsx --test lib/ui/tests/*.test.tsx",
+    "test:localization": "tsx --test lib/i18n/tests/*.test.ts"
   },
   "dependencies": {
     "@heygen/liveavatar-web-sdk": "0.0.18",

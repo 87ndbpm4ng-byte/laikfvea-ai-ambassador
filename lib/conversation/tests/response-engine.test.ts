@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import {
   generateConversationResponse,
+  getServiceUnavailableResponse,
   serviceUnavailableResponse,
 } from "@/lib/conversation/response-engine";
 import { placeholderResponses } from "@/lib/data/placeholder-responses";
@@ -19,6 +20,12 @@ const baseRequest = {
 afterEach(() => {
   globalThis.fetch = originalFetch;
   console.error = originalConsoleError;
+});
+
+test("service failures use the selected visitor language", () => {
+  assert.equal(getServiceUnavailableResponse("en"), serviceUnavailableResponse);
+  assert.match(getServiceUnavailableResponse("ru"), /информации о продукте/);
+  assert.match(getServiceUnavailableResponse("zh"), /产品信息/);
 });
 
 test("successful free-text request returns the server response", async () => {

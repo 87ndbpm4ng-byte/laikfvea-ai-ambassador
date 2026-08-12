@@ -11,12 +11,13 @@ import type {
 } from "@/types/conversation";
 import type { Guide } from "@/types/guide";
 import type { ProductId } from "@/types/product";
+import type { SupportedLanguage } from "@/types/language";
 
 export type ResponseRequest = {
   content: string;
   guide: Guide;
   history: ConversationHistoryItem[];
-  language?: string;
+  language?: SupportedLanguage;
   questionId?: string;
   relatedProduct?: ProductId;
   sessionId?: string;
@@ -31,6 +32,16 @@ export type ResponseResult = {
 
 export const serviceUnavailableResponse =
   "I’m unable to access the product information service right now. Please try again in a moment.";
+
+export function getServiceUnavailableResponse(language?: SupportedLanguage) {
+  if (language === "ru") {
+    return "Сейчас мне не удаётся получить доступ к информации о продукте. Пожалуйста, попробуйте ещё раз через минуту.";
+  }
+  if (language === "zh") {
+    return "暂时无法获取产品信息，请稍后再试。";
+  }
+  return serviceUnavailableResponse;
+}
 
 type ConversationFailureKind =
   | "http"
@@ -242,7 +253,7 @@ export async function generateConversationResponse(
     }
 
     return {
-      content: serviceUnavailableResponse,
+      content: getServiceUnavailableResponse(request.language),
       relatedProduct: request.relatedProduct,
     };
   }
