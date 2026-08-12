@@ -73,7 +73,6 @@ export default function Home() {
     }),
     [fallbackSpeechSynthesis, languageConfiguration.locale, liveAvatarServices],
   );
-
   useEffect(() => {
     document.documentElement.lang = activeLanguage;
   }, [activeLanguage]);
@@ -150,14 +149,21 @@ export default function Home() {
     speechSynthesis,
   ]);
 
-  useEffect(() => () => {
-    speechSynthesis.daniel.reset();
-    speechSynthesis.emily.reset();
-    fallbackSpeechSynthesis.reset();
-    clearConversationHistory();
-    void liveAvatarServices.daniel.dispose();
-    void liveAvatarServices.emily.dispose();
-  }, [clearConversationHistory, fallbackSpeechSynthesis, liveAvatarServices, speechSynthesis]);
+  useEffect(() => {
+    return () => {
+      speechSynthesis.daniel.reset();
+      speechSynthesis.emily.reset();
+      fallbackSpeechSynthesis.reset();
+    };
+  }, [fallbackSpeechSynthesis, speechSynthesis]);
+
+  useEffect(
+    () => () => {
+      void liveAvatarServices.daniel.dispose();
+      void liveAvatarServices.emily.dispose();
+    },
+    [liveAvatarServices],
+  );
 
   function endSession() {
     resetVisitorSession();

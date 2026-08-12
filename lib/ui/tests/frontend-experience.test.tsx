@@ -307,6 +307,22 @@ test("active route bypasses introduction and separate voice activation", async (
   assert.doesNotMatch(source, /setScreen\("end"\)/);
   assert.doesNotMatch(source, /Start conversation|Enable Voice Mode/);
 
+  for (const language of ["en", "ru", "zh", "yue", "fr"]) {
+    assert.match(source, new RegExp(`code: "${language}"|SUPPORTED_LANGUAGES`));
+  }
+  assert.doesNotMatch(
+    source,
+    /ttsLanguageCode[\s\S]{0,160}liveAvatarServices\[guideId\]\.connect/,
+  );
+  assert.match(
+    source,
+    /useEffect\([\s\S]*?liveAvatarServices\.daniel\.dispose\(\)[\s\S]*?\[liveAvatarServices\]/,
+  );
+  assert.doesNotMatch(
+    source,
+    /dispose\(\)[\s\S]{0,300}\[fallbackSpeechSynthesis, speechSynthesis\]/,
+  );
+
   const screenSource = await readFile(
     new URL("../../../components/screens/journey-screens.tsx", import.meta.url),
     "utf8",
