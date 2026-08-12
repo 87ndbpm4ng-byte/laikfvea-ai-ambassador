@@ -17,19 +17,26 @@ export function rankChunks(
     .filter(isSafeKnowledgeChunk)
     .map((chunk) => {
       let score = 0;
+      let lexicalEvidenceScore = 0;
       const signals: string[] = [];
       const heading = chunk.heading.toLocaleLowerCase("en");
       const body = chunk.text.toLocaleLowerCase("en");
       if (phrase.length >= 5 && body.includes(phrase)) {
         score += RETRIEVAL_CONFIG.weights.exactPhrase;
+        lexicalEvidenceScore += RETRIEVAL_CONFIG.weights.exactPhrase;
         signals.push("exact-phrase");
       }
       for (const term of query.normalizedTerms) {
         if (heading.includes(term)) {
           score += RETRIEVAL_CONFIG.weights.headingTerm;
+          lexicalEvidenceScore += RETRIEVAL_CONFIG.weights.headingTerm;
           signals.push(`heading:${term}`);
         } else if (body.includes(term)) {
-          score += RETRIEVAL_CONFIG.weights.bodyTerm;
+          const weight = term.includes(" ")
+            ? RETRIEVAL_CONFIG.weights.headingTerm * 2
+            : RETRIEVAL_CONFIG.weights.bodyTerm;
+          score += weight;
+          lexicalEvidenceScore += weight;
           signals.push(`body:${term}`);
         }
       }
@@ -70,7 +77,11 @@ export function rankChunks(
           signals.push(`context:${term}`);
         }
       }
-      return { chunk, score, matchedSignals: [...new Set(signals)] };
+      return {
+        chunk,
+        score: lexicalEvidenceScore >= RETRIEVAL_CONFIG.thresholds.low ? score : 0,
+        matchedSignals: [...new Set(signals)],
+      };
     })
     .filter((result) => result.score > 0)
     .sort((left, right) => right.score - left.score);

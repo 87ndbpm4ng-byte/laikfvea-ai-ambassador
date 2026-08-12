@@ -177,6 +177,7 @@ export class OrchestratorPipeline {
       const retrievalResult = shouldRunRetrieval(
         retrievalMessage,
         activeSession.language,
+        activeSession,
       )
         ? await this.retrieval.search(retrievalQuery)
         : createSkippedRetrievalResult(retrievalQuery);

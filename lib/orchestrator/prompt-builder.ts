@@ -158,6 +158,16 @@ export class PromptBuilder {
             ...VISITOR_ANSWER_RULES,
           ]
         : [];
+    const noApprovedKnowledge = prompt.approvedKnowledgeContext
+      ? []
+      : [
+          "NO APPROVED KNOWLEDGE CONTEXT",
+          "- No approved factual passage was supplied for this turn.",
+          "- Do not answer factual product, scientific, company, safety, suitability, health or wellness questions from general model knowledge.",
+          "- If the visitor asks such a question, say concisely that the approved information available to you does not provide that guidance.",
+          "- For children, pregnancy, medical conditions, medication or contraindications, state the boundary directly; do not respond only with a clarification question and do not provide medical advice.",
+          "- You may still handle greetings, thanks, farewells and genuinely ambiguous references conversationally without inventing facts.",
+        ];
     const referenceResolution = prompt.sessionContext.referenceResolution;
     const conversationContext = [
       "CURRENT SESSION CONTEXT",
@@ -184,6 +194,7 @@ export class PromptBuilder {
       ...prompt.responseDirectives,
       ...conversationContext,
       ...grounding,
+      ...noApprovedKnowledge,
       ...supplementalContext,
       `Visitor message: ${prompt.userMessage}`,
     ].join("\n");
