@@ -10,11 +10,12 @@ import {
 } from "@/lib/i18n/languages";
 import { getUiCopy } from "@/lib/i18n/ui-copy";
 
-test("English, Russian and Simplified Chinese are offered as functional languages", () => {
-  assert.deepEqual(SUPPORTED_LANGUAGES.map(({ code }) => code), ["en", "ru", "zh"]);
+test("English, Russian, Simplified Chinese and Cantonese are offered", () => {
+  assert.deepEqual(SUPPORTED_LANGUAGES.map(({ code }) => code), ["en", "ru", "zh", "yue"]);
   assert.equal(isSupportedLanguage("en"), true);
   assert.equal(isSupportedLanguage("ru"), true);
   assert.equal(isSupportedLanguage("zh"), true);
+  assert.equal(isSupportedLanguage("yue"), true);
   assert.equal(isSupportedLanguage("es"), false);
 });
 
@@ -23,6 +24,21 @@ test("language configuration provides stable recognition locales", () => {
   assert.equal(getLanguageConfiguration("ru").speechRecognitionLocale, "ru-RU");
   assert.equal(getLanguageConfiguration("zh").speechRecognitionLocale, "zh-CN");
   assert.equal(getLanguageConfiguration("zh").nativeName, "中文（简体）");
+  assert.equal(getLanguageConfiguration("yue").speechRecognitionLocale, "zh-HK");
+  assert.equal(getLanguageConfiguration("yue").nativeName, "廣東話");
+  assert.equal(getLanguageConfiguration("yue").ttsLanguageCode, null);
+});
+
+test("Hong Kong Cantonese visitor copy and Quick Topics are localized", () => {
+  const copy = getUiCopy("yue");
+  assert.equal(copy.specialistsHeading, "認識您的 AI 專家");
+  assert.equal(copy.speakWith("Daniel"), "同 Daniel 傾偈");
+  assert.equal(copy.conversationWith("Emily"), "同 Emily 傾偈");
+  assert.equal(copy.quickTopics, "快速問題");
+  assert.equal(copy.talk, "講嘢");
+  assert.equal(copy.endSession, "結束對話");
+  assert.match(copy.topics.daniel["hydrogen-water-overview"].question, /氫水.*點樣/);
+  assert.match(copy.topics.emily["product-guidance"].question, /日常使用/);
 });
 
 test("Simplified Chinese visitor copy and Quick Topics are localized", () => {
@@ -88,6 +104,20 @@ test("Chinese knowledge questions become retrieval-oriented English without chan
   assert.match(inhalation, /inhalation/i);
 });
 
+test("Cantonese questions use the multilingual retrieval bridge", () => {
+  const charging = createKnowledgeQueryText(
+    "Advanced Bottle 充電嗰陣可唔可以產生氫氣？",
+    "yue",
+  );
+  const packageContents = createKnowledgeQueryText("盒入面有啲咩？", "zh-HK");
+  const materials = createKnowledgeQueryText("個樽係用咩物料造㗎？", "yue");
+  assert.match(charging, /advanced bottle/i);
+  assert.match(charging, /charging/i);
+  assert.match(charging, /generate hydrogen/i);
+  assert.match(packageContents, /package contents/i);
+  assert.match(materials, /material/i);
+});
+
 test("system prompts explicitly enforce the selected output language", async () => {
   const source = await readFile(
     path.join(process.cwd(), "lib/ai/system-prompt.ts"),
@@ -96,6 +126,8 @@ test("system prompts explicitly enforce the selected output language", async () 
   assert.match(source, /Answer in natural English only/);
   assert.match(source, /Answer in natural Russian only/);
   assert.match(source, /Answer in natural Simplified Chinese only/);
+  assert.match(source, /Answer in natural Cantonese only/);
+  assert.match(source, /Traditional Chinese appropriate for Hong Kong/);
   assert.match(source, /numbers, units and warnings exactly/);
   assert.match(source, /same approved facts/i);
 });

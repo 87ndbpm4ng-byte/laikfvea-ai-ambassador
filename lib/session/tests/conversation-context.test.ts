@@ -178,3 +178,21 @@ test("Chinese questions and follow-ups retain charging context", () => {
   assert.equal(followUp.activeProduct, "advanced");
   assert.equal(followUp.activeTopic, "charging");
 });
+
+test("Cantonese questions and follow-ups retain charging context", () => {
+  const manager = createManager();
+  const session = manager.createSession({ language: "yue" });
+  const charging = manager.recordVisitorMessage(session.sessionId, {
+    content: "Advanced Bottle 要點樣充電？",
+  });
+  assert.equal(charging.activeProduct, "advanced");
+  assert.equal(charging.activeTopic, "charging");
+  manager.recordAssistantMessage(session.sessionId, {
+    content: "打開後蓋，接上跟機充電線。",
+  });
+  const followUp = manager.recordVisitorMessage(session.sessionId, {
+    content: "充電嗰陣可唔可以用佢？",
+  });
+  assert.equal(followUp.activeProduct, "advanced");
+  assert.equal(followUp.activeTopic, "charging");
+});

@@ -26,6 +26,7 @@ test("service failures use the selected visitor language", () => {
   assert.equal(getServiceUnavailableResponse("en"), serviceUnavailableResponse);
   assert.match(getServiceUnavailableResponse("ru"), /информации о продукте/);
   assert.match(getServiceUnavailableResponse("zh"), /产品信息/);
+  assert.match(getServiceUnavailableResponse("yue"), /產品資料/);
 });
 
 test("successful free-text request returns the server response", async () => {

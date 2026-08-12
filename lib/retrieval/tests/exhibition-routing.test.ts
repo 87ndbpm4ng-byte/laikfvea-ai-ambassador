@@ -87,6 +87,30 @@ test("routes equivalent English, Russian and Chinese package questions to one so
   assert.equal(new Set(results.map((result) => result.sourceReferences[0])).size, 1);
 });
 
+test("Cantonese exhibition wording retrieves documented facts", async () => {
+  const cases: Array<[string, RegExp]> = [
+    ["盒入面有啲咩？", /Package contents/i],
+    ["充電嗰陣可唔可以產生氫氣？", /Charging/i],
+    ["吸入氫氣功能係點用？", /inhalation/i],
+    ["個樽容量係幾多？", /Technical specifications/i],
+    ["個樽係用咩物料造㗎？", /Technical specifications/i],
+    ["可唔可以用有氣水？", /Safety instructions/i],
+    ["個樽要點樣清潔？", /Maintenance|Initial setup/i],
+  ];
+  for (const [message, heading] of cases) {
+    const visitorSession = session({ language: "yue" });
+    assert.equal(shouldRunRetrieval(message, "yue", visitorSession), true);
+    const result = await engine.search(
+      createRetrievalQuery({ message, session: visitorSession }),
+    );
+    assert.equal(result.insufficientKnowledge, false, message);
+    assert.ok(
+      result.matchedChunks.some(({ chunk }) => heading.test(chunk.heading)),
+      message,
+    );
+  }
+});
+
 test("generic conversational messages remain retrieval-free", () => {
   const visitorSession = session();
   for (const message of ["hello", "thank you", "that's interesting", "what do you mean?", "okay"]) {

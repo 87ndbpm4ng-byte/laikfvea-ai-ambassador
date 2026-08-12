@@ -59,6 +59,9 @@ function insufficientKnowledgeResponse(language: string | null) {
   if (resolvedLanguage === "zh") {
     return "现有产品资料不足以可靠回答这个问题。";
   }
+  if (resolvedLanguage === "yue") {
+    return "現有產品資料未足夠回答呢個問題。";
+  }
   return INSUFFICIENT_KNOWLEDGE_RESPONSE;
 }
 

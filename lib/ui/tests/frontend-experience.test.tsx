@@ -109,6 +109,23 @@ test("Simplified Chinese UI localizes both specialists and the conversation shel
   assert.doesNotMatch(`${danielConversation}${emilyConversation}`, /Quick topics|End session|Ask Emily a question/);
 });
 
+test("Hong Kong Cantonese UI localizes both specialists and the conversation shell", () => {
+  const selection = renderToStaticMarkup(
+    <SpecialistSelectionScreen language="yue" onSelect={() => undefined} onBack={() => undefined} />,
+  );
+  const danielConversation = renderConversation("daniel", "yue");
+  const emilyConversation = renderConversation("emily", "yue");
+
+  assert.match(selection, /認識您的 AI 專家/);
+  assert.match(selection, /同 Daniel 傾偈/);
+  assert.match(selection, /同 Emily 傾偈/);
+  assert.match(danielConversation, /科技專家/);
+  assert.match(danielConversation, /快速問題/);
+  assert.match(emilyConversation, /健康生活專家/);
+  assert.match(emilyConversation, /結束對話/);
+  assert.doesNotMatch(`${danielConversation}${emilyConversation}`, /认识您的 AI 专家|快捷问题|结束对话/);
+});
+
 test("shared conversation labels adapt to Daniel", () => {
   const markup = renderConversation("daniel");
 

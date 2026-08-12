@@ -34,3 +34,9 @@ test("speech normalization preserves Chinese characters, product names and units
     "充电说明 使用 USB-C 充电. 容量为 500 mL. 功率为 5 W.",
   );
 });
+
+test("speech normalization preserves Traditional Chinese Cantonese wording", () => {
+  const source = "呢款水樽用 **USB-C** 充電，容量係 350 mL。";
+  const normalized = normalizeSpeechText(source);
+  assert.equal(normalized, "呢款水樽用 USB-C 充電，容量係 350 mL。");
+});

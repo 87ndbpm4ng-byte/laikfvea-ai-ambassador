@@ -33,6 +33,16 @@ export const LANGUAGE_CONFIG: Record<
     speechRecognitionLocale: "zh-CN",
     ttsLanguageCode: "zh",
   },
+  yue: {
+    code: "yue",
+    displayName: "Cantonese",
+    nativeName: "廣東話",
+    locale: "zh-HK",
+    speechRecognitionLocale: "zh-HK",
+    // ElevenLabs Multilingual v2 documents Chinese (`zh`), not Cantonese
+    // (`yue`). Keep this null rather than silently producing Mandarin.
+    ttsLanguageCode: null,
+  },
 };
 
 export const SUPPORTED_LANGUAGES = Object.values(LANGUAGE_CONFIG);
@@ -40,7 +50,7 @@ export const SUPPORTED_LANGUAGES = Object.values(LANGUAGE_CONFIG);
 export function isSupportedLanguage(
   value: unknown,
 ): value is SupportedLanguage {
-  return value === "en" || value === "ru" || value === "zh";
+  return value === "en" || value === "ru" || value === "zh" || value === "yue";
 }
 
 export function getLanguageConfiguration(
@@ -55,6 +65,7 @@ export function resolveSupportedLanguage(
   if (isSupportedLanguage(value)) return value;
   const normalized = value?.toLocaleLowerCase();
   if (normalized?.startsWith("ru")) return "ru";
+  if (normalized === "yue" || normalized?.startsWith("zh-hk")) return "yue";
   if (normalized?.startsWith("zh")) return "zh";
   return DEFAULT_LANGUAGE;
 }

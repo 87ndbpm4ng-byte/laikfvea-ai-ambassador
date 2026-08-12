@@ -3,6 +3,7 @@ import test from "node:test";
 import { POST } from "@/app/api/speech/route";
 import {
   generateElevenLabsSpeech,
+  ElevenLabsSpeechError,
   MissingElevenLabsConfigError,
 } from "@/lib/voice/elevenlabs-speech-service";
 import { generateGuideSpeech } from "@/lib/voice/guide-speech-service";
@@ -284,6 +285,29 @@ test("Daniel keeps his voice and multilingual model for Chinese speech", async (
   assert.match(requestedBody, /氢水是如何工作的/);
 });
 
+test("Daniel Cantonese fails closed instead of silently requesting Mandarin", async () => {
+  let fetchCalled = false;
+  await assert.rejects(
+    generateElevenLabsSpeech(
+      {
+        text: "呢款水樽用 USB-C 充電，容量係 350 mL。",
+        guideId: "daniel",
+        language: "zh-HK",
+      },
+      {
+        apiKey: "test-key",
+        voiceId: "daniel-test-voice",
+        fetcher: async () => {
+          fetchCalled = true;
+          return new Response(new ArrayBuffer(1), { status: 200 });
+        },
+      },
+    ),
+    (error: unknown) => error instanceof ElevenLabsSpeechError && error.message.includes("422"),
+  );
+  assert.equal(fetchCalled, false);
+});
+
 test("missing Daniel configuration fails safely", async () => {
   await assert.rejects(
     generateElevenLabsSpeech(
@@ -351,6 +375,23 @@ test("Emily preserves marin and Chinese text for speech", async () => {
   );
   assert.equal(receivedOptions?.voice, "marin");
   assert.equal(receivedOptions?.input, "我会用简短清晰的方式说明。");
+});
+
+test("Emily preserves marin and Traditional Chinese Cantonese text", async () => {
+  let receivedOptions: Record<string, unknown> | undefined;
+  const client: SpeechClient = {
+    audio: { speech: { async create(options) {
+      receivedOptions = options;
+      return { async arrayBuffer() { return new ArrayBuffer(1); } };
+    } } },
+  };
+  const text = "呢款水樽用 USB-C 充電，容量係 350 mL。";
+  await generateOpenAISpeech(
+    { text, guideId: "emily", language: "zh-HK" },
+    { client },
+  );
+  assert.equal(receivedOptions?.voice, "marin");
+  assert.equal(receivedOptions?.input, text);
 });
 
 test("Emily LiveAvatar speech requests direct 24 kHz-compatible PCM", async () => {

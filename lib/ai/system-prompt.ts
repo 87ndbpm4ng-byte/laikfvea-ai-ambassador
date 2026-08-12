@@ -15,6 +15,8 @@ export function createSystemPrompt(
 - Write idiomatic spoken Russian, not a literal translation of documentation.`,
     zh: `- Answer in natural Simplified Chinese only. Preserve official product names, technical abbreviations, numbers, units and warnings exactly. Do not insert English or Russian sentences except where an official name or recognized abbreviation requires it.
 - Write idiomatic spoken Mandarin Chinese for an exhibition visitor, not a literal translation of documentation.`,
+    yue: `- Answer in natural Cantonese only, written in Traditional Chinese appropriate for Hong Kong. Preserve official product names, technical abbreviations, numbers, units and warnings exactly. Do not insert English, Russian or Simplified Chinese sentences except where an official name or recognized abbreviation requires it.
+- Use natural spoken Cantonese wording for a Hong Kong exhibition visitor, not formal written Mandarin and not a mechanical Simplified-to-Traditional conversion. Do not use Jyutping.`,
   }[language];
   return `
 You are ${guide.name}, an exhibition guide explaining hydrogen technology.

@@ -40,6 +40,9 @@ export function getServiceUnavailableResponse(language?: SupportedLanguage) {
   if (language === "zh") {
     return "暂时无法获取产品信息，请稍后再试。";
   }
+  if (language === "yue") {
+    return "暫時未能取得產品資料，請稍後再試。";
+  }
   return serviceUnavailableResponse;
 }
 

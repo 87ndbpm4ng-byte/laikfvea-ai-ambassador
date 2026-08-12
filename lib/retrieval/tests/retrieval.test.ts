@@ -145,6 +145,22 @@ test("equivalent Chinese and English questions retrieve the same approved chargi
   );
 });
 
+test("equivalent Cantonese and English questions retrieve the same approved charging section", async () => {
+  const { engine } = await setupKnowledge();
+  const english = await engine.search(createRetrievalQuery({
+    message: "How do I charge the Advanced Bottle?", session: session(),
+  }));
+  const cantonese = await engine.search(createRetrievalQuery({
+    message: "Advanced Bottle 要點樣充電？",
+    session: session({ language: "yue" }),
+  }));
+  assert.equal(cantonese.matchedChunks[0].chunk.heading, "Charging");
+  assert.equal(
+    cantonese.matchedChunks[0].chunk.sourceReference,
+    english.matchedChunks[0].chunk.sourceReference,
+  );
+});
+
 test("advanced product filter excludes everyday-only content", async () => {
   const { engine } = await setupKnowledge();
   const result = await engine.search(

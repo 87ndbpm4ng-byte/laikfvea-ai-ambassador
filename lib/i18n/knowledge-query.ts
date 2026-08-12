@@ -82,6 +82,47 @@ const CHINESE_QUERY_TERMS: readonly [RegExp, string][] = [
   [/它|这个|这款/gu, " it this "],
 ];
 
+const CANTONESE_QUERY_TERMS: readonly [RegExp, string][] = [
+  [/你好|早晨/gu, " hello "],
+  [/唔該|多謝/gu, " thanks "],
+  [/再見/gu, " bye "],
+  [/有咩分別|有乜分別|比較/gu, " compare difference "],
+  [/兩款|兩個產品/gu, " both products "],
+  [/邊一款|邊款|邊個/gu, " which one "],
+  [/旅行|出街|便攜/gu, " travel portable "],
+  [/充電/gu, " charging "],
+  [/包裝|盒入面|配件|包括|跟機/gu, " package contents accessories included "],
+  [/電池|續航/gu, " battery "],
+  [/清潔|清洗|洗/gu, " cleaning "],
+  [/保養|維護/gu, " maintenance "],
+  [/安全|警告|注意事項/gu, " safety warning "],
+  [/吸入氫氣|吸氫|吸入/gu, " inhalation "],
+  [/氫水|富氫水/gu, " hydrogen water "],
+  [/電解/gu, " electrolysis "],
+  [/產生氫氣|製氫/gu, " generate hydrogen operation "],
+  [/礦化|濾芯|濾盒/gu, " mineralisation filter cartridge "],
+  [/規格|尺寸|技術/gu, " technical specifications "],
+  [/物料|材料|咩造|乜造|電極|膜|塗層|鈦|鉑/gu, " material electrode membrane coating titanium platinum "],
+  [/容量|容積|幾多水/gu, " capacity water volume "],
+  [/濃度|ppb|ppm/gu, " hydrogen concentration ppb "],
+  [/循環|模式|幾耐|多長時間/gu, " cycle mode duration "],
+  [/熱水|凍水|溫度/gu, " water temperature "],
+  [/有氣水|梳打水|碳酸水/gu, " carbonated sparkling water liquids "],
+  [/即刻飲|立即飲/gu, " drink immediately "],
+  [/儲存.*水|保存.*水|可以放幾耐/gu, " store water hours "],
+  [/再做一次|再行一次|第二個循環|連續循環/gu, " consecutive repeated cycle pressure "],
+  [/第一次用|首次使用|使用之前|新水樽/gu, " initial setup first use "],
+  [/水喉沖洗|流水沖洗|沖洗/gu, " running water rinse maintenance "],
+  [/幾個月冇用|長期存放|長時間唔用/gu, " long time warm drinking water rinse "],
+  [/功率/gu, " power charging "],
+  [/Advanced Bottle/giu, " advanced bottle "],
+  [/Everyday Bottle/giu, " everyday bottle "],
+  [/水樽|樽/gu, " bottle "],
+  [/講多啲|詳細啲/gu, " tell me more "],
+  [/點解/gu, " why "],
+  [/佢|呢個|呢款/gu, " it this "],
+];
+
 export function createKnowledgeQueryText(
   message: string,
   language?: string | null,
@@ -89,8 +130,11 @@ export function createKnowledgeQueryText(
   const resolvedLanguage = resolveSupportedLanguage(language);
   if (resolvedLanguage === "en") return message.trim();
 
-  const terms =
-    resolvedLanguage === "ru" ? RUSSIAN_QUERY_TERMS : CHINESE_QUERY_TERMS;
+  const terms = resolvedLanguage === "ru"
+    ? RUSSIAN_QUERY_TERMS
+    : resolvedLanguage === "yue"
+      ? CANTONESE_QUERY_TERMS
+      : CHINESE_QUERY_TERMS;
 
   return terms.reduce(
     (translated, [pattern, replacement]) =>
