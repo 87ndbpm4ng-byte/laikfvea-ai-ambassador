@@ -43,6 +43,9 @@ export function getServiceUnavailableResponse(language?: SupportedLanguage) {
   if (language === "yue") {
     return "暫時未能取得產品資料，請稍後再試。";
   }
+  if (language === "fr") {
+    return "Les informations produit sont momentanément indisponibles. Veuillez réessayer dans un instant.";
+  }
   return serviceUnavailableResponse;
 }
 

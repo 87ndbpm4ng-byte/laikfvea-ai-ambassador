@@ -196,3 +196,71 @@ test("Cantonese questions and follow-ups retain charging context", () => {
   assert.equal(followUp.activeProduct, "advanced");
   assert.equal(followUp.activeTopic, "charging");
 });
+
+test("French questions and follow-ups retain charging context", () => {
+  const manager = createManager();
+  const session = manager.createSession({ language: "fr" });
+  const charging = manager.recordVisitorMessage(session.sessionId, {
+    content: "Comment recharger l’Advanced Bottle ?",
+  });
+  assert.equal(charging.activeProduct, "advanced");
+  assert.equal(charging.activeTopic, "charging");
+  manager.recordAssistantMessage(session.sessionId, {
+    content: "Ouvrez le cache arrière et branchez le câble fourni.",
+  });
+  const followUp = manager.recordVisitorMessage(session.sessionId, {
+    content: "Puis-je l’utiliser pendant la charge ?",
+  });
+  assert.equal(followUp.activeProduct, "advanced");
+  assert.equal(followUp.activeTopic, "charging");
+});
+
+test("French technical follow-up retains hydrogen-water context", () => {
+  const manager = createManager();
+  const session = manager.createSession({ language: "fr" });
+  const hydrogenWater = manager.recordVisitorMessage(session.sessionId, {
+    content: "Comment fonctionne l’eau hydrogénée ?",
+  });
+  assert.equal(hydrogenWater.activeTopic, "hydrogen-water");
+  manager.recordAssistantMessage(session.sessionId, {
+    content: "L’appareil prépare l’eau hydrogénée par électrolyse.",
+  });
+  const followUp = manager.recordVisitorMessage(session.sessionId, {
+    content: "Expliquez-le de manière plus technique.",
+  });
+  assert.equal(followUp.activeTopic, "hydrogen-water");
+});
+
+test("Chinese technical follow-up and inhalation switch update the active topic", () => {
+  const manager = createManager();
+  const session = manager.createSession({ language: "zh" });
+  const hydrogenWater = manager.recordVisitorMessage(session.sessionId, {
+    content: "氢水是如何工作的？",
+  });
+  assert.equal(hydrogenWater.activeTopic, "hydrogen-water");
+  const technical = manager.recordVisitorMessage(session.sessionId, {
+    content: "可以讲得更技术一点吗？",
+  });
+  assert.equal(technical.activeTopic, "hydrogen-water");
+  const inhalation = manager.recordVisitorMessage(session.sessionId, {
+    content: "那氢气吸入功能呢？",
+  });
+  assert.equal(inhalation.activeTopic, "hydrogen-inhalation");
+});
+
+test("Cantonese technical follow-up and inhalation switch update the active topic", () => {
+  const manager = createManager();
+  const session = manager.createSession({ language: "yue" });
+  const hydrogenWater = manager.recordVisitorMessage(session.sessionId, {
+    content: "氫水係點樣運作嘅？",
+  });
+  assert.equal(hydrogenWater.activeTopic, "hydrogen-water");
+  const technical = manager.recordVisitorMessage(session.sessionId, {
+    content: "可以講得技術啲嗎？",
+  });
+  assert.equal(technical.activeTopic, "hydrogen-water");
+  const inhalation = manager.recordVisitorMessage(session.sessionId, {
+    content: "咁氫氣吸入功能呢？",
+  });
+  assert.equal(inhalation.activeTopic, "hydrogen-inhalation");
+});

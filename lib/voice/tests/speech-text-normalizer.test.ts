@@ -40,3 +40,9 @@ test("speech normalization preserves Traditional Chinese Cantonese wording", () 
   const normalized = normalizeSpeechText(source);
   assert.equal(normalized, "呢款水樽用 USB-C 充電，容量係 350 mL。");
 });
+
+test("speech normalization preserves French diacritics and technical notation", () => {
+  const source = "L’eau **hydrogénée** utilise un port USB-C à 5 W, sans altérer la sécurité.";
+  const normalized = normalizeSpeechText(source);
+  assert.equal(normalized, "L’eau hydrogénée utilise un port USB-C à 5 W, sans altérer la sécurité.");
+});

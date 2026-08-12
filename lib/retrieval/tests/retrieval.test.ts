@@ -4,6 +4,7 @@ import { test } from "node:test";
 import os from "node:os";
 import path from "node:path";
 import { createRetrievalContext, sanitizeVisitorResponse } from "@/lib/retrieval/retrieval-context";
+import { validateGroundedResponse } from "@/lib/retrieval/retrieval-answer-validator";
 import { RetrievalEngine } from "@/lib/retrieval/retrieval-engine";
 import { ApprovedKnowledgeLoader } from "@/lib/retrieval/retrieval-loader";
 import {
@@ -161,6 +162,22 @@ test("equivalent Cantonese and English questions retrieve the same approved char
   );
 });
 
+test("equivalent French and English questions retrieve the same approved charging section", async () => {
+  const { engine } = await setupKnowledge();
+  const english = await engine.search(createRetrievalQuery({
+    message: "How do I charge the Advanced Bottle?", session: session(),
+  }));
+  const french = await engine.search(createRetrievalQuery({
+    message: "Comment recharger l’Advanced Bottle ?",
+    session: session({ language: "fr" }),
+  }));
+  assert.equal(french.matchedChunks[0].chunk.heading, "Charging");
+  assert.equal(
+    french.matchedChunks[0].chunk.sourceReference,
+    english.matchedChunks[0].chunk.sourceReference,
+  );
+});
+
 test("advanced product filter excludes everyday-only content", async () => {
   const { engine } = await setupKnowledge();
   const result = await engine.search(
@@ -271,6 +288,33 @@ test("visitor-facing product names are neutralized", () => {
   );
   assert.equal(response, "Advanced Bottle and Everyday Bottle");
   assert.doesNotMatch(response, /Laikfvea|PRO|\bGO\b/i);
+});
+
+test("grounding validation does not treat French conjunctions as numeric units", () => {
+  const context = {
+    passages: [{
+      sourceReference: "approved-hydrogen-process",
+      sourceId: "approved-hydrogen-process",
+      documentTitle: "Approved Manual",
+      documentType: "official-user-manual",
+      sourcePriority: 3,
+      sourceVersion: null,
+      language: "en",
+      product: "advanced" as const,
+      topics: ["operation"],
+      text: "Choose the duration of hydrogen generation: 3 minutes or 18 minutes.",
+    }],
+    confidence: "high" as const,
+    insufficientKnowledge: false,
+  };
+
+  assert.equal(
+    validateGroundedResponse(
+      "Choisissez un cycle de 3 ou 18 minutes.",
+      context,
+    ).valid,
+    true,
+  );
 });
 
 test("greetings bypass retrieval", () => {

@@ -43,4 +43,5 @@ test("browser recognition uses the language fixed for the visitor session", () =
   assert.equal(captureRecognitionLocale("ru-RU"), "ru-RU");
   assert.equal(captureRecognitionLocale("zh-CN"), "zh-CN");
   assert.equal(captureRecognitionLocale("zh-HK"), "zh-HK");
+  assert.equal(captureRecognitionLocale("fr-FR"), "fr-FR");
 });

@@ -4,6 +4,10 @@ const RUSSIAN_QUERY_TERMS: readonly [RegExp, string][] = [
   [/привет\w*|здравств\w*/giu, " hello "],
   [/спасибо|благодар\w*/giu, " thanks "],
   [/пока|до свидания/giu, " bye "],
+  [
+    /(?:как работает|что такое|объясни(?:те)?)(?:\s+технологи\S+)?\s+водородн\S*\s+вод\S*/giu,
+    " hydrogen water preparation process ",
+  ],
   [/чем отличаются|разниц\w*|сравн\w*/giu, " compare difference "],
   [/обе|обоих|две бутылки|два продукта/giu, " both products "],
   [/какую|какой из них|которую/giu, " which one "],
@@ -45,6 +49,11 @@ const CHINESE_QUERY_TERMS: readonly [RegExp, string][] = [
   [/你好|您好/gu, " hello "],
   [/谢谢/gu, " thanks "],
   [/再见/gu, " bye "],
+  [
+    /(?:氢水(?:是如何工作(?:的)?|是什么|的原理是什么)|什么是氢水|氢气是如何加入水中(?:的)?|可以解释一下氢水吗)/gu,
+    " hydrogen water preparation process ",
+  ],
+  [/可以讲得更技术一点吗|从技术角度解释一下/gu, " tell me more technical "],
   [/有什么区别|区别|比较|对比/gu, " compare difference "],
   [/两款|两个产品|两种/gu, " both products "],
   [/哪一款|哪款|哪个/gu, " which one "],
@@ -86,6 +95,11 @@ const CANTONESE_QUERY_TERMS: readonly [RegExp, string][] = [
   [/你好|早晨/gu, " hello "],
   [/唔該|多謝/gu, " thanks "],
   [/再見/gu, " bye "],
+  [
+    /(?:氫水係點樣運作(?:嘅|㗎)?|咩係氫水|氫水嘅原理係咩|氫氣係點樣加入水入面|可以解釋一下氫水嗎)/gu,
+    " hydrogen water preparation process ",
+  ],
+  [/可以講得技術啲嗎|從技術角度解釋/gu, " tell me more technical "],
   [/有咩分別|有乜分別|比較/gu, " compare difference "],
   [/兩款|兩個產品/gu, " both products "],
   [/邊一款|邊款|邊個/gu, " which one "],
@@ -123,6 +137,60 @@ const CANTONESE_QUERY_TERMS: readonly [RegExp, string][] = [
   [/佢|呢個|呢款/gu, " it this "],
 ];
 
+const FRENCH_QUERY_TERMS: readonly [RegExp, string][] = [
+  [/bonjour|salut/giu, " hello "],
+  [/merci/giu, " thanks "],
+  [/au revoir/giu, " bye "],
+  [
+    /(?:comment fonctionne|fonctionnement de|qu['’]est-ce que|pouvez-vous m['’]expliquer)\s+l['’]?(?:eau hydrog[ée]n[ée]e|eau hydrog[èe]ne|eau riche en hydrog[èe]ne)/giu,
+    " hydrogen water preparation process ",
+  ],
+  [
+    /comment\s+l['’]?hydrog[èe]ne\s+est-il\s+ajout[ée]\s+[àa]\s+l['’]?eau/giu,
+    " hydrogen water preparation process ",
+  ],
+  [
+    /comment fonctionne\s+(?:cette|la)\s+technologie\s+de\s+l['’]?hydrog[èe]ne/giu,
+    " hydrogen water preparation process ",
+  ],
+  [/expliquez-(?:le|la).*mani[èe]re plus technique/giu, " tell me more technical "],
+  [/diff[ée]rence|compar(?:er|aison)/giu, " compare difference "],
+  [/les deux|deux produits?|deux mod[èe]les?/giu, " both products "],
+  [/lequel|laquelle|quel mod[èe]le/giu, " which one "],
+  [/voyage|portable/giu, " travel portable "],
+  [/recharg\w*|charg\w*/giu, " charging "],
+  [/(?:que contient|contenu).*(?:bo[îi]te|emballage)|dans la bo[îi]te|livr[ée].*avec|accessoires?|inclus/giu, " package contents accessories included "],
+  [/batterie|autonomie/giu, " battery "],
+  [/nettoy\w*|lav\w*/giu, " cleaning "],
+  [/entretien|maintenance/giu, " maintenance "],
+  [/s[ée]curit[ée]|avertissement|pr[ée]caution/giu, " safety warning "],
+  [/inhal\w*|respirer.*hydrog[èe]ne/giu, " inhalation "],
+  [/eau hydrog[ée]n[ée]e|eau hydrog[èe]ne|eau riche en hydrog[èe]ne/giu, " hydrogen water "],
+  [/électrolyse|electrolyse/giu, " electrolysis "],
+  [/g[ée]n[ée]r\w*.*hydrog[èe]ne|produi\w*.*hydrog[èe]ne/giu, " generate hydrogen operation "],
+  [/min[ée]ralis\w*|filtre|cartouche/giu, " mineralisation filter cartridge "],
+  [/caract[ée]ristiques?|dimensions?|sp[ée]cifications?|technique/giu, " technical specifications "],
+  [/mat[ée]riau|fabriqu[ée].*(?:en|avec)|corps|[ée]lectrodes?|membrane|rev[êe]tement|titane|platine/giu, " material electrode membrane coating titanium platinum "],
+  [/capacit[ée]|volume|combien d.eau/giu, " capacity water volume "],
+  [/concentration|ppb|ppm/giu, " hydrogen concentration ppb "],
+  [/cycle|mode|combien de temps|dur[ée]e/giu, " cycle mode duration "],
+  [/eau chaude|eau froide|temp[ée]rature/giu, " water temperature "],
+  [/eau gazeuse|boisson gazeuse|carbonat[ée]/giu, " carbonated sparkling water liquids "],
+  [/boire.*imm[ée]diatement|boire.*tout de suite/giu, " drink immediately "],
+  [/(?:conserver|stocker).*(?:eau|combien de temps)/giu, " store water hours "],
+  [/autre cycle|deuxi[èe]me cycle|cycle.*nouveau|cycles? cons[ée]cutifs?/giu, " consecutive repeated cycle pressure "],
+  [/premi[èe]re utilisation|avant.*utilis\w*|nouvelle bouteille/giu, " initial setup first use "],
+  [/eau courante|sous le robinet|rincer/giu, " running water rinse maintenance "],
+  [/plusieurs mois|longue dur[ée]e|pas utilis[ée].*longtemps/giu, " long time warm drinking water rinse "],
+  [/puissance/giu, " power charging "],
+  [/Advanced Bottle/giu, " advanced bottle "],
+  [/Everyday Bottle/giu, " everyday bottle "],
+  [/bouteille/giu, " bottle "],
+  [/en dire plus|plus de d[ée]tails/giu, " tell me more "],
+  [/pourquoi/giu, " why "],
+  [/(?:elle|lui|celui-ci|celle-ci|ce mod[èe]le)/giu, " it this "],
+];
+
 export function createKnowledgeQueryText(
   message: string,
   language?: string | null,
@@ -132,6 +200,8 @@ export function createKnowledgeQueryText(
 
   const terms = resolvedLanguage === "ru"
     ? RUSSIAN_QUERY_TERMS
+    : resolvedLanguage === "fr"
+      ? FRENCH_QUERY_TERMS
     : resolvedLanguage === "yue"
       ? CANTONESE_QUERY_TERMS
       : CHINESE_QUERY_TERMS;

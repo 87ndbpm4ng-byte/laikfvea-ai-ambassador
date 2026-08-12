@@ -111,6 +111,170 @@ test("Cantonese exhibition wording retrieves documented facts", async () => {
   }
 });
 
+test("French exhibition wording retrieves documented facts", async () => {
+  const cases: Array<[string, RegExp]> = [
+    ["Que contient la boîte ?", /Package contents/i],
+    ["Puis-je produire de l’hydrogène pendant la charge ?", /Charging/i],
+    ["Comment utiliser l’inhalation d’hydrogène ?", /inhalation/i],
+    ["Quelle est la capacité de la bouteille ?", /Technical specifications/i],
+    ["En quels matériaux la bouteille est-elle fabriquée ?", /Technical specifications/i],
+    ["Puis-je utiliser de l’eau gazeuse ?", /Safety instructions/i],
+    ["Comment nettoyer la bouteille ?", /Maintenance|Initial setup/i],
+  ];
+  for (const [message, heading] of cases) {
+    const visitorSession = session({ language: "fr" });
+    assert.equal(shouldRunRetrieval(message, "fr", visitorSession), true);
+    const result = await engine.search(
+      createRetrievalQuery({ message, session: visitorSession }),
+    );
+    assert.equal(result.insufficientKnowledge, false, message);
+    assert.ok(
+      result.matchedChunks.some(({ chunk }) => heading.test(chunk.heading)),
+      message,
+    );
+  }
+});
+
+test("French hydrogen-water explanations retrieve the approved preparation evidence", async () => {
+  const questions = [
+    "Comment fonctionne l’eau hydrogénée ?",
+    "Qu’est-ce que l’eau hydrogénée ?",
+    "Comment fonctionne la technologie de l’hydrogène ?",
+    "Comment l’hydrogène est-il ajouté à l’eau ?",
+    "Pouvez-vous m’expliquer l’eau hydrogénée ?",
+  ];
+
+  for (const message of questions) {
+    const visitorSession = session({ language: "fr" });
+    assert.equal(shouldRunRetrieval(message, "fr", visitorSession), true);
+    const result = await engine.search(
+      createRetrievalQuery({ message, session: visitorSession }),
+    );
+    assert.equal(result.insufficientKnowledge, false, message);
+    assert.equal(
+      result.matchedChunks[0]?.chunk.heading,
+      "Hydrogen water preparation process",
+      message,
+    );
+  }
+});
+
+test("French Hydrogen Technology Quick Topic retrieves approved preparation evidence", async () => {
+  const message = "Comment fonctionne l’eau hydrogénée ?";
+  const visitorSession = session({ language: "fr" });
+  const result = await engine.search(
+    createRetrievalQuery({ message, session: visitorSession }),
+  );
+
+  assert.equal(result.insufficientKnowledge, false);
+  assert.equal(
+    result.matchedChunks[0]?.chunk.heading,
+    "Hydrogen water preparation process",
+  );
+});
+
+test("Simplified Chinese hydrogen-water intent prioritizes preparation evidence", async () => {
+  for (const message of [
+    "氢水是如何工作的？",
+    "什么是氢水？",
+    "氢水的原理是什么？",
+    "氢气是如何加入水中的？",
+    "可以解释一下氢水吗？",
+  ]) {
+    const visitorSession = session({ language: "zh" });
+    const result = await engine.search(
+      createRetrievalQuery({ message, session: visitorSession }),
+    );
+    assert.equal(
+      result.matchedChunks[0]?.chunk.heading,
+      "Hydrogen water preparation process",
+      message,
+    );
+  }
+});
+
+test("Cantonese hydrogen-water intent prioritizes preparation evidence", async () => {
+  for (const message of [
+    "氫水係點樣運作嘅？",
+    "氫水係點樣運作㗎？",
+    "咩係氫水？",
+    "氫水嘅原理係咩？",
+    "氫氣係點樣加入水入面？",
+    "可以解釋一下氫水嗎？",
+  ]) {
+    const visitorSession = session({ language: "yue" });
+    const result = await engine.search(
+      createRetrievalQuery({ message, session: visitorSession }),
+    );
+    assert.equal(
+      result.matchedChunks[0]?.chunk.heading,
+      "Hydrogen water preparation process",
+      message,
+    );
+  }
+});
+
+test("explicit inhalation intent remains distinct in all supported languages", async () => {
+  const cases = [
+    ["How does hydrogen inhalation work?", "en"],
+    ["Как работает водородная ингаляция?", "ru"],
+    ["氢气吸入功能是如何工作的？", "zh"],
+    ["氫氣吸入功能係點樣運作嘅？", "yue"],
+    ["Comment fonctionne l’inhalation d’hydrogène ?", "fr"],
+  ] as const;
+
+  for (const [message, language] of cases) {
+    const visitorSession = session({ language });
+    const result = await engine.search(
+      createRetrievalQuery({ message, session: visitorSession }),
+    );
+    assert.match(result.matchedChunks[0]?.chunk.heading ?? "", /inhalation/i, message);
+  }
+});
+
+test("hydrogen-technology Quick Topics share preparation evidence across five languages", async () => {
+  const cases = [
+    ["How does hydrogen water work?", "en"],
+    ["Как работает водородная вода?", "ru"],
+    ["氢水是如何工作的？", "zh"],
+    ["氫水係點樣運作㗎？", "yue"],
+    ["Comment fonctionne l’eau hydrogénée ?", "fr"],
+  ] as const;
+
+  for (const [message, language] of cases) {
+    const visitorSession = session({ language, activeProduct: "advanced" });
+    const result = await engine.search(
+      createRetrievalQuery({ message, session: visitorSession }),
+    );
+    assert.equal(
+      result.matchedChunks[0]?.chunk.heading,
+      "Hydrogen water preparation process",
+      message,
+    );
+  }
+});
+
+test("hydrogen-water retrieval parity remains stable in English and Russian", async () => {
+  const cases = [
+    ["How does hydrogen water work?", "en"],
+    ["Как работает водородная вода?", "ru"],
+  ] as const;
+
+  for (const [message, language] of cases) {
+    const visitorSession = session({ language, activeProduct: "advanced" });
+    assert.equal(shouldRunRetrieval(message, language, visitorSession), true);
+    const result = await engine.search(
+      createRetrievalQuery({ message, session: visitorSession }),
+    );
+    assert.equal(result.insufficientKnowledge, false, message);
+    assert.equal(
+      result.matchedChunks[0]?.chunk.heading,
+      "Hydrogen water preparation process",
+      message,
+    );
+  }
+});
+
 test("generic conversational messages remain retrieval-free", () => {
   const visitorSession = session();
   for (const message of ["hello", "thank you", "that's interesting", "what do you mean?", "okay"]) {

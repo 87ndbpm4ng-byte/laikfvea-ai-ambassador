@@ -43,6 +43,14 @@ export const LANGUAGE_CONFIG: Record<
     // (`yue`). Keep this null rather than silently producing Mandarin.
     ttsLanguageCode: null,
   },
+  fr: {
+    code: "fr",
+    displayName: "French",
+    nativeName: "Français",
+    locale: "fr-FR",
+    speechRecognitionLocale: "fr-FR",
+    ttsLanguageCode: "fr",
+  },
 };
 
 export const SUPPORTED_LANGUAGES = Object.values(LANGUAGE_CONFIG);
@@ -50,7 +58,7 @@ export const SUPPORTED_LANGUAGES = Object.values(LANGUAGE_CONFIG);
 export function isSupportedLanguage(
   value: unknown,
 ): value is SupportedLanguage {
-  return value === "en" || value === "ru" || value === "zh" || value === "yue";
+  return value === "en" || value === "ru" || value === "zh" || value === "yue" || value === "fr";
 }
 
 export function getLanguageConfiguration(
@@ -65,6 +73,7 @@ export function resolveSupportedLanguage(
   if (isSupportedLanguage(value)) return value;
   const normalized = value?.toLocaleLowerCase();
   if (normalized?.startsWith("ru")) return "ru";
+  if (normalized?.startsWith("fr")) return "fr";
   if (normalized === "yue" || normalized?.startsWith("zh-hk")) return "yue";
   if (normalized?.startsWith("zh")) return "zh";
   return DEFAULT_LANGUAGE;

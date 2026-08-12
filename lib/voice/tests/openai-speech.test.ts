@@ -308,6 +308,32 @@ test("Daniel Cantonese fails closed instead of silently requesting Mandarin", as
   assert.equal(fetchCalled, false);
 });
 
+test("Daniel keeps his voice and multilingual model for French speech", async () => {
+  let requestedURL = "";
+  let requestedBody = "";
+  await generateElevenLabsSpeech(
+    {
+      text: "L’eau hydrogénée utilise un port USB-C, avec une capacité de 350 mL et une puissance de 5 W.",
+      guideId: "daniel",
+      language: "fr-FR",
+    },
+    {
+      apiKey: "test-key",
+      voiceId: "daniel-test-voice",
+      fetcher: async (input, init) => {
+        requestedURL = String(input);
+        requestedBody = String(init?.body);
+        return new Response(Uint8Array.from([1, 2]), { status: 200 });
+      },
+    },
+  );
+  assert.match(requestedURL, /daniel-test-voice/);
+  assert.match(requestedBody, /"model_id":"eleven_multilingual_v2"/);
+  assert.match(requestedBody, /"language_code":"fr"/);
+  assert.match(requestedBody, /hydrogénée/);
+  assert.match(requestedBody, /350 mL/);
+});
+
 test("missing Daniel configuration fails safely", async () => {
   await assert.rejects(
     generateElevenLabsSpeech(
@@ -388,6 +414,23 @@ test("Emily preserves marin and Traditional Chinese Cantonese text", async () =>
   const text = "呢款水樽用 USB-C 充電，容量係 350 mL。";
   await generateOpenAISpeech(
     { text, guideId: "emily", language: "zh-HK" },
+    { client },
+  );
+  assert.equal(receivedOptions?.voice, "marin");
+  assert.equal(receivedOptions?.input, text);
+});
+
+test("Emily preserves marin and French text", async () => {
+  let receivedOptions: Record<string, unknown> | undefined;
+  const client: SpeechClient = {
+    audio: { speech: { async create(options) {
+      receivedOptions = options;
+      return { async arrayBuffer() { return new ArrayBuffer(1); } };
+    } } },
+  };
+  const text = "L’eau hydrogénée utilise un port USB-C, avec une capacité de 350 mL.";
+  await generateOpenAISpeech(
+    { text, guideId: "emily", language: "fr-FR" },
     { client },
   );
   assert.equal(receivedOptions?.voice, "marin");

@@ -10,12 +10,13 @@ import {
 } from "@/lib/i18n/languages";
 import { getUiCopy } from "@/lib/i18n/ui-copy";
 
-test("English, Russian, Simplified Chinese and Cantonese are offered", () => {
-  assert.deepEqual(SUPPORTED_LANGUAGES.map(({ code }) => code), ["en", "ru", "zh", "yue"]);
+test("English, Russian, Chinese, Cantonese and French are offered", () => {
+  assert.deepEqual(SUPPORTED_LANGUAGES.map(({ code }) => code), ["en", "ru", "zh", "yue", "fr"]);
   assert.equal(isSupportedLanguage("en"), true);
   assert.equal(isSupportedLanguage("ru"), true);
   assert.equal(isSupportedLanguage("zh"), true);
   assert.equal(isSupportedLanguage("yue"), true);
+  assert.equal(isSupportedLanguage("fr"), true);
   assert.equal(isSupportedLanguage("es"), false);
 });
 
@@ -27,6 +28,22 @@ test("language configuration provides stable recognition locales", () => {
   assert.equal(getLanguageConfiguration("yue").speechRecognitionLocale, "zh-HK");
   assert.equal(getLanguageConfiguration("yue").nativeName, "廣東話");
   assert.equal(getLanguageConfiguration("yue").ttsLanguageCode, null);
+  assert.equal(getLanguageConfiguration("fr").speechRecognitionLocale, "fr-FR");
+  assert.equal(getLanguageConfiguration("fr").nativeName, "Français");
+  assert.equal(getLanguageConfiguration("fr").ttsLanguageCode, "fr");
+});
+
+test("French visitor copy and Quick Topics are localized", () => {
+  const copy = getUiCopy("fr");
+  assert.equal(copy.specialistsHeading, "Rencontrez nos spécialistes IA");
+  assert.equal(copy.speakWith("Daniel"), "Parler avec Daniel");
+  assert.equal(copy.conversationWith("Emily"), "Conversation avec Emily");
+  assert.equal(copy.askQuestion("Daniel"), "Posez une question à Daniel");
+  assert.equal(copy.quickTopics, "Questions rapides");
+  assert.equal(copy.talk, "Parler");
+  assert.equal(copy.endSession, "Terminer la conversation");
+  assert.match(copy.topics.daniel["hydrogen-water-overview"].question, /hydrogénée/);
+  assert.match(copy.topics.emily["product-guidance"].question, /quotidien/);
 });
 
 test("Hong Kong Cantonese visitor copy and Quick Topics are localized", () => {
@@ -118,6 +135,20 @@ test("Cantonese questions use the multilingual retrieval bridge", () => {
   assert.match(materials, /material/i);
 });
 
+test("French questions use the multilingual retrieval bridge", () => {
+  const charging = createKnowledgeQueryText(
+    "Puis-je produire de l’hydrogène pendant la charge de l’Advanced Bottle ?",
+    "fr",
+  );
+  const packageContents = createKnowledgeQueryText("Que contient la boîte ?", "fr-FR");
+  const materials = createKnowledgeQueryText("En quels matériaux la bouteille est-elle fabriquée ?", "fr");
+  assert.match(charging, /advanced bottle/i);
+  assert.match(charging, /charging/i);
+  assert.match(charging, /generate hydrogen/i);
+  assert.match(packageContents, /package contents/i);
+  assert.match(materials, /material/i);
+});
+
 test("system prompts explicitly enforce the selected output language", async () => {
   const source = await readFile(
     path.join(process.cwd(), "lib/ai/system-prompt.ts"),
@@ -128,6 +159,7 @@ test("system prompts explicitly enforce the selected output language", async () 
   assert.match(source, /Answer in natural Simplified Chinese only/);
   assert.match(source, /Answer in natural Cantonese only/);
   assert.match(source, /Traditional Chinese appropriate for Hong Kong/);
+  assert.match(source, /Answer in natural standard French only/);
   assert.match(source, /numbers, units and warnings exactly/);
   assert.match(source, /same approved facts/i);
 });
