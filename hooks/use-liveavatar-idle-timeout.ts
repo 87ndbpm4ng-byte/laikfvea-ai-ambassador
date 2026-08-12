@@ -11,11 +11,13 @@ export function useLiveAvatarIdleTimeout({
   service,
   active = Boolean(service),
   timeoutSeconds = 120,
+  systemBusy = false,
   onTimeout,
 }: {
   service?: DanielAvatarOutput;
   active?: boolean;
   timeoutSeconds?: number;
+  systemBusy?: boolean;
   onTimeout: () => void;
 }) {
   const timerRef = useRef<LiveAvatarIdleTimer | null>(null);
@@ -34,7 +36,7 @@ export function useLiveAvatarIdleTimeout({
   }, []);
 
   useEffect(() => {
-    if (!active) return;
+    if (!active || systemBusy) return;
 
     function startTimer(nextTimeoutSeconds: number) {
       timerRef.current?.stop();
@@ -69,11 +71,11 @@ export function useLiveAvatarIdleTimeout({
       setRemainingSeconds(null);
       setShowWarning(false);
     };
-  }, [active, recordActivity, service, timeoutSeconds]);
+  }, [active, recordActivity, service, systemBusy, timeoutSeconds]);
 
   return {
-    remainingSeconds,
-    showWarning,
+    remainingSeconds: systemBusy ? null : remainingSeconds,
+    showWarning: systemBusy ? false : showWarning,
     continueSession: recordActivity,
   };
 }

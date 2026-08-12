@@ -73,6 +73,7 @@ type UiCopy = {
   microphoneDenied: string;
   recognitionTimeout: string;
   recognitionFailed: string;
+  connectionLost: string;
   productExplorer: string;
   productExplorerSupport: string;
   viewProductLabel: string;
@@ -187,6 +188,7 @@ const en: UiCopy = {
   microphoneDenied: "Microphone access was not granted. You can still type your question.",
   recognitionTimeout: "I didn’t hear a question. Tap Talk and try again.",
   recognitionFailed: "I couldn’t hear that clearly. Please try again or type your question.",
+  connectionLost: "Connection lost. You can end the conversation or try again when the connection returns.",
   productExplorer: "Product Explorer",
   productExplorerSupport: "Explore the available products and their key capabilities.",
   viewProductLabel: "View product",
@@ -308,6 +310,7 @@ const ru: UiCopy = {
   microphoneDenied: "Доступ к микрофону не предоставлен. Вопрос можно напечатать.",
   recognitionTimeout: "Я не услышал вопрос. Нажмите «Говорить» и попробуйте ещё раз.",
   recognitionFailed: "Не удалось разобрать вопрос. Попробуйте ещё раз или напечатайте его.",
+  connectionLost: "Соединение потеряно. Завершите разговор или попробуйте снова после восстановления связи.",
   productExplorer: "Каталог продуктов",
   productExplorerSupport: "Познакомьтесь с доступными продуктами и их основными возможностями.",
   viewProductLabel: "Открыть продукт",
@@ -429,6 +432,7 @@ const zh: UiCopy = {
   microphoneDenied: "未获得麦克风权限，您仍可输入问题。",
   recognitionTimeout: "没有听到您的问题，请点击“开始说话”后再试一次。",
   recognitionFailed: "没有听清您的问题，请再试一次或直接输入问题。",
+  connectionLost: "网络连接已断开。您可以结束对话，或在连接恢复后重试。",
   productExplorer: "产品一览",
   productExplorerSupport: "了解现有产品及其主要功能。",
   viewProductLabel: "查看产品",
@@ -550,6 +554,7 @@ const yue: UiCopy = {
   microphoneDenied: "未獲准使用咪高峰，您仍然可以打字提問。",
   recognitionTimeout: "未聽到您的問題，請撳「講嘢」再試一次。",
   recognitionFailed: "未聽清楚您的問題，請再試一次或者直接打字。",
+  connectionLost: "網絡連線已中斷。您可以結束對話，或者等連線恢復後再試。",
   productExplorer: "產品一覽",
   productExplorerSupport: "了解現有產品同主要功能。",
   viewProductLabel: "查看產品",
@@ -671,6 +676,7 @@ const fr: UiCopy = {
   microphoneDenied: "L’accès au microphone n’a pas été autorisé. Vous pouvez toujours écrire votre question.",
   recognitionTimeout: "Je n’ai pas entendu de question. Appuyez sur « Parler » et réessayez.",
   recognitionFailed: "Je n’ai pas bien compris. Réessayez ou écrivez votre question.",
+  connectionLost: "Connexion interrompue. Vous pouvez terminer la conversation ou réessayer une fois la connexion rétablie.",
   productExplorer: "Découvrir les produits",
   productExplorerSupport: "Découvrez les produits disponibles et leurs principales fonctions.",
   viewProductLabel: "Voir le produit",

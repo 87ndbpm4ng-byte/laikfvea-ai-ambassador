@@ -33,6 +33,12 @@ test("language configuration provides stable recognition locales", () => {
   assert.equal(getLanguageConfiguration("fr").ttsLanguageCode, "fr");
 });
 
+test("connection-loss recovery copy exists in every supported language", () => {
+  for (const language of ["en", "ru", "zh", "yue", "fr"] as const) {
+    assert.ok(getUiCopy(language).connectionLost.length > 20, language);
+  }
+});
+
 test("French visitor copy and Quick Topics are localized", () => {
   const copy = getUiCopy("fr");
   assert.equal(copy.specialistsHeading, "Rencontrez nos spécialistes IA");

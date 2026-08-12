@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, KeyboardEvent, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
 import { LiveAvatarRenderer } from "@/components/liveavatar/liveavatar-renderer";
 import { PresentationLayer } from "@/components/presentation/presentation-layer";
 import { PrimaryButton } from "@/components/ui/primary-button";
@@ -140,6 +140,9 @@ export function ConversationScreen({
     ...copy.topics[guideId][suggestedQuestion.id],
   }));
   const [draft, setDraft] = useState("");
+  const [isOnline, setIsOnline] = useState(
+    () => typeof navigator === "undefined" || navigator.onLine,
+  );
   const conversationTurns = createConversationTurns(messages);
   const latestVisitorMessage = [...messages]
     .reverse()
@@ -173,8 +176,24 @@ export function ConversationScreen({
   const idleTimeout = useLiveAvatarIdleTimeout({
     service: liveAvatarService,
     active: true,
+    systemBusy:
+      isLoading ||
+      voice.inputState === "listening" ||
+      voice.inputState === "processing" ||
+      voice.outputState === "speaking" ||
+      voice.isPreparingVoice,
     onTimeout: onIdleTimeout,
   });
+
+  useEffect(() => {
+    const updateOnlineState = () => setIsOnline(navigator.onLine);
+    window.addEventListener("online", updateOnlineState);
+    window.addEventListener("offline", updateOnlineState);
+    return () => {
+      window.removeEventListener("online", updateOnlineState);
+      window.removeEventListener("offline", updateOnlineState);
+    };
+  }, []);
 
   async function submitTypedQuestion(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -221,6 +240,11 @@ export function ConversationScreen({
       className="screen-content conversation-content"
       aria-labelledby="conversation-heading"
     >
+      {!isOnline ? (
+        <p className="connection-status" role="status">
+          {copy.connectionLost}
+        </p>
+      ) : null}
       {idleTimeout.showWarning && idleTimeout.remainingSeconds !== null ? (
         <div
           className="liveavatar-idle-warning"

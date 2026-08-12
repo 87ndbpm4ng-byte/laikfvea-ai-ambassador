@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { generateConversationResponse } from "@/lib/conversation/response-engine";
 import { logVoiceDiagnostic } from "@/lib/voice/voice-diagnostics";
 import type {
@@ -9,6 +9,7 @@ import type {
 } from "@/types/conversation";
 import type { Guide } from "@/types/guide";
 import type { SupportedLanguage } from "@/types/language";
+import { VisitorSessionLifecycle } from "@/lib/kiosk/visitor-session-lifecycle";
 
 let fallbackMessageSequence = 0;
 
@@ -29,6 +30,7 @@ export function useConversation(
   const [isLoading, setIsLoading] = useState(false);
   const loadingRef = useRef(false);
   const sessionIdRef = useRef<string | undefined>(undefined);
+  const lifecycleRef = useRef(new VisitorSessionLifecycle());
 
   const submitQuestion = useCallback(
     async ({
@@ -64,6 +66,8 @@ export function useConversation(
         visitorMessage,
       ]);
 
+      const request = lifecycleRef.current.beginRequest();
+
       try {
         const history = messages
           .filter(
@@ -86,7 +90,11 @@ export function useConversation(
           questionId,
           relatedProduct,
           sessionId: sessionIdRef.current,
+          signal: request.controller.signal,
         });
+        if (!lifecycleRef.current.isCurrent(request.generation, request.controller)) {
+          return false;
+        }
         sessionIdRef.current = response.sessionId;
 
         const guideMessage: ConversationMessage = {
@@ -110,19 +118,25 @@ export function useConversation(
         ]);
         return true;
       } finally {
-        loadingRef.current = false;
-        setIsLoading(false);
+        if (lifecycleRef.current.isCurrent(request.generation, request.controller)) {
+          lifecycleRef.current.finish(request.controller);
+          loadingRef.current = false;
+          setIsLoading(false);
+        }
       }
     },
     [guide, language, messages],
   );
 
   const clearHistory = useCallback(() => {
+    lifecycleRef.current.reset();
     loadingRef.current = false;
     setIsLoading(false);
     setMessages([]);
     sessionIdRef.current = undefined;
   }, []);
+
+  useEffect(() => () => lifecycleRef.current.reset(), []);
 
   return {
     messages,

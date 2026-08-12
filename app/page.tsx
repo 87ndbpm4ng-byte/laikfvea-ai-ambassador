@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScreenContainer } from "@/components/layout/screen-container";
 import {
   ConversationScreen,
@@ -35,11 +35,13 @@ export default function Home() {
   const [selectedProduct, setSelectedProduct] = useState<ProductId>("everyday");
   const [voiceActivation, setVoiceActivation] =
     useState<Promise<boolean> | null>(null);
+  const resetInProgressRef = useRef(false);
   const selectedGuide = selectedGuideId ? guides[selectedGuideId] : null;
   const activeLanguage = selectedLanguage ?? "en";
   const languageConfiguration = getLanguageConfiguration(activeLanguage);
   const copy = getUiCopy(activeLanguage);
   const conversation = useConversation(selectedGuide, selectedLanguage);
+  const clearConversationHistory = conversation.clearHistory;
   const liveAvatarServices = useMemo(
     () => ({
       daniel: new LiveAvatarService({ guideId: "daniel" }),
@@ -121,21 +123,44 @@ export default function Home() {
     setScreen("conversation");
   }
 
-  function restartSession() {
-    if (selectedGuideId) speechSynthesis[selectedGuideId].reset();
-    void liveAvatarServices.daniel.disconnect();
-    void liveAvatarServices.emily.disconnect();
+  const resetVisitorSession = useCallback(() => {
+    if (resetInProgressRef.current) return;
+    resetInProgressRef.current = true;
+
+    speechSynthesis.daniel.reset();
+    speechSynthesis.emily.reset();
     fallbackSpeechSynthesis.reset();
+    clearConversationHistory();
     setSelectedLanguage(null);
     setSelectedGuideId(null);
     setSelectedProduct("everyday");
     setVoiceActivation(null);
-    conversation.clearHistory();
     setScreen("language");
-  }
+
+    void Promise.all([
+      liveAvatarServices.daniel.disconnect(),
+      liveAvatarServices.emily.disconnect(),
+    ]).finally(() => {
+      resetInProgressRef.current = false;
+    });
+  }, [
+    clearConversationHistory,
+    fallbackSpeechSynthesis,
+    liveAvatarServices,
+    speechSynthesis,
+  ]);
+
+  useEffect(() => () => {
+    speechSynthesis.daniel.reset();
+    speechSynthesis.emily.reset();
+    fallbackSpeechSynthesis.reset();
+    clearConversationHistory();
+    void liveAvatarServices.daniel.dispose();
+    void liveAvatarServices.emily.dispose();
+  }, [clearConversationHistory, fallbackSpeechSynthesis, liveAvatarServices, speechSynthesis]);
 
   function endSession() {
-    restartSession();
+    resetVisitorSession();
   }
 
   function selectSpecialist(guideId: GuideId) {
@@ -197,7 +222,7 @@ export default function Home() {
             onProducts={() => setScreen("products")}
             onOpenProduct={openProduct}
             onEnd={endSession}
-            onIdleTimeout={restartSession}
+            onIdleTimeout={resetVisitorSession}
             synthesisProvider={speechSynthesis[selectedGuideId]}
             audioActivationProvider={fallbackSpeechSynthesis}
             voiceActivationPromise={voiceActivation}

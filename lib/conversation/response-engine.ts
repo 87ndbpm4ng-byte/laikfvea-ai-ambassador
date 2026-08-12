@@ -22,6 +22,7 @@ export type ResponseRequest = {
   relatedProduct?: ProductId;
   sessionId?: string;
   demoFallback?: "suggested-question";
+  signal?: AbortSignal;
 };
 
 export type ResponseResult = {
@@ -126,6 +127,7 @@ async function requestOpenAIResponse({
   history,
   language,
   sessionId,
+  signal,
 }: ResponseRequest): Promise<ConversationApiSuccessResponse> {
   let response: Response;
 
@@ -140,7 +142,9 @@ async function requestOpenAIResponse({
         language,
         sessionId,
       }),
-      signal: AbortSignal.timeout(25_000),
+      signal: signal
+        ? AbortSignal.any([signal, AbortSignal.timeout(25_000)])
+        : AbortSignal.timeout(25_000),
     });
   } catch (error) {
     throw new ConversationRequestError(

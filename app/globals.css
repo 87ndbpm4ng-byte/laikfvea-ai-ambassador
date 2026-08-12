@@ -299,6 +299,17 @@
   place-items: center;
 }
 
+.connection-status {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid var(--color-border-subtle);
+  border-radius: var(--radius-control);
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height-body);
+}
+
 .liveavatar-idle-warning > div {
   width: min(100%, 28rem);
   padding: var(--space-8);
