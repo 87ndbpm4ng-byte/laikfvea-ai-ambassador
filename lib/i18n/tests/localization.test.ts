@@ -94,12 +94,13 @@ test("Russian visitor copy and Quick Topics are localized", () => {
   assert.match(copy.topics.daniel["hydrogen-water-overview"].question, /водород/i);
 });
 
-test("English interface copy remains unchanged", () => {
+test("English conversation actions use exhibition-friendly labels", () => {
   const copy = getUiCopy("en");
   assert.equal(copy.speakWith("Daniel"), "Speak with Daniel");
   assert.equal(copy.conversationWith("Emily"), "Conversation with Emily");
-  assert.equal(copy.quickTopics, "Quick topics");
-  assert.equal(copy.endSession, "End session");
+  assert.equal(copy.quickTopics, "Quick questions");
+  assert.equal(copy.exploreProducts, "Explore products →");
+  assert.equal(copy.endSession, "End conversation");
 });
 
 test("Russian knowledge questions become retrieval-oriented English without changing product names", () => {

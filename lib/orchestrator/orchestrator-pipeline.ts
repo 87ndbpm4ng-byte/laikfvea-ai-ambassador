@@ -51,6 +51,15 @@ import { resolveSupportedLanguage } from "@/lib/i18n/languages";
 const INSUFFICIENT_KNOWLEDGE_RESPONSE =
   "The available product documentation does not give me enough information to answer that reliably.";
 
+const GROUNDED_ANSWER_CLARIFICATION = [
+  "Grounded-answer clarification:",
+  "- Approved context is available for this turn. Reconsider the answer using only that context.",
+  "- If the visitor asks a broad or general explanatory question, answer the useful portion directly supported by the approved context first.",
+  "- Do not replace a supported partial explanation with a total information boundary merely because a broader or deeper interpretation is possible.",
+  "- You may briefly state which additional detail is not documented after giving the supported answer.",
+  "- If the visitor explicitly requests a specific fact, scientific mechanism, or technical detail that the approved context does not contain, keep the approved-information boundary. Do not substitute unrelated operating instructions.",
+] as const;
+
 function insufficientKnowledgeResponse(language: string | null) {
   const resolvedLanguage = resolveSupportedLanguage(language);
   if (resolvedLanguage === "ru") {
@@ -208,13 +217,37 @@ export class OrchestratorPipeline {
       );
       const retrievalContext = context.retrievalContext;
       const failSafe = insufficientKnowledgeResponse(activeSession.language);
-      let response = retrievalResult.insufficientKnowledge
-        ? failSafe
-        : sanitizeVisitorResponse(
-            await this.requestResponse(prompt, input.guide),
-          );
-      if (!validateGroundedResponse(response, retrievalContext).valid) {
-        response = failSafe;
+      let response = failSafe;
+      if (!retrievalResult.insufficientKnowledge) {
+        const generated = sanitizeVisitorResponse(
+          await this.requestResponse(prompt, input.guide),
+        );
+        const validation = validateGroundedResponse(
+          generated,
+          retrievalContext,
+        );
+        const needsGroundedClarification =
+          generated === failSafe || !validation.valid;
+        const clarified = needsGroundedClarification
+          ? sanitizeVisitorResponse(
+              await this.requestResponse(
+                {
+                  ...prompt,
+                  responseDirectives: [
+                    ...prompt.responseDirectives,
+                    ...GROUNDED_ANSWER_CLARIFICATION,
+                  ],
+                },
+                input.guide,
+              ),
+            )
+          : generated;
+        response = validateGroundedResponse(
+          clarified,
+          retrievalContext,
+        ).valid
+          ? clarified
+          : failSafe;
       }
       const updatedSession = this.sessionManager.recordAssistantMessage(
         activeSession.sessionId,

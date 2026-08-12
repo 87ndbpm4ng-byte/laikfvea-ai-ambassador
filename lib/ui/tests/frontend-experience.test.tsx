@@ -150,6 +150,9 @@ test("shared conversation labels adapt to Daniel", () => {
   assert.match(markup, /Ask Daniel a question/);
   assert.match(markup, /Talk to Daniel/);
   assert.match(markup, />Talk</);
+  assert.match(markup, /Quick questions/);
+  assert.match(markup, /Explore products →/);
+  assert.match(markup, /End conversation/);
   assert.doesNotMatch(markup, /Begin voice|Enable voice|Start conversation/);
   assert.match(markup, /Technology Specialist/);
 });
@@ -392,6 +395,42 @@ test("responsive kiosk layout defines two areas without horizontal overflow", as
   assert.match(
     css,
     /\.conversation-workspace\s*{[^}]*grid-template-columns: 1fr/s,
+  );
+});
+
+test("ordinary answers grow before Quick Questions without an internal scrollbar", async () => {
+  const css = await readFile(
+    new URL("../../../app/globals.css", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(
+    css,
+    /\.response-area\s*\{[^}]*max-height:\s*none;[^}]*overflow:\s*visible;/s,
+  );
+  assert.match(
+    css,
+    /\.conversation-topics\s*\{[^}]*padding-top:\s*var\(--space-6\);[^}]*border-top:/s,
+  );
+  assert.match(
+    css,
+    /\.conversation-response-presentation:has\(\.presentation-panel\)\s*\{[^}]*align-items:\s*start;/s,
+  );
+  assert.match(
+    css,
+    /\.conversation-content\s*\{[^}]*max-height:\s*none;[^}]*grid-template-rows:\s*auto auto;/s,
+  );
+  assert.match(
+    css,
+    /\.conversation-workspace\s*\{[^}]*min-height:\s*auto;[^}]*align-items:\s*start;/s,
+  );
+  assert.match(
+    css,
+    /\.conversation-dialogue\s*\{[^}]*min-height:\s*auto;/s,
+  );
+  assert.doesNotMatch(
+    css.slice(css.lastIndexOf("/* Final cascade: focused two-area kiosk composition */")),
+    /\.conversation-content\s*\{[^}]*max-height:\s*calc/s,
   );
 });
 
