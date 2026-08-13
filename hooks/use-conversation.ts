@@ -10,6 +10,7 @@ import type {
 import type { Guide } from "@/types/guide";
 import type { SupportedLanguage } from "@/types/language";
 import { VisitorSessionLifecycle } from "@/lib/kiosk/visitor-session-lifecycle";
+import type { ProductId } from "@/types/product";
 
 let fallbackMessageSequence = 0;
 
@@ -30,6 +31,7 @@ export function useConversation(
   const [isLoading, setIsLoading] = useState(false);
   const loadingRef = useRef(false);
   const sessionIdRef = useRef<string | undefined>(undefined);
+  const activeProductRef = useRef<ProductId | undefined>(undefined);
   const lifecycleRef = useRef(new VisitorSessionLifecycle());
 
   const submitQuestion = useCallback(
@@ -40,6 +42,7 @@ export function useConversation(
       relatedProduct,
     }: QuestionSubmission) => {
       const normalizedContent = content.trim();
+      const productContext = relatedProduct ?? activeProductRef.current;
 
       if (!guide || !normalizedContent || loadingRef.current) {
         return false;
@@ -56,7 +59,7 @@ export function useConversation(
         role: "visitor",
         content: normalizedContent,
         timestamp: new Date().toISOString(),
-        relatedProduct,
+        relatedProduct: productContext,
         questionId,
         source,
       };
@@ -88,7 +91,7 @@ export function useConversation(
           history,
           language: language ?? undefined,
           questionId,
-          relatedProduct,
+          relatedProduct: productContext,
           sessionId: sessionIdRef.current,
           signal: request.controller.signal,
         });
@@ -102,7 +105,7 @@ export function useConversation(
           role: "guide",
           content: response.content,
           timestamp: new Date().toISOString(),
-          relatedProduct: response.relatedProduct,
+          relatedProduct: response.relatedProduct ?? productContext,
           questionId,
           source,
         };
@@ -134,6 +137,11 @@ export function useConversation(
     setIsLoading(false);
     setMessages([]);
     sessionIdRef.current = undefined;
+    activeProductRef.current = undefined;
+  }, []);
+
+  const selectProduct = useCallback((productId: ProductId) => {
+    activeProductRef.current = productId;
   }, []);
 
   useEffect(() => () => lifecycleRef.current.reset(), []);
@@ -143,5 +151,6 @@ export function useConversation(
     isLoading,
     submitQuestion,
     clearHistory,
+    selectProduct,
   };
 }

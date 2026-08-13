@@ -11,7 +11,7 @@ import {
 } from "@/components/screens/journey-screens";
 import { useConversation } from "@/hooks/use-conversation";
 import { guides } from "@/lib/data/guides";
-import { products } from "@/lib/data/products";
+import { createAskAboutProductQuestion } from "@/lib/data/product-navigation";
 import { getSuggestedQuestion } from "@/lib/data/suggested-questions";
 import {
   getLanguageConfiguration,
@@ -86,19 +86,14 @@ export default function Home() {
   }, [liveAvatarServices, selectedGuideId]);
 
   function openProduct(product: ProductId) {
+    conversation.selectProduct(product);
     setSelectedProduct(product);
     setScreen("product-detail");
   }
 
   async function askAboutProduct() {
-    const product = products[selectedProduct];
     await conversation.submitQuestion({
-      content:
-        activeLanguage === "ru"
-          ? `Расскажи о ${product.name}`
-          : activeLanguage === "zh"
-            ? `请介绍一下 ${product.name}`
-          : `Tell me about ${product.name}`,
+      content: createAskAboutProductQuestion(selectedProduct, activeLanguage),
       source: "product",
       relatedProduct: selectedProduct,
     });
@@ -245,6 +240,7 @@ export default function Home() {
           <ProductDetailScreen
             language={activeLanguage}
             productId={selectedProduct}
+            guideName={copy.guideDisplayName[selectedGuideId ?? "daniel"]}
             onBack={() => setScreen("products")}
             onCompare={() => setScreen("comparison")}
             onAskGuide={askAboutProduct}

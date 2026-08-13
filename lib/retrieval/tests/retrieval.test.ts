@@ -60,6 +60,13 @@ Everyday Bottle-only cleaning information.
 The Everyday Bottle is the portable option.
 `;
 
+const PENDING_PORTFOLIO_DOCUMENTS = [
+  ["Water Ionizer", "water-ionizer"],
+  ["Hydrogen Water Generator for Face & Body", "face-body-generator"],
+  ["Water Mineralizer", "water-mineralizer"],
+  ["Air Purifier", "air-purifier"],
+] as const;
+
 function session(overrides: Partial<VisitorSession> = {}): VisitorSession {
   return {
     sessionId: "session-test",
@@ -235,6 +242,43 @@ test("draft knowledge is never retrieved", async () => {
       ({ chunk }) => chunk.sourceId !== "DRAFT-MANUAL-001",
     ),
   );
+});
+
+test("future approved metadata can represent every new portfolio identity", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "retrieval-products-"));
+  await mkdir(path.join(root, "products"), { recursive: true });
+  for (const [name, id] of PENDING_PORTFOLIO_DOCUMENTS) {
+    await writeFile(path.join(root, "products", `${id}.md`), `---
+title: "${name} Manual"
+sourceId: ${id.toUpperCase()}-001
+sourceType: official-user-manual
+sourceLanguage: en
+product: "${name}"
+status: approved
+tags: [product]
+---
+
+# Approved test section
+
+Approved fixture content for product identity validation only.
+`);
+  }
+
+  const documents = await new ApprovedKnowledgeLoader(root).load();
+  assert.deepEqual(
+    documents.map(({ product }) => product).sort(),
+    PENDING_PORTFOLIO_DOCUMENTS.map(([, id]) => id).sort(),
+  );
+});
+
+test("pending portfolio products gain no approved evidence from the repository", async () => {
+  const loader = new ApprovedKnowledgeLoader(path.join(process.cwd(), "knowledge"));
+  const documents = await loader.load();
+  assert.equal(documents.some(({ product }) => product === "water-ionizer"), false);
+  assert.equal(documents.some(({ product }) => product === "face-body-generator"), false);
+  assert.equal(documents.some(({ product }) => product === "water-mineralizer"), false);
+  assert.equal(documents.some(({ product }) => product === "air-purifier"), false);
+  assert.ok(documents.some(({ product }) => product === "advanced"));
 });
 
 test("knowledge instructions cannot override system rules", async () => {

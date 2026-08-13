@@ -9,6 +9,7 @@ import type {
   VisitorIntentId,
 } from "@/types/experience";
 import type { ProductId } from "@/types/product";
+import { exhibitionProducts } from "@/lib/data/exhibition-products";
 
 const REFERENCE_PATTERN =
   /\b(the other one|the first one|the second one|which one|both|its|it|that|this)\b/gi;
@@ -174,10 +175,10 @@ function nextStage(
 }
 
 function productLabel(product: ActiveSessionProduct | null) {
+  if (product === "both") return "both bottles";
   if (product === "advanced") return "Advanced Bottle";
   if (product === "everyday") return "Everyday Bottle";
-  if (product === "both") return "both bottles";
-  return null;
+  return product ? exhibitionProducts[product].exhibitionName : null;
 }
 
 function topicLabel(topic: ConversationTopic | null) {

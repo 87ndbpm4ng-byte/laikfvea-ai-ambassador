@@ -170,6 +170,9 @@ export class OrchestratorPipeline {
 
     try {
       const session = this.loadOrCreateSession(input);
+      if (input.activeProduct) {
+        this.sessionManager.markProductViewed(session.sessionId, input.activeProduct);
+      }
       const activeSession = this.updateSession(
         session.sessionId,
         message,

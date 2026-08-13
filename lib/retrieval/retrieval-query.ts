@@ -11,6 +11,7 @@ import type {
 import type { SessionConversationEntry } from "@/lib/session/conversation-history";
 import type { VisitorSession } from "@/lib/session/session-types";
 import { createKnowledgeQueryText } from "@/lib/i18n/knowledge-query";
+import { isProductId } from "@/lib/data/exhibition-products";
 
 const STOP_WORDS = new Set([
   "a",
@@ -85,7 +86,7 @@ function inferProduct(text: string): RetrievalProduct | null {
 
 function productFromSession(session: VisitorSession): RetrievalProduct | null {
   const viewed = session.viewedProducts.at(-1);
-  if (viewed === "advanced" || viewed === "everyday") return viewed;
+  if (isProductId(viewed)) return viewed;
   const recentProductText = [...session.conversationHistory]
     .reverse()
     .slice(0, RETRIEVAL_CONFIG.maxRecentMessages)

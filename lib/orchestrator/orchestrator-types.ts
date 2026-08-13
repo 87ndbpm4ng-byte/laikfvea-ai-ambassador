@@ -13,6 +13,7 @@ import type {
   SessionReferenceResolution,
 } from "@/lib/session/session-types";
 import type { SupportedLanguage } from "@/types/language";
+import type { ProductId } from "@/types/product";
 
 export type OrchestratorMetadata = {
   requestId: string;
@@ -59,6 +60,7 @@ export type OrchestrateMessageInput = {
   sessionId?: string;
   language?: SupportedLanguage | null;
   supplementalContext?: readonly PromptContextFragment[];
+  activeProduct?: ProductId;
 };
 
 export type OrchestratorResult = {

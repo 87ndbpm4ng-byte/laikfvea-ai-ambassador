@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { SessionManager } from "@/lib/session/session-manager";
 import { InMemorySessionStore } from "@/lib/session/session-store";
+import { PRODUCT_IDS } from "@/types/product";
 
 function createManager() {
   let sequence = 0;
@@ -98,6 +99,23 @@ test("comparison context supports both, first, second and other product referenc
     content: "And the other one?",
   });
   assert.equal(other.activeProduct, "everyday");
+});
+
+test("sessions can structurally track every exhibition product without changing the bottle pair", () => {
+  const manager = createManager();
+  const session = manager.createSession();
+
+  for (const productId of PRODUCT_IDS) {
+    const updated = manager.markProductViewed(session.sessionId, productId);
+    assert.equal(updated.activeProduct, productId);
+    assert.ok(updated.viewedProducts.includes(productId));
+  }
+
+  const comparison = manager.recordVisitorMessage(session.sessionId, {
+    content: "Compare both bottles.",
+  });
+  assert.equal(comparison.activeProduct, "both");
+  assert.deepEqual(comparison.comparisonProducts, ["everyday", "advanced"]);
 });
 
 test("hydrogen inhalation remains the referent for safety and frequency follow-ups", () => {

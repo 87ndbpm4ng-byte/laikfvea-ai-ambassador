@@ -44,6 +44,7 @@ export type ConversationApiRequest = {
   history: ConversationHistoryItem[];
   language?: SupportedLanguage;
   sessionId?: string;
+  activeProduct?: ProductId;
 };
 
 export type ConversationApiErrorCode =

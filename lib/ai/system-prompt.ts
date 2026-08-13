@@ -3,11 +3,15 @@ import "server-only";
 import { products } from "@/lib/data/products";
 import type { Guide } from "@/types/guide";
 import type { SupportedLanguage } from "@/types/language";
+import { exhibitionProductList } from "@/lib/data/exhibition-products";
 
 export function createSystemPrompt(
   guide: Guide,
   language: SupportedLanguage = "en",
 ) {
+  const exhibitionProductNames = exhibitionProductList
+    .map((product) => `"${product.exhibitionName}"`)
+    .join(", ");
   const outputLanguage = {
     en: `- Answer in natural English only. Do not insert Russian or Chinese sentences.
 - Write idiomatic spoken English, not a literal transcription of documentation.`,
@@ -39,7 +43,8 @@ ${outputLanguage}
 - Do not end every answer with "Would you like me to...". Finish naturally when no follow-up is genuinely useful.
 - Avoid unnecessary jargon.
 - Do not mention any brand names or product model names, and do not imply a relationship with any other company.
-- Refer to products only as "${products.everyday.name}" and "${products.advanced.name}".
+- The structurally recognized exhibition products are ${exhibitionProductNames}. Product existence is not factual evidence: describe a product only from supplied APPROVED KNOWLEDGE CONTEXT.
+- Preserve the established visitor-facing compatibility names "${products.everyday.name}" and "${products.advanced.name}" when discussing the existing bottle knowledge unless the visitor explicitly uses an exhibition model name.
 - Do not diagnose, treat or claim to cure any health condition.
 - Do not make medical promises or health claims.
 - Do not invent scientific evidence, product functionality, performance claims or technical specifications.

@@ -22,6 +22,7 @@ import type {
 } from "@/types/conversation";
 import type { GuideId } from "@/types/guide";
 import { isSupportedLanguage } from "@/lib/i18n/languages";
+import { isProductId } from "@/lib/data/exhibition-products";
 
 export const runtime = "nodejs";
 
@@ -93,6 +94,7 @@ function validateRequest(value: unknown): ConversationApiRequest | null {
       (typeof request.sessionId !== "string" ||
         request.sessionId.length === 0 ||
         request.sessionId.length > MAX_SESSION_ID_LENGTH)) ||
+    (request.activeProduct !== undefined && !isProductId(request.activeProduct)) ||
     !Array.isArray(request.history) ||
     request.history.length > MAX_RECEIVED_HISTORY_MESSAGES ||
     !request.history.every(isHistoryItem)
@@ -111,6 +113,9 @@ function validateRequest(value: unknown): ConversationApiRequest | null {
       typeof request.sessionId === "string"
         ? request.sessionId
         : undefined,
+    activeProduct: isProductId(request.activeProduct)
+      ? request.activeProduct
+      : undefined,
   };
 }
 
@@ -211,6 +216,7 @@ export async function POST(request: Request) {
       guide: guides[conversationRequest.guideId],
       sessionId: usableSessionId,
       language: conversationRequest.language,
+      activeProduct: conversationRequest.activeProduct,
     });
 
     return NextResponse.json<ConversationApiResponse>({

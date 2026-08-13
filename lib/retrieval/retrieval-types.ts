@@ -1,6 +1,7 @@
 import type { ConversationStageId, VisitorIntentId } from "@/types/experience";
+import type { ProductId } from "@/types/product";
 
-export type RetrievalProduct = "everyday" | "advanced";
+export type RetrievalProduct = ProductId;
 export type RetrievalConfidence = "high" | "medium" | "low" | "none";
 export type KnowledgeApprovalStatus = "approved";
 export type KnowledgeDocumentType =

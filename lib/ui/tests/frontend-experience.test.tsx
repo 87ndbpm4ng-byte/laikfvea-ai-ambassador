@@ -5,11 +5,18 @@ import { renderToStaticMarkup } from "react-dom/server";
 import Home from "@/app/page";
 import {
   ConversationScreen,
+  ProductDetailScreen,
+  ProductExplorerScreen,
   SpecialistSelectionScreen,
 } from "@/components/screens/journey-screens";
 import { VoiceControls } from "@/components/ui/voice-controls";
 import type { SpeechSynthesisProvider } from "@/lib/voice/voice-types";
 import type { SupportedLanguage } from "@/types/language";
+import { PRODUCT_IDS } from "@/types/product";
+import {
+  exhibitionProducts,
+  productCategoryNames,
+} from "@/lib/data/exhibition-products";
 
 const silentSpeechProvider: SpeechSynthesisProvider = {
   isSupported: true,
@@ -459,4 +466,95 @@ test("conversation heading belongs to the dialogue column", () => {
   assert.ok(specialistStart >= 0);
   assert.ok(dialogueStart > specialistStart);
   assert.ok(headingStart > dialogueStart);
+});
+
+test("the portfolio is registry-driven and groups all six exhibition products", () => {
+  const opened: string[] = [];
+  const markup = renderToStaticMarkup(
+    <ProductExplorerScreen
+      language="en"
+      onOpenProduct={(productId) => opened.push(productId)}
+      onBack={() => undefined}
+    />,
+  );
+
+  assert.match(markup, /Functional Water/);
+  assert.match(markup, /Clean Air/);
+  for (const productId of PRODUCT_IDS) {
+    assert.ok(
+      markup.includes(
+        exhibitionProducts[productId].displayNames.en.replaceAll("&", "&amp;"),
+      ),
+      productId,
+    );
+  }
+  assert.equal(markup.match(/class="product-card"/g)?.length, 6);
+  assert.match(markup, /everyday-bottle\.png/);
+  assert.match(markup, /advanced-bottle\.png/);
+  assert.equal(markup.match(/<small>Product visual coming soon<\/small>/g)?.length, 4);
+  assert.deepEqual(opened, []);
+});
+
+test("product details stay structural for pending products and compare only GO with PRO", () => {
+  for (const productId of PRODUCT_IDS) {
+    const markup = renderToStaticMarkup(
+      <ProductDetailScreen
+        language="en"
+        productId={productId}
+        guideName="Daniel"
+        onBack={() => undefined}
+        onCompare={() => undefined}
+        onAskGuide={() => undefined}
+      />,
+    );
+
+    assert.ok(
+      markup.includes(
+        exhibitionProducts[productId].displayNames.en.replaceAll("&", "&amp;"),
+      ),
+      productId,
+    );
+    assert.match(markup, /Back to portfolio/);
+    assert.match(markup, /Ask Daniel/);
+    if (productId === "everyday" || productId === "advanced") {
+      assert.match(markup, /Compare GO and PRO/);
+    } else {
+      assert.doesNotMatch(markup, /Compare GO and PRO/);
+      assert.doesNotMatch(markup, /Key features|Best for/);
+    }
+  }
+});
+
+test("portfolio identities and navigation remain localized in all five languages", () => {
+  for (const language of ["en", "ru", "zh", "yue", "fr"] as const) {
+    const portfolio = renderToStaticMarkup(
+      <ProductExplorerScreen
+        language={language}
+        onOpenProduct={() => undefined}
+        onBack={() => undefined}
+      />,
+    );
+    assert.match(portfolio, new RegExp(productCategoryNames["functional-water"][language]));
+    assert.match(portfolio, new RegExp(productCategoryNames["clean-air"][language]));
+    assert.match(portfolio, new RegExp(exhibitionProducts["air-purifier"].displayNames[language]));
+
+    const detail = renderToStaticMarkup(
+      <ProductDetailScreen
+        language={language}
+        productId="air-purifier"
+        guideName="Daniel"
+        onBack={() => undefined}
+        onCompare={() => undefined}
+        onAskGuide={() => undefined}
+      />,
+    );
+    assert.doesNotMatch(detail, /undefined|null/);
+  }
+});
+
+test("portfolio CSS provides intentional landscape, portrait and mobile grids", async () => {
+  const css = await readFile(new URL("../../../app/globals.css", import.meta.url), "utf8");
+  assert.match(css, /\.product-grid\s*\{[^}]*repeat\(3, minmax\(0, 1fr\)\)/s);
+  assert.match(css, /@media \(orientation: portrait\)[\s\S]*?\.product-grid\s*\{[^}]*repeat\(2, minmax\(0, 1fr\)\)/s);
+  assert.match(css, /@media \(max-width: 47\.999rem\)[\s\S]*?\.product-grid,[\s\S]*?grid-template-columns: minmax\(0, 1fr\)/s);
 });

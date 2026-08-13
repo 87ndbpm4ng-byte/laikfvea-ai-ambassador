@@ -1,10 +1,11 @@
 import type {
   Product,
   ProductComparisonRow,
-  ProductId,
+  BottleProductId,
 } from "@/types/product";
 
-export const products: Record<ProductId, Product> = {
+/** Phase 1 compatibility view: Explore Products remains the existing bottle pair. */
+export const products: Record<BottleProductId, Product> = {
   everyday: {
     id: "everyday",
     shortName: "Everyday",

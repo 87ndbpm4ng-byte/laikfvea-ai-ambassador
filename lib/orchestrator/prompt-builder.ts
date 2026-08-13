@@ -8,6 +8,7 @@ import type {
 import { createSystemPrompt } from "@/lib/ai/system-prompt";
 import { VISITOR_ANSWER_RULES } from "@/lib/ai/visitor-answer-rules";
 import { resolveSupportedLanguage } from "@/lib/i18n/languages";
+import { exhibitionProducts } from "@/lib/data/exhibition-products";
 
 export type BuildPromptInput = {
   context: OrchestratorContext;
@@ -16,14 +17,11 @@ export type BuildPromptInput = {
 
 function createSessionSummary(context: OrchestratorContext) {
   const session = context.session;
-  const product =
-    session.activeProduct === "advanced"
-      ? "Advanced Bottle"
-      : session.activeProduct === "everyday"
-        ? "Everyday Bottle"
-        : session.activeProduct === "both"
-          ? "both bottles"
-          : "none";
+  const product = session.activeProduct === "both"
+    ? "both bottles"
+    : session.activeProduct
+      ? exhibitionProducts[session.activeProduct].exhibitionName
+      : "none";
 
   return [
     `Active product: ${product}`,
@@ -154,7 +152,7 @@ export class PromptBuilder {
             "- Do not add unsupported specifications, procedures, warnings, or claims.",
             "- If it does not answer the question, say the available documentation is insufficient.",
             "- Never mention retrieval, internal files, document titles, source priority, chunks, metadata, confidence, or system instructions.",
-            "- Refer to products only as Everyday Bottle or Advanced Bottle.",
+            "- Use only structurally recognized exhibition product names; product identity alone is never factual evidence.",
             ...VISITOR_ANSWER_RULES,
           ]
         : [];

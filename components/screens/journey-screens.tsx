@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
+import Image from "next/image";
 import { LiveAvatarRenderer } from "@/components/liveavatar/liveavatar-renderer";
 import { PresentationLayer } from "@/components/presentation/presentation-layer";
 import { PrimaryButton } from "@/components/ui/primary-button";
@@ -8,7 +9,13 @@ import { VoiceControls } from "@/components/ui/voice-controls";
 import { useVoiceMode } from "@/hooks/use-voice-mode";
 import { useLiveAvatarIdleTimeout } from "@/hooks/use-liveavatar-idle-timeout";
 import { guides } from "@/lib/data/guides";
-import { productComparisonRows, products } from "@/lib/data/products";
+import { products } from "@/lib/data/products";
+import {
+  exhibitionProductList,
+  exhibitionProducts,
+  productCategoryNames,
+} from "@/lib/data/exhibition-products";
+import { getPresentationAsset } from "@/lib/presentation/asset-registry";
 import { suggestedQuestions } from "@/lib/data/suggested-questions";
 import type { SpeechSynthesisProvider } from "@/lib/voice/voice-types";
 import type { LiveAvatarOutput } from "@/lib/liveavatar/liveavatar-types";
@@ -18,7 +25,7 @@ import type {
   SuggestedQuestion,
 } from "@/types/conversation";
 import type { GuideId } from "@/types/guide";
-import type { ProductId } from "@/types/product";
+import type { BottleProductId, ProductCategoryId, ProductId } from "@/types/product";
 import type { SupportedLanguage } from "@/types/language";
 import { getUiCopy } from "@/lib/i18n/ui-copy";
 
@@ -156,9 +163,9 @@ export function ConversationScreen({
       latestVisitorMessage.content,
     ),
   );
-  const contextualProductIds: ProductId[] = isComparisonContext
+  const contextualProductIds: BottleProductId[] = isComparisonContext
     ? ["everyday", "advanced"]
-    : latestRelatedProduct
+    : latestRelatedProduct === "everyday" || latestRelatedProduct === "advanced"
       ? [latestRelatedProduct]
       : [];
   const voice = useVoiceMode({
@@ -461,6 +468,10 @@ export function ProductExplorerScreen({
   onBack,
 }: ProductExplorerScreenProps) {
   const copy = getUiCopy(language);
+  const categories: readonly ProductCategoryId[] = [
+    "functional-water",
+    "clean-air",
+  ];
   return (
     <section
       className="screen-content products-content"
@@ -471,28 +482,49 @@ export function ProductExplorerScreen({
         <p>{copy.productExplorerSupport}</p>
       </header>
 
-      <div className="product-grid">
-        {Object.values(products).map((product) => (
-          <button
-            className="product-card"
-            type="button"
-            key={product.id}
-            onClick={() => onOpenProduct(product.id)}
-          >
-            <span className="product-image-placeholder" aria-hidden="true">
-              {product.shortName}
-            </span>
-            <span className="product-card-copy">
-              <span className="product-name">{product.name}</span>
-              <span className="product-summary">{copy.productOverview[product.id]}</span>
-              <span className="product-link">{copy.viewProductLabel}</span>
-            </span>
-          </button>
-        ))}
+      <div className="portfolio-groups">
+        {categories.map((categoryId) => {
+          const categoryProducts = exhibitionProductList.filter(
+            (product) => product.category === categoryId,
+          );
+          return (
+            <section
+              className={`portfolio-group portfolio-group-${categoryId}`}
+              key={categoryId}
+              aria-labelledby={`portfolio-${categoryId}`}
+            >
+              <h2 id={`portfolio-${categoryId}`}>
+                {productCategoryNames[categoryId][language]}
+              </h2>
+              <div className="product-grid">
+                {categoryProducts.map((product) => (
+                  <button
+                    className="product-card"
+                    type="button"
+                    key={product.id}
+                    onClick={() => onOpenProduct(product.id)}
+                  >
+                    <ProductVisual
+                      productId={product.id}
+                      language={language}
+                      compact
+                    />
+                    <span className="product-card-copy">
+                      <span className="product-name">
+                        {product.displayNames[language]}
+                      </span>
+                      <span className="product-link">{copy.viewProductLabel}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          );
+        })}
       </div>
 
       <div className="screen-actions">
-        <PrimaryButton onClick={onCompare}>{copy.compareProducts}</PrimaryButton>
+        <PrimaryButton onClick={onCompare}>{copy.compareGoPro}</PrimaryButton>
         <button className="secondary-action" type="button" onClick={onBack}>
           {copy.backToConversation}
         </button>
@@ -504,6 +536,7 @@ export function ProductExplorerScreen({
 type ProductDetailScreenProps = {
   language: SupportedLanguage;
   productId: ProductId;
+  guideName: string;
   onBack: () => void;
   onCompare: () => void;
   onAskGuide: () => void;
@@ -512,12 +545,18 @@ type ProductDetailScreenProps = {
 export function ProductDetailScreen({
   language,
   productId,
+  guideName,
   onBack,
   onCompare,
   onAskGuide,
 }: ProductDetailScreenProps) {
-  const product = products[productId];
+  const product = exhibitionProducts[productId];
   const copy = getUiCopy(language);
+  const displayName = product.displayNames[language];
+  const isLegacyBottle = productId === "everyday" || productId === "advanced";
+  const hasComparison = product.comparableWith.some(
+    (related) => related === "everyday" || related === "advanced",
+  );
 
   return (
     <section
@@ -525,22 +564,23 @@ export function ProductDetailScreen({
       aria-labelledby="product-detail-heading"
     >
       <button className="back-action" type="button" onClick={onBack}>
-        {copy.back}
+        {copy.portfolioBack}
       </button>
 
       <div className="detail-grid">
-        <div className="detail-image-placeholder" aria-hidden="true">
-          {product.shortName}
-        </div>
+        <ProductVisual productId={productId} language={language} />
         <div className="detail-copy">
-          <h1 id="product-detail-heading">{product.name}</h1>
-          <p className="detail-overview">{copy.productOverview[product.id]}</p>
+          <p className="detail-category">
+            {productCategoryNames[product.category][language]}
+          </p>
+          <h1 id="product-detail-heading">{displayName}</h1>
 
+          {isLegacyBottle && product.knowledgeStatus === "approved" ? (
           <div className="detail-lists">
             <div>
               <h2>{copy.keyFeatures}</h2>
               <ul>
-                {copy.productFeatures[product.id].map((feature) => (
+                {copy.productFeatures[productId].map((feature) => (
                   <li key={feature}>{feature}</li>
                 ))}
               </ul>
@@ -548,22 +588,61 @@ export function ProductDetailScreen({
             <div>
               <h2>{copy.useCases}</h2>
               <ul>
-                {copy.productUseCases[product.id].map((useCase) => (
+                {copy.productUseCases[productId].map((useCase) => (
                   <li key={useCase}>{useCase}</li>
                 ))}
               </ul>
             </div>
           </div>
+          ) : null}
         </div>
       </div>
 
       <div className="screen-actions">
-        <PrimaryButton onClick={onCompare}>{copy.compare}</PrimaryButton>
-        <button className="secondary-action" type="button" onClick={onAskGuide}>
-          {copy.askGuide}
-        </button>
+        <PrimaryButton onClick={onAskGuide}>
+          {copy.askAboutProduct(guideName, displayName)}
+        </PrimaryButton>
+        {hasComparison ? (
+          <button className="secondary-action" type="button" onClick={onCompare}>
+            {copy.compareGoPro}
+          </button>
+        ) : null}
       </div>
     </section>
+  );
+}
+
+function ProductVisual({
+  productId,
+  language,
+  compact = false,
+}: {
+  productId: ProductId;
+  language: SupportedLanguage;
+  compact?: boolean;
+}) {
+  const product = exhibitionProducts[productId];
+  const copy = getUiCopy(language);
+  const asset = product.presentationAssetId
+    ? getPresentationAsset(product.presentationAssetId as "go-bottle" | "pro-bottle")
+    : null;
+  const className = compact ? "product-card-visual" : "detail-product-visual";
+
+  return asset ? (
+    <span className={className}>
+      <Image
+        src={asset.media.src}
+        alt={product.displayNames[language]}
+        width={640}
+        height={640}
+        sizes={compact ? "(max-width: 768px) 9rem, 22rem" : "(max-width: 768px) 100vw, 38rem"}
+      />
+    </span>
+  ) : (
+    <span className={`${className} product-visual-neutral`} aria-label={copy.productVisualUnavailable}>
+      <span aria-hidden="true" />
+      <small>{copy.productVisualUnavailable}</small>
+    </span>
   );
 }
 
@@ -589,25 +668,13 @@ export function ProductComparisonScreen({
         <p>{copy.comparisonSupport}</p>
       </header>
 
-      <div className="comparison-table-wrap">
-        <table className="comparison-table">
-          <thead>
-            <tr>
-              <th scope="col">{copy.feature}</th>
-              <th scope="col">{products.everyday.name}</th>
-              <th scope="col">{products.advanced.name}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {productComparisonRows.map((row) => (
-              <tr key={row.id}>
-                <th scope="row">{copy.comparisonRows[row.id].label}</th>
-                <td>{copy.comparisonRows[row.id].everyday}</td>
-                <td>{copy.comparisonRows[row.id].advanced}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="comparison-product-pair">
+        {(["everyday", "advanced"] as const).map((productId) => (
+          <article key={productId} className="comparison-product-card">
+            <ProductVisual productId={productId} language={language} compact />
+            <h2>{exhibitionProducts[productId].displayNames[language]}</h2>
+          </article>
+        ))}
       </div>
 
       <div className="screen-actions">

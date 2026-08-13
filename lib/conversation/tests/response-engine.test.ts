@@ -48,6 +48,30 @@ test("successful free-text request returns the server response", async () => {
   assert.equal(result.sessionId, "session-1");
 });
 
+test("selected exhibition product identity is sent to the conversation route", async () => {
+  let requestBody: Record<string, unknown> | null = null;
+  globalThis.fetch = async (_input, init) => {
+    requestBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+    return new Response(
+      JSON.stringify({
+        success: true,
+        response: "I do not have approved information on that product yet.",
+        sessionId: "session-product",
+        requestId: "request-product",
+      }),
+      { status: 200 },
+    );
+  };
+
+  await generateConversationResponse({
+    ...baseRequest,
+    content: "Tell me about the Air Purifier.",
+    relatedProduct: "air-purifier",
+  });
+
+  assert.equal(requestBody?.activeProduct, "air-purifier");
+});
+
 test("failed free-text request never substitutes a local prototype answer", async () => {
   globalThis.fetch = async () =>
     new Response(

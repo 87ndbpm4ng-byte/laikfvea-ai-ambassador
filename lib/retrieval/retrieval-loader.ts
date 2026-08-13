@@ -5,6 +5,7 @@ import {
   normalizeDocumentType,
   resolveSourcePriority,
 } from "@/lib/retrieval/knowledge-metadata";
+import { resolveKnowledgeProductId } from "@/lib/data/exhibition-products";
 import type {
   ApprovedKnowledgeDocument,
   RetrievalProduct,
@@ -46,11 +47,7 @@ function parseMarkdown(content: string): {
 }
 
 function normalizeProduct(value: unknown): RetrievalProduct | null {
-  if (typeof value !== "string") return null;
-  const normalized = value.toLocaleLowerCase("en");
-  if (normalized.includes("advanced")) return "advanced";
-  if (normalized.includes("everyday")) return "everyday";
-  return null;
+  return resolveKnowledgeProductId(value);
 }
 
 function normalizeValues(...values: unknown[]) {

@@ -126,6 +126,7 @@ async function requestOpenAIResponse({
   guide,
   history,
   language,
+  relatedProduct,
   sessionId,
   signal,
 }: ResponseRequest): Promise<ConversationApiSuccessResponse> {
@@ -141,6 +142,7 @@ async function requestOpenAIResponse({
         history,
         language,
         sessionId,
+        activeProduct: relatedProduct,
       }),
       signal: signal
         ? AbortSignal.any([signal, AbortSignal.timeout(25_000)])

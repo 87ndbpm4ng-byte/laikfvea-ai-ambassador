@@ -1,5 +1,5 @@
 import type { GuideId } from "@/types/guide";
-import type { ProductId } from "@/types/product";
+import type { BottleProductId } from "@/types/product";
 import type { SupportedLanguage } from "@/types/language";
 
 type TopicCopy = { title: string; description: string; question: string };
@@ -76,6 +76,10 @@ type UiCopy = {
   connectionLost: string;
   productExplorer: string;
   productExplorerSupport: string;
+  portfolioBack: string;
+  productVisualUnavailable: string;
+  askAboutProduct: (guide: string, name: string) => string;
+  compareGoPro: string;
   viewProductLabel: string;
   compareProducts: string;
   backToConversation: string;
@@ -91,9 +95,9 @@ type UiCopy = {
   thankYou: string;
   startAgain: string;
   returnToConversation: string;
-  productOverview: Record<ProductId, string>;
-  productFeatures: Record<ProductId, readonly string[]>;
-  productUseCases: Record<ProductId, readonly string[]>;
+  productOverview: Record<BottleProductId, string>;
+  productFeatures: Record<BottleProductId, readonly string[]>;
+  productUseCases: Record<BottleProductId, readonly string[]>;
   comparisonRows: Record<
     string,
     { label: string; everyday: string; advanced: string }
@@ -190,7 +194,11 @@ const en: UiCopy = {
   recognitionFailed: "I couldn’t hear that clearly. Please try again or type your question.",
   connectionLost: "Connection lost. You can end the conversation or try again when the connection returns.",
   productExplorer: "Product Explorer",
-  productExplorerSupport: "Explore the available products and their key capabilities.",
+  productExplorerSupport: "Explore the technologies presented at this stand.",
+  portfolioBack: "Back to portfolio",
+  productVisualUnavailable: "Product visual coming soon",
+  askAboutProduct: (guide) => `Ask ${guide}`,
+  compareGoPro: "Compare GO and PRO",
   viewProductLabel: "View product",
   compareProducts: "Compare Products",
   backToConversation: "Back to Conversation",
@@ -312,7 +320,11 @@ const ru: UiCopy = {
   recognitionFailed: "Не удалось разобрать вопрос. Попробуйте ещё раз или напечатайте его.",
   connectionLost: "Соединение потеряно. Завершите разговор или попробуйте снова после восстановления связи.",
   productExplorer: "Каталог продуктов",
-  productExplorerSupport: "Познакомьтесь с доступными продуктами и их основными возможностями.",
+  productExplorerSupport: "Познакомьтесь с технологиями, представленными на стенде.",
+  portfolioBack: "Вернуться к портфолио",
+  productVisualUnavailable: "Изображение скоро появится",
+  askAboutProduct: (guide) => `Спросить ${guide === "Daniel" ? "Дэниела" : "Эмили"}`,
+  compareGoPro: "Сравнить GO и PRO",
   viewProductLabel: "Открыть продукт",
   compareProducts: "Сравнить продукты",
   backToConversation: "Вернуться к разговору",
@@ -434,7 +446,11 @@ const zh: UiCopy = {
   recognitionFailed: "没有听清您的问题，请再试一次或直接输入问题。",
   connectionLost: "网络连接已断开。您可以结束对话，或在连接恢复后重试。",
   productExplorer: "产品一览",
-  productExplorerSupport: "了解现有产品及其主要功能。",
+  productExplorerSupport: "了解本展台展出的技术与产品。",
+  portfolioBack: "返回产品一览",
+  productVisualUnavailable: "产品图片即将提供",
+  askAboutProduct: (guide) => `咨询 ${guide}`,
+  compareGoPro: "比较 GO 和 PRO",
   viewProductLabel: "查看产品",
   compareProducts: "比较产品",
   backToConversation: "返回对话",
@@ -556,7 +572,11 @@ const yue: UiCopy = {
   recognitionFailed: "未聽清楚您的問題，請再試一次或者直接打字。",
   connectionLost: "網絡連線已中斷。您可以結束對話，或者等連線恢復後再試。",
   productExplorer: "產品一覽",
-  productExplorerSupport: "了解現有產品同主要功能。",
+  productExplorerSupport: "了解呢個展台展出嘅技術同產品。",
+  portfolioBack: "返回產品一覽",
+  productVisualUnavailable: "產品圖片即將提供",
+  askAboutProduct: (guide) => `問 ${guide}`,
+  compareGoPro: "比較 GO 同 PRO",
   viewProductLabel: "查看產品",
   compareProducts: "比較產品",
   backToConversation: "返回對話",
@@ -678,7 +698,11 @@ const fr: UiCopy = {
   recognitionFailed: "Je n’ai pas bien compris. Réessayez ou écrivez votre question.",
   connectionLost: "Connexion interrompue. Vous pouvez terminer la conversation ou réessayer une fois la connexion rétablie.",
   productExplorer: "Découvrir les produits",
-  productExplorerSupport: "Découvrez les produits disponibles et leurs principales fonctions.",
+  productExplorerSupport: "Découvrez les technologies présentées sur ce stand.",
+  portfolioBack: "Retour au portfolio",
+  productVisualUnavailable: "Visuel du produit à venir",
+  askAboutProduct: (guide) => `Demander à ${guide}`,
+  compareGoPro: "Comparer GO et PRO",
   viewProductLabel: "Voir le produit",
   compareProducts: "Comparer les produits",
   backToConversation: "Retour à la conversation",
