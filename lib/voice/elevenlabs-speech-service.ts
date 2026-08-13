@@ -36,6 +36,49 @@ type ElevenLabsSpeechOptions = {
   signal?: AbortSignal;
 };
 
+type ElevenLabsAlignmentResponse = {
+  audio_base64: string;
+  alignment?: {
+    characters: string[];
+    character_start_times_seconds: number[];
+    character_end_times_seconds: number[];
+  };
+  normalized_alignment?: {
+    characters: string[];
+    character_start_times_seconds: number[];
+    character_end_times_seconds: number[];
+  };
+};
+
+export type ElevenLabsAlignedSpeech = {
+  audio: ArrayBuffer;
+  alignment: NonNullable<ElevenLabsAlignmentResponse["alignment"]> | null;
+};
+
+function base64ToArrayBuffer(value: string) {
+  return Uint8Array.from(Buffer.from(value, "base64")).buffer;
+}
+
+export async function generateElevenLabsSpeechWithTimestamps(
+  request: SpeechApiRequest,
+  options: ElevenLabsSpeechOptions = {},
+): Promise<ElevenLabsAlignedSpeech> {
+  const { response, voiceId } = await requestElevenLabsSpeech(request, options, true);
+  const payload = (await response.json()) as ElevenLabsAlignmentResponse;
+  if (!payload.audio_base64) throw new ElevenLabsSpeechError(response.status);
+  // Raw alignment corresponds to the submitted/visible answer. Normalized
+  // alignment may expand numbers or symbols and is only a fallback.
+  const alignment = payload.alignment ?? payload.normalized_alignment ?? null;
+
+  console.info("[speech-api] Daniel aligned ElevenLabs audio buffered.", {
+    provider: "elevenlabs",
+    voiceIdSuffix: voiceId.slice(-4),
+    status: response.status,
+    alignedCharacters: alignment?.characters.length ?? 0,
+  });
+  return { audio: base64ToArrayBuffer(payload.audio_base64), alignment };
+}
+
 export type ElevenLabsProgressiveSpeech = {
   body: ReadableStream<Uint8Array>;
   firstByteMs: number;
@@ -88,6 +131,7 @@ export async function streamElevenLabsSpeech(
 async function requestElevenLabsSpeech(
   request: SpeechApiRequest,
   options: ElevenLabsSpeechOptions,
+  withTimestamps = false,
 ) {
   const language = resolveSupportedLanguage(request.language);
   const ttsLanguageCode = getLanguageConfiguration(language).ttsLanguageCode;
@@ -123,7 +167,7 @@ async function requestElevenLabsSpeech(
   const response = await fetcher(
     `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(
       voiceId,
-    )}/stream?output_format=${outputFormat}`,
+    )}/${withTimestamps ? "with-timestamps" : "stream"}?output_format=${outputFormat}`,
     {
       method: "POST",
       headers: {

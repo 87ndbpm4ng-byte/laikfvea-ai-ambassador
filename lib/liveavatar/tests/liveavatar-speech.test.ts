@@ -63,9 +63,13 @@ class FakeAvatar implements DanielAvatarOutput {
   markFallback() {
     this.fallbackCount += 1;
   }
-  async speakAudio(audioBase64: string) {
+  async speakAudio(
+    audioBase64: string,
+    metadata?: { onPlaybackStarted?: () => void },
+  ) {
     if (this.failSpeech) throw new Error("avatar failed");
     this.audio.push(audioBase64);
+    metadata?.onPlaybackStarted?.();
   }
   async beginAudioStream(
     eventId: string,

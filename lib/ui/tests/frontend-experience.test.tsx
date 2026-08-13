@@ -457,6 +457,43 @@ test("ordinary answers grow before Quick Questions without an internal scrollbar
   );
 });
 
+test("exhibition answers stay prominent and spoken highlighting does not alter flow", async () => {
+  const css = await readFile(
+    new URL("../../../app/globals.css", import.meta.url),
+    "utf8",
+  );
+  const screenSource = await readFile(
+    new URL("../../../components/screens/journey-screens.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(
+    css,
+    /\.conversation-response-presentation:has\(\.presentation-panel\)\s*{[^}]*grid-template-columns:\s*minmax\(0, 1\.7fr\) minmax\(13rem, 0\.7fr\);[^}]*align-items:\s*start;/s,
+  );
+  assert.match(
+    css,
+    /\.guide-response p\s*{[^}]*font-size:\s*clamp\(1\.18rem, 1\.65vw, 1\.4rem\);[^}]*line-height:\s*1\.68;/s,
+  );
+  assert.match(
+    css,
+    /\.guide-response \.spoken-answer-segment\s*{[^}]*font:\s*inherit;[^}]*letter-spacing:\s*inherit;/s,
+  );
+  const finalGuideRule = css
+    .slice(css.lastIndexOf("/* Final cascade: focused two-area kiosk composition */"))
+    .match(/\.guide-response p\s*{([^}]*)}/s)?.[1];
+  assert.ok(finalGuideRule);
+  assert.doesNotMatch(finalGuideRule, /(?:^|\n)\s*(?:height|max-height|overflow-y)\s*:/);
+  assert.match(screenSource, /spoken-answer-segment is-current/);
+  assert.match(screenSource, /spoken-answer-segment is-complete/);
+  assert.match(
+    css,
+    /\.spoken-answer-segment\.is-complete\s*{[^}]*opacity:\s*0\.72;/s,
+  );
+  assert.match(screenSource, /: turn\.guide\.content/);
+  assert.doesNotMatch(screenSource, /aria-hidden=.*spoken-answer-segment/);
+});
+
 test("conversation heading belongs to the dialogue column", () => {
   const markup = renderConversation("daniel");
   const dialogueStart = markup.indexOf('class="conversation-dialogue"');

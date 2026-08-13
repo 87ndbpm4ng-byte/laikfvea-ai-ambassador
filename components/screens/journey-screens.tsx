@@ -357,7 +357,29 @@ export function ConversationScreen({
                       {turn.guide ? (
                         <div className="guide-response">
                           <span>{guideDisplayName}</span>
-                          <p>{turn.guide.content}</p>
+                          <p>
+                            {voice.spokenHighlight?.messageId === turn.guide.id
+                              ? voice.spokenHighlight.segments.map(
+                                  (segment, index) => (
+                                    <span
+                                      className={
+                                        index ===
+                                        voice.spokenHighlight?.activeIndex
+                                          ? "spoken-answer-segment is-current"
+                                          : index <
+                                              (voice.spokenHighlight
+                                                ?.activeIndex ?? 0)
+                                            ? "spoken-answer-segment is-complete"
+                                            : "spoken-answer-segment"
+                                      }
+                                      key={`${turn.guide!.id}-${index}`}
+                                    >
+                                      {segment.text}
+                                    </span>
+                                  ),
+                                )
+                              : turn.guide.content}
+                          </p>
                         </div>
                       ) : (
                         <div className="guide-response is-preparing">

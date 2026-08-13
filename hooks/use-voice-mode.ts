@@ -19,6 +19,14 @@ import type { ConversationMessage } from "@/types/conversation";
 import type { GuideId } from "@/types/guide";
 import type { SupportedLanguage } from "@/types/language";
 import { getLanguageConfiguration } from "@/lib/i18n/languages";
+import {
+  findActiveSpokenSegment,
+  getAlignedSegmentStartTimes,
+  getSpokenSegmentStartTimes,
+  segmentSpokenText,
+  type SpokenTextSegment,
+} from "@/lib/voice/spoken-highlight";
+import type { SpeechPlaybackClock, SpeechTiming } from "@/lib/voice/voice-types";
 
 type VoiceModeOptions = {
   guideId: GuideId;
@@ -78,6 +86,20 @@ export function useVoiceMode({
   const activationPromiseRef = useRef<Promise<boolean> | null>(
     activationPromise ?? null,
   );
+  const [spokenHighlight, setSpokenHighlight] = useState<{
+    messageId: string;
+    segments: SpokenTextSegment[];
+    activeIndex: number;
+  } | null>(null);
+  const highlightTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pendingTimingRef = useRef<SpeechTiming | null>(null);
+
+  const clearSpokenHighlight = useCallback(() => {
+    if (highlightTimerRef.current) clearInterval(highlightTimerRef.current);
+    highlightTimerRef.current = null;
+    pendingTimingRef.current = null;
+    setSpokenHighlight(null);
+  }, []);
 
   const stopAll = useCallback(() => {
     recognition.abort();
@@ -86,7 +108,8 @@ export function useVoiceMode({
     setOutputState("idle");
     setPlaybackProvider(null);
     setIsPlaybackBlocked(false);
-  }, [recognition, synthesis]);
+    clearSpokenHighlight();
+  }, [clearSpokenHighlight, recognition, synthesis]);
 
   const setEnabled = useCallback(
     (enabled: boolean) => {
@@ -103,11 +126,12 @@ export function useVoiceMode({
         setIsPlaybackBlocked(false);
         setIsAudioSessionActivated(false);
         setActivationFailed(false);
+        clearSpokenHighlight();
       } else {
         setIsAudioSessionActivated(activationProvider.isActivated ?? false);
       }
     },
-    [activationProvider, recognition, synthesis],
+    [activationProvider, clearSpokenHighlight, recognition, synthesis],
   );
 
   const activateAudioSession = useCallback(() => {
@@ -156,8 +180,9 @@ export function useVoiceMode({
       setOutputState(
         voiceError.code === "synthesis-unavailable" ? "unavailable" : "idle",
       );
+      clearSpokenHighlight();
     },
-    [synthesis],
+    [clearSpokenHighlight, synthesis],
   );
 
   const startListening = useCallback(() => {
@@ -166,6 +191,7 @@ export function useVoiceMode({
     }
 
     synthesis.stop();
+    clearSpokenHighlight();
     if (!isAudioSessionActivated) {
       // This call begins audio unlock synchronously inside the Talk gesture.
       activateAudioSession();
@@ -215,6 +241,7 @@ export function useVoiceMode({
     recognition,
     submitTranscript,
     synthesis,
+    clearSpokenHighlight,
   ]);
 
   const stopListening = useCallback(() => {
@@ -227,6 +254,7 @@ export function useVoiceMode({
 
     recognition.abort();
     synthesis.stop();
+    clearSpokenHighlight();
     if (!isAudioSessionActivated) activateAudioSession();
     synthesis.setThinking?.();
     setTranscript("");
@@ -243,6 +271,7 @@ export function useVoiceMode({
     isEnabled,
     recognition,
     synthesis,
+    clearSpokenHighlight,
   ]);
 
   const cancelQuestionSubmission = useCallback(() => {
@@ -269,6 +298,45 @@ export function useVoiceMode({
       audioSessionActivated: isAudioSessionActivated,
     });
     synthesis.speak(normalizeSpeechText(latestGuideMessage.content), guideId, {
+      onTiming: (timing) => {
+        clearSpokenHighlight();
+        pendingTimingRef.current = timing;
+      },
+      onPlaybackClock: (clock: SpeechPlaybackClock) => {
+        const timing = pendingTimingRef.current;
+        if (!timing) return;
+        const segments = segmentSpokenText(
+          latestGuideMessage.content,
+          language,
+        );
+        const alignedStarts = timing.alignment
+          ? getAlignedSegmentStartTimes(
+              latestGuideMessage.content,
+              segments,
+              timing.alignment,
+            )
+          : [];
+        const starts = alignedStarts.length
+          ? alignedStarts
+          : getSpokenSegmentStartTimes(segments, timing.durationMs);
+        if (!segments.length || starts.length !== segments.length) return;
+
+        const updateHighlight = () => {
+          const activeIndex = findActiveSpokenSegment(
+            starts,
+            clock.currentTimeMs(),
+          );
+          if (activeIndex < 0) return;
+          setSpokenHighlight((current) =>
+            current?.messageId === latestGuideMessage.id &&
+            current.activeIndex === activeIndex
+              ? current
+              : { messageId: latestGuideMessage.id, segments, activeIndex },
+          );
+        };
+        updateHighlight();
+        highlightTimerRef.current = setInterval(updateHighlight, 150);
+      },
       onProvider: (provider) => {
         logVoiceDiagnostic("provider-selected", { provider });
         setPlaybackProvider(provider);
@@ -293,7 +361,10 @@ export function useVoiceMode({
         setInputState("idle");
         setOutputState("speaking");
       },
-      onEnd: () => setOutputState("idle"),
+      onEnd: () => {
+        setOutputState("idle");
+        clearSpokenHighlight();
+      },
       onError: handleError,
     });
   }, [
@@ -301,8 +372,10 @@ export function useVoiceMode({
     handleError,
     isAudioSessionActivated,
     isEnabled,
+    language,
     messages,
     synthesis,
+    clearSpokenHighlight,
   ]);
 
   useEffect(() => {
@@ -317,8 +390,9 @@ export function useVoiceMode({
       window.removeEventListener("keydown", handleEscape);
       recognition.abort();
       synthesis.stop();
+      clearSpokenHighlight();
     };
-  }, [recognition, stopAll, synthesis]);
+  }, [clearSpokenHighlight, recognition, stopAll, synthesis]);
 
   return {
     isEnabled,
@@ -333,6 +407,7 @@ export function useVoiceMode({
     activationFailed,
     transcript,
     error,
+    spokenHighlight,
     setEnabled,
     activateAudioSession,
     prepareQuestionSubmission,
@@ -347,6 +422,7 @@ export function useVoiceMode({
       synthesis.stop();
       setOutputState("idle");
       setIsPlaybackBlocked(false);
+      clearSpokenHighlight();
     },
   };
 }

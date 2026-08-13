@@ -1,5 +1,6 @@
 import { BrowserSpeechSynthesisProvider } from "@/lib/voice/browser-speech-synthesis";
 import type {
+  SpeechAlignment,
   SpeechSynthesisCallbacks,
   SpeechSynthesisProvider,
   VoiceError,
@@ -13,6 +14,7 @@ import {
 type AudioPlayback = {
   src: string;
   currentTime: number;
+  duration?: number;
   preload?: string;
   style?: { display: string };
   onplay: (() => void) | null;
@@ -37,6 +39,34 @@ type OpenAISpeechSynthesisOptions = {
   revokeObjectURL?: (url: string) => void;
   language?: () => string | undefined;
 };
+
+type AlignedSpeechPayload = {
+  audioBase64: string;
+  alignment?: {
+    characters: string[];
+    character_start_times_seconds: number[];
+    character_end_times_seconds: number[];
+  } | null;
+};
+
+function decodeBase64Audio(value: string) {
+  const bytes = Uint8Array.from(atob(value), (character) =>
+    character.charCodeAt(0),
+  );
+  return new Blob([bytes], { type: "audio/mpeg" });
+}
+
+function normalizeAlignment(
+  alignment: AlignedSpeechPayload["alignment"],
+): SpeechAlignment | undefined {
+  return alignment
+    ? {
+        characters: alignment.characters,
+        characterStartTimesSeconds: alignment.character_start_times_seconds,
+        characterEndTimesSeconds: alignment.character_end_times_seconds,
+      }
+    : undefined;
+}
 
 const ACTIVATION_AUDIO_SOURCE = "/voice-session-activation.mp3";
 
@@ -254,7 +284,15 @@ export class OpenAISpeechSynthesisProvider
 
       const serverProvider =
         response.headers.get("x-speech-provider") ?? "unknown";
-      const blob = await response.blob();
+      const alignedResponse =
+        response.headers.get("x-speech-response") === "aligned-json";
+      const payload = alignedResponse
+        ? ((await response.json()) as AlignedSpeechPayload)
+        : null;
+      const blob = payload
+        ? decodeBase64Audio(payload.audioBase64)
+        : await response.blob();
+      const alignment = normalizeAlignment(payload?.alignment);
 
       if (controller.signal.aborted || requestId !== this.requestSequence) {
         return;
@@ -272,6 +310,7 @@ export class OpenAISpeechSynthesisProvider
         guideId,
         callbacks,
         serverProvider,
+        alignment,
       );
       audio.load?.();
 
@@ -338,12 +377,22 @@ export class OpenAISpeechSynthesisProvider
     guideId: GuideId,
     callbacks: SpeechSynthesisCallbacks,
     serverProvider: string,
+    alignment?: SpeechAlignment,
   ) {
     this.clearAudioHandlers(audio);
     audio.onplay = () => {
       if (serverProvider === "elevenlabs" || serverProvider === "openai") {
         callbacks.onProvider?.(serverProvider);
       }
+      if (Number.isFinite(audio.duration) && (audio.duration ?? 0) > 0) {
+        callbacks.onTiming?.({
+          durationMs: audio.duration! * 1_000,
+          alignment,
+        });
+      }
+      callbacks.onPlaybackClock?.({
+        currentTimeMs: () => audio.currentTime * 1_000,
+      });
       callbacks.onStart();
     };
     audio.onended = () => {

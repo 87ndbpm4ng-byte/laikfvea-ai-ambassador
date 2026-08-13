@@ -2,6 +2,7 @@
 
 import type { LiveAvatarOutput } from "@/lib/liveavatar/liveavatar-types";
 import type {
+  SpeechAlignment,
   SpeechSynthesisCallbacks,
   SpeechSynthesisProvider,
   VoiceError,
@@ -48,6 +49,15 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
 
   return btoa(binary);
 }
+
+type AlignedPcmPayload = {
+  audioBase64: string;
+  alignment?: {
+    characters: string[];
+    character_start_times_seconds: number[];
+    character_end_times_seconds: number[];
+  } | null;
+};
 
 export class LiveAvatarSpeechSynthesisProvider
   implements SpeechSynthesisProvider
@@ -201,7 +211,26 @@ export class LiveAvatarSpeechSynthesisProvider
         return;
       }
 
-      const audio = await response.arrayBuffer();
+      const alignedResponse =
+        response.headers.get("X-LiveAvatar-Speech-Mode") ===
+        "buffered-aligned-json";
+      const payload = alignedResponse
+        ? ((await response.json()) as AlignedPcmPayload)
+        : null;
+      const audio = payload
+        ? Uint8Array.from(atob(payload.audioBase64), (character) =>
+            character.charCodeAt(0),
+          ).buffer
+        : await response.arrayBuffer();
+      const alignment: SpeechAlignment | undefined = payload?.alignment
+        ? {
+            characters: payload.alignment.characters,
+            characterStartTimesSeconds:
+              payload.alignment.character_start_times_seconds,
+            characterEndTimesSeconds:
+              payload.alignment.character_end_times_seconds,
+          }
+        : undefined;
       const ttsCompletedAt = performance.now();
 
       if (
@@ -230,14 +259,22 @@ export class LiveAvatarSpeechSynthesisProvider
       });
 
       callbacks.onProvider?.("liveavatar");
+      callbacks.onTiming?.({ durationMs: analysis.durationMs, alignment });
       logVoiceDiagnostic("liveavatar-repeat-audio", {
         selectedProvider: "liveavatar",
         liveAvatarConnected: this.avatar.isConnected,
         repeatAudioCalled: true,
       });
-      callbacks.onStart();
+      let playbackStartedAt = 0;
       await this.avatar.speakAudio(arrayBufferToBase64(audio), {
         diagnosticId,
+        onPlaybackStarted: () => {
+          playbackStartedAt = performance.now();
+          callbacks.onPlaybackClock?.({
+            currentTimeMs: () => performance.now() - playbackStartedAt,
+          });
+          callbacks.onStart();
+        },
       });
 
       if (requestId === this.sequence) callbacks.onEnd();

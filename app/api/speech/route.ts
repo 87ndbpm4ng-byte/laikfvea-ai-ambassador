@@ -1,4 +1,6 @@
 import { generateGuideSpeech } from "@/lib/voice/guide-speech-service";
+import { generateElevenLabsSpeechWithTimestamps } from "@/lib/voice/elevenlabs-speech-service";
+import { selectSpeechProvider } from "@/lib/voice/speech-provider-routing";
 import { SpeechRateLimiter } from "@/lib/voice/speech-rate-limit";
 import { validateSpeechRequest } from "@/lib/voice/speech-request";
 
@@ -48,15 +50,31 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { audio, provider } = await generateGuideSpeech(speechRequest);
+    const provider = selectSpeechProvider(speechRequest);
+    if (provider === "elevenlabs") {
+      const { audio, alignment } = await generateElevenLabsSpeechWithTimestamps(
+        speechRequest,
+      );
+      return Response.json(
+        {
+          audioBase64: Buffer.from(audio).toString("base64"),
+          alignment,
+        },
+        {
+          headers: {
+            "Cache-Control": "no-store",
+            "X-Speech-Provider": provider,
+            "X-Speech-Response": "aligned-json",
+          },
+        },
+      );
+    }
+    const { audio } = await generateGuideSpeech(speechRequest);
 
     if (speechRequest.guideId === "daniel") {
       console.info("[speech-api] Daniel audio response ready.", {
         provider,
-        voiceIdSuffix:
-          provider === "elevenlabs"
-            ? process.env.ELEVENLABS_DANIEL_VOICE_ID?.slice(-4) || "missing"
-            : "built-in",
+        voiceIdSuffix: "built-in",
         status: 200,
         contentType: "audio/mpeg",
         audioByteLength: audio.byteLength,

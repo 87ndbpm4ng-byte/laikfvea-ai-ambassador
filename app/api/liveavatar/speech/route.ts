@@ -1,5 +1,5 @@
 import {
-  generateElevenLabsSpeech,
+  generateElevenLabsSpeechWithTimestamps,
   streamElevenLabsSpeech,
 } from "@/lib/voice/elevenlabs-speech-service";
 import { isLiveAvatarStreamingSpeechEnabled } from "@/lib/liveavatar/liveavatar-streaming-config";
@@ -73,15 +73,26 @@ export async function POST(request: Request) {
 
     let timing: ElevenLabsSpeechTiming = { firstByteMs: 0, completeMs: 0 };
     const startedAt = performance.now();
-    const audio =
-      provider === "elevenlabs"
-        ? await generateElevenLabsSpeech(speechRequest, {
-            output: "liveavatar",
-            onTiming: (value) => {
-              timing = value;
-            },
-          })
-        : await generateOpenAISpeech(speechRequest, {
+    if (provider === "elevenlabs") {
+      const aligned = await generateElevenLabsSpeechWithTimestamps(speechRequest, {
+        output: "liveavatar",
+      });
+      return Response.json(
+        {
+          audioBase64: Buffer.from(aligned.audio).toString("base64"),
+          alignment: aligned.alignment,
+        },
+        {
+          headers: {
+            "Cache-Control": "no-store",
+            "X-Audio-Format": "pcm_s16le_24000_mono",
+            "X-LiveAvatar-Speech-Mode": "buffered-aligned-json",
+            "X-Speech-Provider": provider,
+          },
+        },
+      );
+    }
+    const audio = await generateOpenAISpeech(speechRequest, {
             output: "liveavatar",
           });
     if (provider === "openai") {

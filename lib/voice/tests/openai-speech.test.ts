@@ -3,6 +3,7 @@ import test from "node:test";
 import { POST } from "@/app/api/speech/route";
 import {
   generateElevenLabsSpeech,
+  generateElevenLabsSpeechWithTimestamps,
   ElevenLabsSpeechError,
   MissingElevenLabsConfigError,
 } from "@/lib/voice/elevenlabs-speech-service";
@@ -245,6 +246,38 @@ test("Daniel speech uses the configured ElevenLabs voice endpoint", async () => 
     /text-to-speech\/daniel-test-voice\/stream/,
   );
   assert.match(requestedBody, /"model_id":"eleven_multilingual_v2"/);
+});
+
+test("Daniel aligned speech preserves raw character timestamps", async () => {
+  let requestedURL = "";
+  const answer = "Power is 5 W.";
+  const aligned = await generateElevenLabsSpeechWithTimestamps(
+    { text: answer, guideId: "daniel", language: "en-GB" },
+    {
+      apiKey: "test-key",
+      voiceId: "daniel-test-voice",
+      fetcher: async (input) => {
+        requestedURL = String(input);
+        return Response.json({
+          audio_base64: Buffer.from([4, 5, 6]).toString("base64"),
+          alignment: {
+            characters: Array.from(answer),
+            character_start_times_seconds: Array.from(answer, (_, index) => index / 10),
+            character_end_times_seconds: Array.from(answer, (_, index) => (index + 1) / 10),
+          },
+          normalized_alignment: {
+            characters: Array.from("Power is five watts."),
+            character_start_times_seconds: [],
+            character_end_times_seconds: [],
+          },
+        });
+      },
+    },
+  );
+
+  assert.match(requestedURL, /text-to-speech\/daniel-test-voice\/with-timestamps/);
+  assert.equal(aligned.audio.byteLength, 3);
+  assert.equal(aligned.alignment?.characters.join(""), answer);
 });
 
 test("Daniel keeps his multilingual voice model for Russian speech", async () => {

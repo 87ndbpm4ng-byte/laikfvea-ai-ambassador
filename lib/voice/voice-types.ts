@@ -29,9 +29,26 @@ export type SpeechSynthesisCallbacks = {
   onProvider?: (provider: SpeechPlaybackProvider) => void;
   onActivationRequired?: () => void;
   onPlaybackBlocked?: () => void;
+  onTiming?: (timing: SpeechTiming) => void;
+  onPlaybackClock?: (clock: SpeechPlaybackClock) => void;
   onStart: () => void;
   onEnd: () => void;
   onError: (error: VoiceError) => void;
+};
+
+export type SpeechAlignment = {
+  characters: string[];
+  characterStartTimesSeconds: number[];
+  characterEndTimesSeconds: number[];
+};
+
+export type SpeechTiming = {
+  durationMs: number;
+  alignment?: SpeechAlignment;
+};
+
+export type SpeechPlaybackClock = {
+  currentTimeMs: () => number;
 };
 
 export type RecognitionCallbacks = {
