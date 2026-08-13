@@ -43,6 +43,10 @@ function explicitProduct(
     return "advanced";
   }
 
+  if (/\b(?:water ionizer|ionized water|ionised water)\b/.test(normalized)) {
+    return "water-ionizer";
+  }
+
   if (/\bthe first one\b/.test(normalized)) {
     return session.comparisonProducts?.[0] ?? "everyday";
   }

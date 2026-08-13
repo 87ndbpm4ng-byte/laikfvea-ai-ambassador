@@ -66,6 +66,18 @@ function expandedTerms(text: string, session?: VisitorSession) {
   if (/\bwhat does the bottle do\b/i.test(text)) {
     terms.push("hydrogen water preparation", "hydrogen inhalation");
   }
+  if (/\b(?:what does|how does).*water ionizer/i.test(text)) {
+    terms.push("product purpose", "operating principle");
+  }
+  if (/\bhow do i (?:use|operate).*water ionizer/i.test(text)) {
+    terms.push("preparing alkaline and acidic water", "controls");
+  }
+  if (/\b(?:choose|select).*water mode.*water ionizer/i.test(text)) {
+    terms.push("controls", "selectable ionization level", "up down");
+  }
+  if (/\b(?:filter|membrane).*water ionizer/i.test(text)) {
+    terms.push("membrane use", "membrane replacement", "pressed cotton");
+  }
   if (
     /\b(?:compare|comparison|difference)\b/i.test(text) &&
     /\bGO\b/.test(text) &&
@@ -95,6 +107,9 @@ export function tokenizeRetrievalText(text: string): string[] {
 
 function inferProduct(text: string): RetrievalProduct | null {
   const normalized = text.toLocaleLowerCase("en");
+  if (/\b(?:water ionizer|ionized water|ionised water)\b/.test(normalized)) {
+    return "water-ionizer";
+  }
   const explicitlyNamesGo =
     /\bGO\b/.test(text) ||
     /\b(everyday|go bottle|hydrogen water bottle go|portable|compact)\b/.test(normalized);

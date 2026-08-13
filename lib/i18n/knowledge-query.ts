@@ -4,6 +4,9 @@ const RUSSIAN_QUERY_TERMS: readonly [RegExp, string][] = [
   [/привет\w*|здравств\w*/giu, " hello "],
   [/спасибо|благодар\w*/giu, " thanks "],
   [/пока|до свидания/giu, " bye "],
+  [/ионизатор\w* вод\w*|ионизированн\w+ вод\w*/giu, " water ionizer ionized water "],
+  [/щелочн\w+ вод\w*/giu, " alkaline ionized water "],
+  [/кисл\w+ вод\w*/giu, " acidic ionized water "],
   [
     /(?:как работает|что такое|объясни(?:те)?)(?:\s+технологи\S+)?\s+водородн\S*\s+вод\S*/giu,
     " hydrogen water preparation process ",
@@ -49,6 +52,10 @@ const CHINESE_QUERY_TERMS: readonly [RegExp, string][] = [
   [/你好|您好/gu, " hello "],
   [/谢谢/gu, " thanks "],
   [/再见/gu, " bye "],
+  [/水离子机|离子水机|电解水机/gu, " water ionizer "],
+  [/离子水|电解水/gu, " ionized water "],
+  [/碱性水/gu, " alkaline ionized water "],
+  [/酸性水/gu, " acidic ionized water "],
   [
     /(?:氢水(?:是如何工作(?:的)?|是什么|的原理是什么)|什么是氢水|氢气是如何加入水中(?:的)?|可以解释一下氢水吗)/gu,
     " hydrogen water preparation process ",
@@ -95,6 +102,10 @@ const CANTONESE_QUERY_TERMS: readonly [RegExp, string][] = [
   [/你好|早晨/gu, " hello "],
   [/唔該|多謝/gu, " thanks "],
   [/再見/gu, " bye "],
+  [/水離子機|離子水機|電解水機/gu, " water ionizer "],
+  [/離子水|電解水/gu, " ionized water "],
+  [/鹼性水/gu, " alkaline ionized water "],
+  [/酸性水/gu, " acidic ionized water "],
   [
     /(?:氫水係點樣運作(?:嘅|㗎)?|咩係氫水|氫水嘅原理係咩|氫氣係點樣加入水入面|可以解釋一下氫水嗎)/gu,
     " hydrogen water preparation process ",
@@ -141,6 +152,9 @@ const FRENCH_QUERY_TERMS: readonly [RegExp, string][] = [
   [/bonjour|salut/giu, " hello "],
   [/merci/giu, " thanks "],
   [/au revoir/giu, " bye "],
+  [/ioniseur d['’]eau|eau ionis[ée]e/giu, " water ionizer ionized water "],
+  [/eau alcaline/giu, " alkaline ionized water "],
+  [/eau acide/giu, " acidic ionized water "],
   [
     /(?:comment fonctionne|fonctionnement de|qu['’]est-ce que|pouvez-vous m['’]expliquer)\s+l['’]?(?:eau hydrog[ée]n[ée]e|eau hydrog[èe]ne|eau riche en hydrog[èe]ne)/giu,
     " hydrogen water preparation process ",

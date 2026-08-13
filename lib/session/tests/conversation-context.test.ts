@@ -54,6 +54,23 @@ test("charging follow-ups preserve product, topic and previous turn", () => {
   assert.equal(useWhileCharging.referenceResolution?.ambiguous, false);
 });
 
+test("Water Ionizer identity survives multi-turn references", () => {
+  const manager = createManager();
+  const session = manager.createSession();
+  const first = manager.recordVisitorMessage(session.sessionId, {
+    content: "Tell me about the Water Ionizer.",
+  });
+  assert.equal(first.activeProduct, "water-ionizer");
+  manager.recordAssistantMessage(session.sessionId, {
+    content: "The Water Ionizer uses electrolysis.",
+  });
+  const followUp = manager.recordVisitorMessage(session.sessionId, {
+    content: "What kinds of water can it make?",
+  });
+  assert.equal(followUp.activeProduct, "water-ionizer");
+  assert.match(followUp.resolvedQuestion ?? "", /active product: Water Ionizer/);
+});
+
 test("comparison context supports both, first, second and other product references", () => {
   const manager = createManager();
   const session = manager.createSession();

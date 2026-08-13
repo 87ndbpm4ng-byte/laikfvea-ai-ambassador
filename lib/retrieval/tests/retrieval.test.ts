@@ -61,7 +61,6 @@ The Everyday Bottle is the portable option.
 `;
 
 const PENDING_PORTFOLIO_DOCUMENTS = [
-  ["Water Ionizer", "water-ionizer"],
   ["Hydrogen Water Generator for Face & Body", "face-body-generator"],
   ["Water Mineralizer", "water-mineralizer"],
   ["Air Purifier", "air-purifier"],
@@ -271,10 +270,10 @@ Approved fixture content for product identity validation only.
   );
 });
 
-test("pending portfolio products gain no approved evidence from the repository", async () => {
+test("only documented portfolio products have approved repository evidence", async () => {
   const loader = new ApprovedKnowledgeLoader(path.join(process.cwd(), "knowledge"));
   const documents = await loader.load();
-  assert.equal(documents.some(({ product }) => product === "water-ionizer"), false);
+  assert.equal(documents.some(({ product }) => product === "water-ionizer"), true);
   assert.equal(documents.some(({ product }) => product === "face-body-generator"), false);
   assert.equal(documents.some(({ product }) => product === "water-mineralizer"), false);
   assert.equal(documents.some(({ product }) => product === "air-purifier"), false);

@@ -78,7 +78,7 @@ export const exhibitionProducts = {
       fr: "Ioniseur d’eau",
     },
     aliases: ["Water Ionizer"],
-    knowledgeStatus: "pending",
+    knowledgeStatus: "approved",
     knowledgeProductNames: ["water-ionizer", "Water Ionizer"],
     presentationAssetId: null,
     comparableWith: [],
