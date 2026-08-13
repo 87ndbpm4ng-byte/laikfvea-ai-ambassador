@@ -96,7 +96,7 @@ export const exhibitionProducts = {
       fr: "Générateur d’eau hydrogénée pour le visage et le corps",
     },
     aliases: ["Hydrogen Water Generator for Face & Body"],
-    knowledgeStatus: "pending",
+    knowledgeStatus: "approved",
     knowledgeProductNames: [
       "face-body-generator",
       "Hydrogen Water Generator for Face & Body",

@@ -69,6 +69,16 @@ function expandedTerms(text: string, session?: VisitorSession) {
   if (/\b(?:what does|how does).*water ionizer/i.test(text)) {
     terms.push("product purpose", "operating principle");
   }
+  if (/\b(?:what is|how does).*?(?:face (?:&|and) body generator|portable hydrogen skin (?:humidifier|sprayer))/i.test(text)) {
+    terms.push("product purpose", "operating principle", "fine mist");
+  }
+  if (/\bhow (?:do i|often|long).*?(?:face (?:&|and) body generator|portable hydrogen skin (?:humidifier|sprayer))/i.test(text)) {
+    terms.push("operating procedure", "one spray cycle", "55 seconds");
+  }
+  if (session?.activeProduct === "face-body-generator") {
+    if (/\bhow do i use it\b/i.test(text)) terms.push("operating procedure", "switch", "spray");
+    if (/\bhow often can i use it\b/i.test(text)) terms.push("one spray cycle", "frequency", "55 seconds");
+  }
   if (/\bhow do i (?:use|operate).*water ionizer/i.test(text)) {
     terms.push("preparing alkaline and acidic water", "controls");
   }
@@ -109,6 +119,9 @@ function inferProduct(text: string): RetrievalProduct | null {
   const normalized = text.toLocaleLowerCase("en");
   if (/\b(?:water ionizer|ionized water|ionised water)\b/.test(normalized)) {
     return "water-ionizer";
+  }
+  if (/\b(?:hydrogen water generator for face (?:&|and) body|face (?:&|and) body generator|portable hydrogen skin (?:humidifier|sprayer))\b/.test(normalized)) {
+    return "face-body-generator";
   }
   const explicitlyNamesGo =
     /\bGO\b/.test(text) ||

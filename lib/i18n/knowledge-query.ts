@@ -7,6 +7,7 @@ const RUSSIAN_QUERY_TERMS: readonly [RegExp, string][] = [
   [/ионизатор\w* вод\w*|ионизированн\w+ вод\w*/giu, " water ionizer ionized water "],
   [/щелочн\w+ вод\w*/giu, " alkaline ionized water "],
   [/кисл\w+ вод\w*/giu, " acidic ionized water "],
+  [/генератор\p{L}* водородн\p{L}* вод\p{L}* для лиц\p{L}* и тел\p{L}*|генератор\p{L}* для лиц\p{L}* и тел\p{L}*|портативн\p{L}* водородн\p{L}* увлажнител\p{L}* для кож\p{L}*/giu, " hydrogen water generator for face and body portable hydrogen skin sprayer "],
   [
     /(?:как работает|что такое|объясни(?:те)?)(?:\s+технологи\S+)?\s+водородн\S*\s+вод\S*/giu,
     " hydrogen water preparation process ",
@@ -56,6 +57,7 @@ const CHINESE_QUERY_TERMS: readonly [RegExp, string][] = [
   [/离子水|电解水/gu, " ionized water "],
   [/碱性水/gu, " alkaline ionized water "],
   [/酸性水/gu, " acidic ionized water "],
+  [/面部及身体用氢水生成器|面部和身体氢水生成器|便携式氢气皮肤喷雾器/gu, " hydrogen water generator for face and body portable hydrogen skin sprayer "],
   [
     /(?:氢水(?:是如何工作(?:的)?|是什么|的原理是什么)|什么是氢水|氢气是如何加入水中(?:的)?|可以解释一下氢水吗)/gu,
     " hydrogen water preparation process ",
@@ -106,6 +108,7 @@ const CANTONESE_QUERY_TERMS: readonly [RegExp, string][] = [
   [/離子水|電解水/gu, " ionized water "],
   [/鹼性水/gu, " alkaline ionized water "],
   [/酸性水/gu, " acidic ionized water "],
+  [/面部及身體用氫水生成器|面部同身體氫水生成器|便攜式氫氣皮膚噴霧器/gu, " hydrogen water generator for face and body portable hydrogen skin sprayer "],
   [
     /(?:氫水係點樣運作(?:嘅|㗎)?|咩係氫水|氫水嘅原理係咩|氫氣係點樣加入水入面|可以解釋一下氫水嗎)/gu,
     " hydrogen water preparation process ",
@@ -155,6 +158,7 @@ const FRENCH_QUERY_TERMS: readonly [RegExp, string][] = [
   [/ioniseur d['’]eau|eau ionis[ée]e/giu, " water ionizer ionized water "],
   [/eau alcaline/giu, " alkaline ionized water "],
   [/eau acide/giu, " acidic ionized water "],
+  [/g[ée]n[ée]rateur d['’]eau hydrog[ée]n[ée]e pour le visage et le corps|brumisateur cutan[ée] portable [àa] hydrog[èe]ne/giu, " hydrogen water generator for face and body portable hydrogen skin sprayer "],
   [
     /(?:comment fonctionne|fonctionnement de|qu['’]est-ce que|pouvez-vous m['’]expliquer)\s+l['’]?(?:eau hydrog[ée]n[ée]e|eau hydrog[èe]ne|eau riche en hydrog[èe]ne)/giu,
     " hydrogen water preparation process ",

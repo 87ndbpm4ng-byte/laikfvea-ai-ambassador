@@ -29,6 +29,10 @@ export const RETRIEVAL_TOPIC_GROUPS = {
       { pattern: /\b(?:bottle|product|model|generator)\b/i, terms: ["bottle", "generator"] },
       { pattern: /\bwater ionizer\b/i, terms: ["water ionizer", "electrolysis"] },
       {
+        pattern: /\b(?:hydrogen water generator for face (?:&|and) body|portable hydrogen skin (?:humidifier|sprayer))\b/i,
+        terms: ["portable hydrogen skin sprayer", "fine mist"],
+      },
+      {
         pattern: /\b(?:what(?:'s| is) in the box|what comes (?:in|with)|package contents|supplied with|does it include|accessories)\b/i,
         terms: ["package", "contents"],
       },

@@ -48,7 +48,7 @@ test("knowledge availability is explicit and does not become factual content", (
   assert.equal(exhibitionProducts.advanced.knowledgeStatus, "approved");
   assert.equal(exhibitionProducts["water-ionizer"].knowledgeStatus, "approved");
   for (const id of PRODUCT_IDS.filter(
-    (id) => !["advanced", "everyday", "water-ionizer"].includes(id),
+    (id) => !["advanced", "everyday", "water-ionizer", "face-body-generator"].includes(id),
   )) {
     assert.equal(exhibitionProducts[id].knowledgeStatus, "pending", id);
   }

@@ -71,6 +71,23 @@ test("Water Ionizer identity survives multi-turn references", () => {
   assert.match(followUp.resolvedQuestion ?? "", /active product: Water Ionizer/);
 });
 
+test("Face & Body Generator identity survives multi-turn references", () => {
+  const manager = createManager();
+  const session = manager.createSession();
+  const first = manager.recordVisitorMessage(session.sessionId, {
+    content: "Tell me about the Face & Body Generator.",
+  });
+  assert.equal(first.activeProduct, "face-body-generator");
+  manager.recordAssistantMessage(session.sessionId, {
+    content: "It is a portable skin-care water sprayer.",
+  });
+  const followUp = manager.recordVisitorMessage(session.sessionId, {
+    content: "How do I use it?",
+  });
+  assert.equal(followUp.activeProduct, "face-body-generator");
+  assert.match(followUp.resolvedQuestion ?? "", /active product: Hydrogen Water Generator for Face & Body/);
+});
+
 test("comparison context supports both, first, second and other product references", () => {
   const manager = createManager();
   const session = manager.createSession();

@@ -47,6 +47,10 @@ function explicitProduct(
     return "water-ionizer";
   }
 
+  if (/\b(?:hydrogen water generator for face (?:&|and) body|face (?:&|and) body generator|portable hydrogen skin (?:humidifier|sprayer))\b/.test(normalized)) {
+    return "face-body-generator";
+  }
+
   if (/\bthe first one\b/.test(normalized)) {
     return session.comparisonProducts?.[0] ?? "everyday";
   }
