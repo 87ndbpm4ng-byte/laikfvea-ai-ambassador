@@ -58,7 +58,7 @@ export const RETRIEVAL_TOPIC_GROUPS = {
       { pattern: /\b(?:size|dimensions?)\b/i, terms: ["dimensions"] },
       { pattern: /\bweight\b/i, terms: ["net weight", "gross weight"] },
       { pattern: /\b(?:concentration|ppm|ppb|orp|how strong)\b/i, terms: ["hydrogen concentration"] },
-      { pattern: /\b(?:cycle|mode)\b/i, terms: ["3 minutes", "18 minutes"] },
+      { pattern: /\b(?:cycle|mode)\b/i, terms: ["cycle", "duration"] },
       { pattern: /\b(?:specifications?|specs)\b/i, terms: ["technical specifications"] },
       { pattern: /\bhow long\b/i, terms: [] },
     ],

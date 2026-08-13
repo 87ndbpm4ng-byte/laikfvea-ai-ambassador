@@ -55,8 +55,28 @@ function expandedTerms(text: string, session?: VisitorSession) {
   if (/^what power\b/i.test(text) && session?.activeTopic === "charging") {
     terms.push("wireless charging", "maximum wireless charging power");
   }
+  if (/^how long\b/i.test(text) && /hydrogen water/i.test(session?.activeTopic ?? "")) {
+    terms.push("process duration", "minutes");
+  }
+  if (/\b(?:cycle|mode|duration|how long)\b/i.test(text)) {
+    const product = inferProduct(text) ?? (session ? productFromSession(session) : null);
+    if (product === "everyday") terms.push("5 minutes");
+    if (product === "advanced") terms.push("3 minutes", "18 minutes");
+  }
   if (/\bwhat does the bottle do\b/i.test(text)) {
     terms.push("hydrogen water preparation", "hydrogen inhalation");
+  }
+  if (
+    /\b(?:compare|comparison|difference)\b/i.test(text) &&
+    /\bGO\b/.test(text) &&
+    /\bPRO\b/.test(text)
+  ) {
+    terms.push(
+      "technical specifications",
+      "hydrogen concentration",
+      "water capacity",
+      "hydrogen water preparation",
+    );
   }
   return terms;
 }
@@ -75,12 +95,18 @@ export function tokenizeRetrievalText(text: string): string[] {
 
 function inferProduct(text: string): RetrievalProduct | null {
   const normalized = text.toLocaleLowerCase("en");
-  if (/\b(advanced|inhalation|mineralisation|mineralization)\b/.test(normalized)) {
-    return "advanced";
-  }
-  if (/\b(everyday|portable|compact)\b/.test(normalized)) {
-    return "everyday";
-  }
+  const explicitlyNamesGo =
+    /\bGO\b/.test(text) ||
+    /\b(everyday|go bottle|hydrogen water bottle go|portable|compact)\b/.test(normalized);
+  const explicitlyNamesPro =
+    /\bPRO\b/.test(text) ||
+    /\b(advanced|pro bottle|hydrogen water bottle pro)\b/.test(
+      normalized,
+    );
+  if (explicitlyNamesGo && explicitlyNamesPro) return null;
+  if (explicitlyNamesGo) return "everyday";
+  if (explicitlyNamesPro) return "advanced";
+  if (/\b(inhalation|mineralisation|mineralization)\b/.test(normalized)) return "advanced";
   return null;
 }
 

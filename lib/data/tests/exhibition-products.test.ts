@@ -44,8 +44,9 @@ test("GO and PRO retain compatible internal identities and their pair relationsh
 });
 
 test("knowledge availability is explicit and does not become factual content", () => {
+  assert.equal(exhibitionProducts.everyday.knowledgeStatus, "approved");
   assert.equal(exhibitionProducts.advanced.knowledgeStatus, "approved");
-  for (const id of PRODUCT_IDS.filter((id) => id !== "advanced")) {
+  for (const id of PRODUCT_IDS.filter((id) => id !== "advanced" && id !== "everyday")) {
     assert.equal(exhibitionProducts[id].knowledgeStatus, "pending", id);
   }
   assert.deepEqual(exhibitionProducts["water-mineralizer"].capabilities, []);

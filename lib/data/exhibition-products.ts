@@ -42,7 +42,7 @@ export const exhibitionProducts = {
       fr: "Bouteille d’eau hydrogénée GO",
     },
     aliases: ["GO", "GO bottle", "Hydrogen Water Bottle GO", "Everyday Bottle"],
-    knowledgeStatus: "pending",
+    knowledgeStatus: "approved",
     knowledgeProductNames: ["everyday", "Everyday Bottle"],
     presentationAssetId: "go-bottle",
     comparableWith: ["advanced"],
