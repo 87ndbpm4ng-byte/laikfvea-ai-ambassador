@@ -79,7 +79,7 @@ test("five languages resolve natural Air Purifier questions to the same source",
 });
 
 test("Air Purifier follow-ups and product-explorer context retain identity", async () => {
-  for (const question of ["How does it work?", "How do I clean it?"]) {
+  for (const question of ["How does it work?", "How large a room does it cover?", "How do I clean it?"]) {
     const { query, result } = await search(question, {
       activeProduct: "air-purifier",
       viewedProducts: ["air-purifier"],

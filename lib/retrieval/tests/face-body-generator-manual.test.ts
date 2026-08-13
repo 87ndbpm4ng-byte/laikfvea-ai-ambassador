@@ -95,6 +95,16 @@ test("follow-ups retain Face & Body Generator context", async () => {
   }
 });
 
+test("reservoir-capacity follow-up retrieves the documented 15 mL specification", async () => {
+  const { query, result } = await search("What is its reservoir capacity?", {
+    activeProduct: "face-body-generator",
+    viewedProducts: ["face-body-generator"],
+  });
+  assert.equal(query.activeProduct, "face-body-generator");
+  assert.equal(result.matchedChunks[0]?.chunk.sourceId, "FACE-BODY-GENERATOR-MANUAL-001");
+  assert.match(result.matchedChunks[0]?.chunk.text ?? "", /15 mL/);
+});
+
 test("Face & Body Generator evidence stays isolated from every other product", async () => {
   const { result } = await search("How does the Face & Body Generator work?");
   assert.ok(result.matchedChunks.every(({ chunk }) => chunk.product === "face-body-generator"));

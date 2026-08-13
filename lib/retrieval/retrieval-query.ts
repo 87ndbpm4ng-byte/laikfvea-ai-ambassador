@@ -78,6 +78,8 @@ function expandedTerms(text: string, session?: VisitorSession) {
   if (session?.activeProduct === "face-body-generator") {
     if (/\bhow do i use it\b/i.test(text)) terms.push("operating procedure", "switch", "spray");
     if (/\bhow often can i use it\b/i.test(text)) terms.push("one spray cycle", "frequency", "55 seconds");
+    if (/\b(?:reservoir|capacity|volume)\b/i.test(text)) terms.push("reservoir volume", "15 mL");
+    if (/\b(?:cycle|mode|duration|how long)\b/i.test(text)) terms.push("one spray cycle", "55 seconds");
   }
   if (/\b(?:what does|how does).*?(?:air purifier|capsula m size)/i.test(text)) {
     terms.push("air path", "glass-filter", "pre-filter", "operating modes");
@@ -91,6 +93,7 @@ function expandedTerms(text: string, session?: VisitorSession) {
   if (session?.activeProduct === "air-purifier") {
     if (/\bhow does it work\b/i.test(text)) terms.push("air path", "glass-filter", "pre-filter");
     if (/\bhow do i clean it\b/i.test(text)) terms.push("cleaning maintenance", "blockages");
+    if (/\b(?:room|coverage|cover|large|big)\b/i.test(text)) terms.push("room coverage", "218 sq. ft.", "20.25 m²");
   }
   if (/\b(?:what is|what does|how does).*?(?:water mineralizer|severyanka mineral additive)/i.test(text)) {
     terms.push("product identity", "documented purpose", "preparation and use");
@@ -101,6 +104,8 @@ function expandedTerms(text: string, session?: VisitorSession) {
   if (session?.activeProduct === "water-mineralizer") {
     if (/\bhow does it work\b/i.test(text)) terms.push("documented purpose", "composition", "preparation and use");
     if (/\bhow do i use it\b/i.test(text)) terms.push("recommended dilution", "mix thoroughly");
+    if (/\b(?:mineral|composition|contain)\b/i.test(text)) terms.push("composition", "calcium", "magnesium", "potassium");
+    if (/\b(?:restriction|safety|warning)\b/i.test(text)) terms.push("safety restrictions", "recommended proportion", "undiluted");
   }
   if (/\bhow do i (?:use|operate).*water ionizer/i.test(text)) {
     terms.push("preparing alkaline and acidic water", "controls");
@@ -110,6 +115,10 @@ function expandedTerms(text: string, session?: VisitorSession) {
   }
   if (/\b(?:filter|membrane).*water ionizer/i.test(text)) {
     terms.push("membrane use", "membrane replacement", "pressed cotton");
+  }
+  if (session?.activeProduct === "water-ionizer") {
+    if (/\bhow does it work\b/i.test(text)) terms.push("product purpose", "operating principle");
+    if (/\bhow do i use it\b/i.test(text)) terms.push("preparing alkaline and acidic water", "controls");
   }
   if (
     /\b(?:compare|comparison|difference)\b/i.test(text) &&

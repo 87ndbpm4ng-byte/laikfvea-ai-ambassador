@@ -80,7 +80,7 @@ test("five languages resolve Water Mineralizer identity to one authoritative sou
 });
 
 test("follow-ups and Product Explorer context retain standalone Water Mineralizer identity", async () => {
-  for (const question of ["How does it work?", "How do I use it?", "What are its restrictions?"]) {
+  for (const question of ["How does it work?", "How do I use it?", "What minerals does it contain?", "What are its restrictions?"]) {
     const { query, result } = await search(question, {
       activeProduct: "water-mineralizer",
       viewedProducts: ["water-mineralizer"],

@@ -1,6 +1,12 @@
 import { resolveSupportedLanguage } from "@/lib/i18n/languages";
 
 const RUSSIAN_QUERY_TERMS: readonly [RegExp, string][] = [
+  [/расскажите об ионизаторе воды/giu, " tell me about the water ionizer "],
+  [/как (?:он|она|это) работа(?:ет|ют)/giu, " how does it work "],
+  [/как (?:его|её|ее|это) использова(?:ть|ть\w*)/giu, " how do i use it "],
+  [/какие минерал\p{L}* (?:он|она|это) содерж\p{L}*/giu, " what minerals does it contain "],
+  [/какие (?:есть )?(?:ограничения|меры предосторожности)/giu, " what are its restrictions safety "],
+  [/какую площад\p{L}* (?:он|она|это) покрыва\p{L}*/giu, " how large a room does it cover room coverage "],
   [/привет\w*|здравств\w*/giu, " hello "],
   [/спасибо|благодар\w*/giu, " thanks "],
   [/пока|до свидания/giu, " bye "],
@@ -52,6 +58,11 @@ const RUSSIAN_QUERY_TERMS: readonly [RegExp, string][] = [
 ];
 
 const CHINESE_QUERY_TERMS: readonly [RegExp, string][] = [
+  [/它如何工作|它是如何工作的/gu, " how does it work "],
+  [/如何使用它|它怎么使用/gu, " how do i use it "],
+  [/它含有什么矿物质|有什么矿物质/gu, " what minerals does it contain "],
+  [/有什么限制|有哪些限制/gu, " what are its restrictions safety "],
+  [/它适合多大房间|覆盖多大面积/gu, " how large a room does it cover room coverage "],
   [/你好|您好/gu, " hello "],
   [/谢谢/gu, " thanks "],
   [/再见/gu, " bye "],
@@ -105,6 +116,11 @@ const CHINESE_QUERY_TERMS: readonly [RegExp, string][] = [
 ];
 
 const CANTONESE_QUERY_TERMS: readonly [RegExp, string][] = [
+  [/佢點樣運作|佢係點樣運作/gu, " how does it work "],
+  [/點樣用佢|佢點樣用/gu, " how do i use it "],
+  [/佢有咩礦物質|有咩礦物質/gu, " what minerals does it contain "],
+  [/有咩限制/gu, " what are its restrictions safety "],
+  [/佢適合幾大間房|覆蓋幾大面積/gu, " how large a room does it cover room coverage "],
   [/你好|早晨/gu, " hello "],
   [/唔該|多謝/gu, " thanks "],
   [/再見/gu, " bye "],
@@ -158,6 +174,11 @@ const CANTONESE_QUERY_TERMS: readonly [RegExp, string][] = [
 ];
 
 const FRENCH_QUERY_TERMS: readonly [RegExp, string][] = [
+  [/comment fonctionne-t-il|comment fonctionne-t-elle|comment fonctionne (?:ce produit|cet appareil)/giu, " how does it work "],
+  [/comment l['’]utiliser|comment utiliser (?:ce produit|cet appareil)/giu, " how do i use it "],
+  [/quels min[ée]raux contient-il|quels min[ée]raux contient-elle/giu, " what minerals does it contain "],
+  [/quelles sont ses restrictions|quelles pr[ée]cautions/giu, " what are its restrictions safety "],
+  [/quelle surface couvre-t-il|quelle surface couvre-t-elle/giu, " how large a room does it cover room coverage "],
   [/bonjour|salut/giu, " hello "],
   [/merci/giu, " thanks "],
   [/au revoir/giu, " bye "],

@@ -129,6 +129,21 @@ test("Water Ionizer follow-ups retain active product context", async () => {
   assert.equal(result.matchedChunks[0]?.chunk.product, "water-ionizer");
 });
 
+test("generic Water Ionizer operation follow-ups retrieve its approved source", async () => {
+  for (const question of ["How does it work?", "How do I use it?"]) {
+    const { query, result } = await search(question, {
+      activeProduct: "water-ionizer",
+      viewedProducts: ["water-ionizer"],
+      conversationHistory: [
+        { role: "user", content: "Tell me about the Water Ionizer." },
+        { role: "assistant", content: "It is the exhibition Water Ionizer." },
+      ],
+    });
+    assert.equal(query.activeProduct, "water-ionizer");
+    assert.equal(result.matchedChunks[0]?.chunk.sourceId, "WATER-IONIZER-MANUAL-001");
+  }
+});
+
 test("unsupported Water Ionizer facts and health claims are absent", async () => {
   const documents = await loader.load();
   const approved = documents
