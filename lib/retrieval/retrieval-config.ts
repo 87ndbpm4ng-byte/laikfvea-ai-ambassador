@@ -33,6 +33,10 @@ export const RETRIEVAL_TOPIC_GROUPS = {
         terms: ["portable hydrogen skin sprayer", "fine mist"],
       },
       {
+        pattern: /\b(?:air purifier|capsula m size)\b/i,
+        terms: ["air purifier", "capsula m size", "pre-filter", "glass-filter"],
+      },
+      {
         pattern: /\b(?:what(?:'s| is) in the box|what comes (?:in|with)|package contents|supplied with|does it include|accessories)\b/i,
         terms: ["package", "contents"],
       },

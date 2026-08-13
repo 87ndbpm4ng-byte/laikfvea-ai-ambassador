@@ -62,7 +62,6 @@ The Everyday Bottle is the portable option.
 
 const PENDING_PORTFOLIO_DOCUMENTS = [
   ["Water Mineralizer", "water-mineralizer"],
-  ["Air Purifier", "air-purifier"],
 ] as const;
 
 function session(overrides: Partial<VisitorSession> = {}): VisitorSession {
@@ -275,7 +274,7 @@ test("only documented portfolio products have approved repository evidence", asy
   assert.equal(documents.some(({ product }) => product === "water-ionizer"), true);
   assert.equal(documents.some(({ product }) => product === "face-body-generator"), true);
   assert.equal(documents.some(({ product }) => product === "water-mineralizer"), false);
-  assert.equal(documents.some(({ product }) => product === "air-purifier"), false);
+  assert.equal(documents.some(({ product }) => product === "air-purifier"), true);
   assert.ok(documents.some(({ product }) => product === "advanced"));
 });
 

@@ -79,6 +79,19 @@ function expandedTerms(text: string, session?: VisitorSession) {
     if (/\bhow do i use it\b/i.test(text)) terms.push("operating procedure", "switch", "spray");
     if (/\bhow often can i use it\b/i.test(text)) terms.push("one spray cycle", "frequency", "55 seconds");
   }
+  if (/\b(?:what does|how does).*?(?:air purifier|capsula m size)/i.test(text)) {
+    terms.push("air path", "glass-filter", "pre-filter", "operating modes");
+  }
+  if (/\b(?:how (?:do i|large|big)|room|coverage).*?(?:air purifier|capsula m size)/i.test(text)) {
+    terms.push("placement", "room coverage", "operating modes");
+  }
+  if (/\b(?:clean|filter|pre-filter).*?(?:air purifier|capsula m size)/i.test(text)) {
+    terms.push("cleaning maintenance", "pre-filter replacement");
+  }
+  if (session?.activeProduct === "air-purifier") {
+    if (/\bhow does it work\b/i.test(text)) terms.push("air path", "glass-filter", "pre-filter");
+    if (/\bhow do i clean it\b/i.test(text)) terms.push("cleaning maintenance", "blockages");
+  }
   if (/\bhow do i (?:use|operate).*water ionizer/i.test(text)) {
     terms.push("preparing alkaline and acidic water", "controls");
   }
@@ -122,6 +135,9 @@ function inferProduct(text: string): RetrievalProduct | null {
   }
   if (/\b(?:hydrogen water generator for face (?:&|and) body|face (?:&|and) body generator|portable hydrogen skin (?:humidifier|sprayer))\b/.test(normalized)) {
     return "face-body-generator";
+  }
+  if (/\b(?:air purifier|capsula m size)\b/.test(normalized)) {
+    return "air-purifier";
   }
   const explicitlyNamesGo =
     /\bGO\b/.test(text) ||

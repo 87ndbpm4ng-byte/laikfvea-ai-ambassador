@@ -51,6 +51,10 @@ function explicitProduct(
     return "face-body-generator";
   }
 
+  if (/\b(?:air purifier|capsula m size)\b/.test(normalized)) {
+    return "air-purifier";
+  }
+
   if (/\bthe first one\b/.test(normalized)) {
     return session.comparisonProducts?.[0] ?? "everyday";
   }

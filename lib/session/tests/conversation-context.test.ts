@@ -88,6 +88,23 @@ test("Face & Body Generator identity survives multi-turn references", () => {
   assert.match(followUp.resolvedQuestion ?? "", /active product: Hydrogen Water Generator for Face & Body/);
 });
 
+test("Air Purifier identity survives multi-turn references", () => {
+  const manager = createManager();
+  const session = manager.createSession();
+  const first = manager.recordVisitorMessage(session.sessionId, {
+    content: "Tell me about the Air Purifier.",
+  });
+  assert.equal(first.activeProduct, "air-purifier");
+  manager.recordAssistantMessage(session.sessionId, {
+    content: "The Air Purifier is the Capsula M Size model.",
+  });
+  for (const content of ["How does it work?", "How do I clean it?"]) {
+    const followUp = manager.recordVisitorMessage(session.sessionId, { content });
+    assert.equal(followUp.activeProduct, "air-purifier");
+    assert.match(followUp.resolvedQuestion ?? "", /active product: Air Purifier/);
+  }
+});
+
 test("comparison context supports both, first, second and other product references", () => {
   const manager = createManager();
   const session = manager.createSession();
