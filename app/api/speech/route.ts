@@ -53,7 +53,10 @@ export async function POST(request: Request) {
     if (speechRequest.guideId === "daniel") {
       console.info("[speech-api] Daniel audio response ready.", {
         provider,
-        voiceId: process.env.ELEVENLABS_DANIEL_VOICE_ID || "missing",
+        voiceIdSuffix:
+          provider === "elevenlabs"
+            ? process.env.ELEVENLABS_DANIEL_VOICE_ID?.slice(-4) || "missing"
+            : "built-in",
         status: 200,
         contentType: "audio/mpeg",
         audioByteLength: audio.byteLength,

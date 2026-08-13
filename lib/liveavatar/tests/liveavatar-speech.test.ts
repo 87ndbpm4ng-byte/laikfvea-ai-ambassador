@@ -172,6 +172,73 @@ test("Daniel uses ElevenLabs PCM through LiveAvatar when connected", async () =>
   assert.equal(callbacks.ends, 1);
 });
 
+test("Daniel Cantonese sends zh-HK through the same buffered LiveAvatar path", async () => {
+  callbacks.reset();
+  const avatar = new FakeAvatar();
+  const fallback = new FakeFallback();
+  let requestBody: { guideId?: string; language?: string; text?: string } | undefined;
+  const provider = new LiveAvatarSpeechSynthesisProvider({
+    avatar,
+    fallback,
+    language: () => "zh-HK",
+    fetcher: async (_input, init) => {
+      requestBody = JSON.parse(String(init?.body));
+      return new Response(Uint8Array.from([1, 2, 3, 4]), {
+        status: 200,
+        headers: {
+          "X-Audio-Format": "pcm_s16le_24000_mono",
+          "X-LiveAvatar-Speech-Mode": "buffered",
+          "X-Speech-Provider": "openai",
+        },
+      });
+    },
+  });
+
+  provider.speak("呢款水樽用 USB-C 充電。", "daniel", callbacks.value());
+  await flushPromises();
+
+  assert.deepEqual(requestBody, {
+    text: "呢款水樽用 USB-C 充電。",
+    guideId: "daniel",
+    language: "zh-HK",
+  });
+  assert.equal(avatar.audio.length, 1);
+  assert.equal(fallback.spoken.length, 0);
+  assert.deepEqual(callbacks.providers, ["liveavatar"]);
+});
+
+test("reset invalidates pending Cantonese PCM before it can reach a later visitor", async () => {
+  callbacks.reset();
+  const avatar = new FakeAvatar();
+  const fallback = new FakeFallback();
+  let resolveSpeech: ((response: Response) => void) | undefined;
+  const response = new Promise<Response>((resolve) => {
+    resolveSpeech = resolve;
+  });
+  const provider = new LiveAvatarSpeechSynthesisProvider({
+    avatar,
+    fallback,
+    language: () => "zh-HK",
+    fetcher: async () => response,
+  });
+
+  provider.speak("上一位訪客嘅答案。", "daniel", callbacks.value());
+  provider.reset();
+  resolveSpeech?.(
+    new Response(Uint8Array.from([1, 2, 3, 4]), {
+      status: 200,
+      headers: { "X-LiveAvatar-Speech-Mode": "buffered" },
+    }),
+  );
+  await flushPromises();
+
+  assert.equal(avatar.audio.length, 0);
+  assert.equal(fallback.spoken.length, 0);
+  assert.equal(callbacks.starts, 0);
+  assert.equal(callbacks.ends, 0);
+  assert.equal(avatar.disconnectCount, 1);
+});
+
 test("Daniel progressively forwards streaming PCM with one event ID", async () => {
   callbacks.reset();
   const avatar = new FakeAvatar();

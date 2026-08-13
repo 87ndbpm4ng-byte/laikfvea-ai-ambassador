@@ -6,6 +6,7 @@ import {
   SPEECH_REQUEST_TIMEOUT_MS,
 } from "@/lib/voice/openai-voice-config";
 import type { SpeechApiRequest } from "@/lib/voice/speech-request";
+import { resolveSupportedLanguage } from "@/lib/i18n/languages";
 
 export class MissingSpeechApiKeyError extends Error {
   constructor() {
@@ -53,11 +54,16 @@ export async function generateOpenAISpeech(
       maxRetries: 1,
     }) as SpeechClient);
   const profile = OPENAI_VOICE_PROFILES[request.guideId];
+  const isDanielCantonese =
+    request.guideId === "daniel" &&
+    resolveSupportedLanguage(request.language) === "yue";
   const response = await client.audio.speech.create({
     model: OPENAI_TTS_MODEL,
     voice: profile.voice,
     input: request.text,
-    instructions: profile.instructions,
+    instructions: isDanielCantonese
+      ? `${profile.instructions} Speak in natural Hong Kong Cantonese, not Mandarin. Preserve the Cantonese wording in Traditional Chinese exactly; do not translate or transliterate it.`
+      : profile.instructions,
     response_format:
       options.output === "liveavatar" ? "pcm" : OPENAI_TTS_RESPONSE_FORMAT,
     speed: profile.speed,

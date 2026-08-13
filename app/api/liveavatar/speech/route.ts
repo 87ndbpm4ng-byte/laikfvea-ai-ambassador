@@ -7,6 +7,7 @@ import { SpeechRateLimiter } from "@/lib/voice/speech-rate-limit";
 import { validateSpeechRequest } from "@/lib/voice/speech-request";
 import type { ElevenLabsSpeechTiming } from "@/lib/voice/elevenlabs-speech-service";
 import { generateOpenAISpeech } from "@/lib/voice/openai-speech-service";
+import { selectSpeechProvider } from "@/lib/voice/speech-provider-routing";
 
 export const runtime = "nodejs";
 
@@ -47,8 +48,9 @@ export async function POST(request: Request) {
   }
 
   try {
+    const provider = selectSpeechProvider(speechRequest);
     if (
-      speechRequest.guideId === "daniel" &&
+      provider === "elevenlabs" &&
       isLiveAvatarStreamingSpeechEnabled()
     ) {
       const speech = await streamElevenLabsSpeech(speechRequest, {
@@ -72,7 +74,7 @@ export async function POST(request: Request) {
     let timing: ElevenLabsSpeechTiming = { firstByteMs: 0, completeMs: 0 };
     const startedAt = performance.now();
     const audio =
-      speechRequest.guideId === "daniel"
+      provider === "elevenlabs"
         ? await generateElevenLabsSpeech(speechRequest, {
             output: "liveavatar",
             onTiming: (value) => {
@@ -82,7 +84,7 @@ export async function POST(request: Request) {
         : await generateOpenAISpeech(speechRequest, {
             output: "liveavatar",
           });
-    if (speechRequest.guideId === "emily") {
+    if (provider === "openai") {
       const elapsed = Math.round(performance.now() - startedAt);
       timing = { firstByteMs: elapsed, completeMs: elapsed };
     }
@@ -98,8 +100,7 @@ export async function POST(request: Request) {
         "X-TTS-First-Byte-Ms": String(timing.firstByteMs),
         "X-TTS-Complete-Ms": String(timing.completeMs),
         "X-Content-Type-Options": "nosniff",
-        "X-Speech-Provider":
-          speechRequest.guideId === "daniel" ? "elevenlabs" : "openai",
+        "X-Speech-Provider": provider,
       },
     });
   } catch (error) {

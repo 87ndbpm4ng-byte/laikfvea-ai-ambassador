@@ -259,8 +259,7 @@ export class LiveAvatarSpeechSynthesisProvider
 
       if (this.fallback.isSupported) {
         logVoiceDiagnostic("speech-provider-route", {
-          selectedProvider:
-            this.guideId === "daniel" ? "elevenlabs-mp3" : "openai",
+          selectedProvider: "browser-audio-fallback",
           liveAvatarConnected: false,
           mp3FallbackCalled: true,
         });

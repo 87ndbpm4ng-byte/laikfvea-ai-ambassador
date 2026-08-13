@@ -308,6 +308,100 @@ test("Daniel Cantonese fails closed instead of silently requesting Mandarin", as
   assert.equal(fetchCalled, false);
 });
 
+test("Daniel Cantonese uses OpenAI cedar without changing other Daniel languages", async () => {
+  const calls: string[] = [];
+  const openai = async (request: { text: string; language?: string }) => {
+    calls.push(`openai:${request.language}:${request.text}`);
+    return Uint8Array.from([1, 2]).buffer;
+  };
+  const elevenlabs = async (request: { text: string; language?: string }) => {
+    calls.push(`elevenlabs:${request.language}:${request.text}`);
+    return Uint8Array.from([3, 4]).buffer;
+  };
+
+  const cantonese = await generateGuideSpeech(
+    {
+      text: "呢款水樽用 USB-C 充電。",
+      guideId: "daniel",
+      language: "zh-HK",
+    },
+    {
+      openai: openai as never,
+      elevenlabs: elevenlabs as never,
+      environment: { DANIEL_CANTONESE_SPEECH: "true" },
+    },
+  );
+  assert.equal(cantonese.provider, "openai");
+
+  for (const language of ["en-GB", "ru-RU", "zh-CN", "fr-FR"]) {
+    const result = await generateGuideSpeech(
+      { text: "Supported language", guideId: "daniel", language },
+      { openai: openai as never, elevenlabs: elevenlabs as never },
+    );
+    assert.equal(result.provider, "elevenlabs");
+  }
+
+  assert.equal(calls.filter((call) => call.startsWith("openai:")).length, 1);
+});
+
+test("Daniel Cantonese remains fail-closed until its quality gate is enabled", async () => {
+  let openaiCalled = false;
+  await assert.rejects(
+    generateGuideSpeech(
+      { text: "用廣東話講解。", guideId: "daniel", language: "zh-HK" },
+      {
+        openai: async () => {
+          openaiCalled = true;
+          return new ArrayBuffer(1);
+        },
+        elevenlabs: async () => {
+          throw new ElevenLabsSpeechError(422);
+        },
+        environment: {},
+      },
+    ),
+    ElevenLabsSpeechError,
+  );
+  assert.equal(openaiCalled, false);
+});
+
+test("Daniel Cantonese OpenAI speech preserves text and requests Cantonese delivery", async () => {
+  let receivedOptions: Record<string, unknown> | undefined;
+  const client: SpeechClient = {
+    audio: { speech: { async create(options) {
+      receivedOptions = options;
+      return { async arrayBuffer() { return new ArrayBuffer(2); } };
+    } } },
+  };
+  const text = "呢款水樽用 USB-C 充電，容量係 350 mL，PEM/SPE 技術會產生氫氣。";
+  await generateOpenAISpeech(
+    { text, guideId: "daniel", language: "zh-HK" },
+    { client },
+  );
+
+  assert.equal(receivedOptions?.model, "gpt-4o-mini-tts");
+  assert.equal(receivedOptions?.voice, "cedar");
+  assert.equal(receivedOptions?.input, text);
+  assert.equal(receivedOptions?.response_format, "mp3");
+  assert.match(String(receivedOptions?.instructions), /Hong Kong Cantonese/);
+  assert.match(String(receivedOptions?.instructions), /not Mandarin/);
+});
+
+test("Daniel Cantonese LiveAvatar speech requests direct PCM", async () => {
+  let responseFormat: string | undefined;
+  const client = {
+    audio: { speech: { async create(options: { response_format: "mp3" | "pcm" }) {
+      responseFormat = options.response_format;
+      return { async arrayBuffer() { return new ArrayBuffer(2); } };
+    } } },
+  };
+  await generateOpenAISpeech(
+    { text: "用廣東話講解氫水。", guideId: "daniel", language: "zh-HK" },
+    { client: client as never, output: "liveavatar" },
+  );
+  assert.equal(responseFormat, "pcm");
+});
+
 test("Daniel keeps his voice and multilingual model for French speech", async () => {
   let requestedURL = "";
   let requestedBody = "";
@@ -640,6 +734,40 @@ test("new speech prevents overlapping playback", async () => {
   assert.equal(audio.playCount, 3);
   assert.equal(audio.src, "blob:2");
   assert.deepEqual(revoked, ["blob:1"]);
+});
+
+test("a reset aborts pending Cantonese MP3 and prevents stale playback", async () => {
+  const audio = createFakeAudio();
+  let resolveSpeech: ((response: Response) => void) | undefined;
+  const response = new Promise<Response>((resolve) => {
+    resolveSpeech = resolve;
+  });
+  const provider = new OpenAISpeechSynthesisProvider({
+    fallback: new FakeFallback(),
+    language: () => "zh-HK",
+    fetcher: async () => response,
+    createAudio: () => audio,
+    createObjectURL: () => "blob:cantonese-stale",
+    revokeObjectURL() {},
+  });
+
+  await provider.activate();
+  provider.speak("上一位訪客嘅廣東話答案。", "daniel", {
+    onStart: assert.fail,
+    onEnd: assert.fail,
+    onError: assert.fail,
+  });
+  provider.reset();
+  resolveSpeech?.(
+    new Response(Uint8Array.from([1, 2, 3]), {
+      status: 200,
+      headers: { "X-Speech-Provider": "openai" },
+    }),
+  );
+  await flushPromises();
+
+  assert.notEqual(audio.src, "blob:cantonese-stale");
+  assert.equal(provider.isActivated, false);
 });
 
 test("text conversation remains unaffected when both audio providers fail", async () => {
