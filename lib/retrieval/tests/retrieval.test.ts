@@ -273,7 +273,7 @@ test("only documented portfolio products have approved repository evidence", asy
   const documents = await loader.load();
   assert.equal(documents.some(({ product }) => product === "water-ionizer"), true);
   assert.equal(documents.some(({ product }) => product === "face-body-generator"), true);
-  assert.equal(documents.some(({ product }) => product === "water-mineralizer"), false);
+  assert.equal(documents.some(({ product }) => product === "water-mineralizer"), true);
   assert.equal(documents.some(({ product }) => product === "air-purifier"), true);
   assert.ok(documents.some(({ product }) => product === "advanced"));
 });

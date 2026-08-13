@@ -105,6 +105,23 @@ test("Air Purifier identity survives multi-turn references", () => {
   }
 });
 
+test("standalone Water Mineralizer identity survives multi-turn references", () => {
+  const manager = createManager();
+  const session = manager.createSession();
+  const first = manager.recordVisitorMessage(session.sessionId, {
+    content: "Tell me about the Water Mineralizer.",
+  });
+  assert.equal(first.activeProduct, "water-mineralizer");
+  manager.recordAssistantMessage(session.sessionId, {
+    content: "It is the standalone Severyanka mineral additive.",
+  });
+  const followUp = manager.recordVisitorMessage(session.sessionId, {
+    content: "How do I use it?",
+  });
+  assert.equal(followUp.activeProduct, "water-mineralizer");
+  assert.match(followUp.resolvedQuestion ?? "", /active product: Water Mineralizer/);
+});
+
 test("comparison context supports both, first, second and other product references", () => {
   const manager = createManager();
   const session = manager.createSession();

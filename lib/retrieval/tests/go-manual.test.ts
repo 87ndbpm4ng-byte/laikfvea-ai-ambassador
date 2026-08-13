@@ -104,10 +104,9 @@ test("standalone Water Mineralizer receives no bottle mineralisation evidence", 
   const { result } = await search("Tell me about the Water Mineralizer", {
     viewedProducts: ["water-mineralizer"],
   });
-  assert.ok(
-    result.matchedChunks.every(({ chunk }) => chunk.product !== "advanced"),
-  );
-  assert.equal(result.insufficientKnowledge, true);
+  assert.ok(result.matchedChunks.every(({ chunk }) => chunk.product === "water-mineralizer"));
+  assert.equal(result.matchedChunks[0]?.chunk.sourceId, "WATER-MINERALIZER-MANUAL-001");
+  assert.equal(result.insufficientKnowledge, false);
 });
 
 test("five languages route GO duration questions to the same approved manual", async () => {

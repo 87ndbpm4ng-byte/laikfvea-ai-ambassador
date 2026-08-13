@@ -117,7 +117,7 @@ export const exhibitionProducts = {
       fr: "Minéralisateur d’eau",
     },
     aliases: ["Water Mineralizer"],
-    knowledgeStatus: "pending",
+    knowledgeStatus: "approved",
     knowledgeProductNames: ["water-mineralizer", "Water Mineralizer"],
     presentationAssetId: null,
     comparableWith: [],

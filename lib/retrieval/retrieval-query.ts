@@ -92,6 +92,16 @@ function expandedTerms(text: string, session?: VisitorSession) {
     if (/\bhow does it work\b/i.test(text)) terms.push("air path", "glass-filter", "pre-filter");
     if (/\bhow do i clean it\b/i.test(text)) terms.push("cleaning maintenance", "blockages");
   }
+  if (/\b(?:what is|what does|how does).*?(?:water mineralizer|severyanka mineral additive)/i.test(text)) {
+    terms.push("product identity", "documented purpose", "preparation and use");
+  }
+  if (/\b(?:how do i use|what minerals|how long|how much water|clean|replac|specification|restriction).*?(?:water mineralizer|severyanka mineral additive)/i.test(text)) {
+    terms.push("composition", "preparation and use", "storage", "safety restrictions");
+  }
+  if (session?.activeProduct === "water-mineralizer") {
+    if (/\bhow does it work\b/i.test(text)) terms.push("documented purpose", "composition", "preparation and use");
+    if (/\bhow do i use it\b/i.test(text)) terms.push("recommended dilution", "mix thoroughly");
+  }
   if (/\bhow do i (?:use|operate).*water ionizer/i.test(text)) {
     terms.push("preparing alkaline and acidic water", "controls");
   }
@@ -138,6 +148,9 @@ function inferProduct(text: string): RetrievalProduct | null {
   }
   if (/\b(?:air purifier|capsula m size)\b/.test(normalized)) {
     return "air-purifier";
+  }
+  if (/\b(?:water mineralizer|severyanka mineral additive)\b/.test(normalized)) {
+    return "water-mineralizer";
   }
   const explicitlyNamesGo =
     /\bGO\b/.test(text) ||

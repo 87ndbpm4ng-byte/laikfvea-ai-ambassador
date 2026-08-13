@@ -55,6 +55,10 @@ function explicitProduct(
     return "air-purifier";
   }
 
+  if (/\b(?:water mineralizer|severyanka mineral additive)\b/.test(normalized)) {
+    return "water-mineralizer";
+  }
+
   if (/\bthe first one\b/.test(normalized)) {
     return session.comparisonProducts?.[0] ?? "everyday";
   }

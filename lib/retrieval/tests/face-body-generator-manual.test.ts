@@ -109,7 +109,7 @@ test("Face & Body Generator evidence stays isolated from every other product", a
     assert.equal(other.result.matchedChunks[0]?.chunk.product, product, question);
     assert.ok(other.result.matchedChunks.every(({ chunk }) => chunk.product !== "face-body-generator"), question);
   }
-  assert.equal(exhibitionProducts["water-mineralizer"].knowledgeStatus, "pending");
+  assert.equal(exhibitionProducts["water-mineralizer"].knowledgeStatus, "approved");
   assert.equal(exhibitionProducts["air-purifier"].knowledgeStatus, "approved");
 });
 

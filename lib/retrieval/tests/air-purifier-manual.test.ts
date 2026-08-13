@@ -41,7 +41,7 @@ test("approved Air Purifier manual is indexed under air-purifier", async () => {
   assert.equal(document.product, "air-purifier");
   assert.equal(document.approvalStatus, "approved");
   assert.equal(exhibitionProducts["air-purifier"].knowledgeStatus, "approved");
-  assert.equal(exhibitionProducts["water-mineralizer"].knowledgeStatus, "pending");
+  assert.equal(exhibitionProducts["water-mineralizer"].knowledgeStatus, "approved");
 });
 
 test("purpose, mechanism, coverage, filter, operation, maintenance, specifications and safety retrieve approved evidence", async () => {
