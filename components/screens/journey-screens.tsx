@@ -163,6 +163,9 @@ export function ConversationScreen({
     .map((message) => resolveQuickQuestionProduct(message.content, language))
     .find((productId): productId is ProductId => productId !== null);
   const quickQuestionProduct = latestExplicitProduct ?? latestRelatedProduct;
+  const activeProductName = quickQuestionProduct
+    ? exhibitionProducts[quickQuestionProduct].displayNames[language]
+    : null;
   const quickQuestions = quickQuestionProduct
     ? getProductQuickQuestions(quickQuestionProduct, language)
     : getGeneralQuickQuestions(language);
@@ -345,6 +348,11 @@ export function ConversationScreen({
             <div>
               <p className="guide-context">{copy.guideRole[guideId]}</p>
               <h1 id="conversation-heading">{copy.conversationWith(guide.name)}</h1>
+              {activeProductName ? (
+                <p className="conversation-active-product" aria-live="polite">
+                  {copy.discussingProduct(activeProductName)}
+                </p>
+              ) : null}
             </div>
           </header>
 
@@ -455,9 +463,11 @@ export function ConversationScreen({
                 {copy.viewProduct(products[productId].name)}
               </button>
             ))}
-            <button type="button" onClick={onProducts}>
-              {copy.exploreProducts}
-            </button>
+            {quickQuestionProduct ? (
+              <button type="button" onClick={onProducts}>
+                {copy.exploreProducts}
+              </button>
+            ) : null}
           </div>
 
           <form className="composer" onSubmit={submitTypedQuestion}>

@@ -164,7 +164,7 @@ test("shared conversation labels adapt to Daniel", () => {
   assert.match(markup, /Compare GO and PRO/);
   assert.match(markup, /How do I use the Water Ionizer/);
   assert.match(markup, /Tell me about the Air Purifier/);
-  assert.match(markup, /Explore products →/);
+  assert.equal((markup.match(/Explore products/g) ?? []).length, 1);
   assert.match(markup, /End conversation/);
   assert.doesNotMatch(markup, /Begin voice|Enable voice|Start conversation/);
   assert.match(markup, /Technology Specialist/);
@@ -195,6 +195,33 @@ test("conversation Quick Questions follow explicit product context changes", () 
   assert.match(switched, /What room size is the Air Purifier designed for/);
   assert.match(switched, /When should I replace the Air Purifier pre-filter/);
   assert.doesNotMatch(switched, /How does hydrogen inhalation work/);
+});
+
+test("active product context is visible and localized without appearing in a general conversation", () => {
+  const productMessage: ConversationMessage = {
+    id: "visitor-air-purifier",
+    role: "visitor",
+    content: "Tell me about the Air Purifier.",
+    timestamp: "2026-08-14T00:00:00.000Z",
+    relatedProduct: "air-purifier",
+    source: "typed",
+  };
+  const expected = {
+    en: "Discussing: Air Purifier",
+    ru: "Сейчас обсуждаем: Очиститель воздуха",
+    zh: "正在了解：空气净化器",
+    yue: "而家了解緊：空氣淨化器",
+    fr: "Produit en cours : Purificateur d’air",
+  } as const;
+
+  for (const language of ["en", "ru", "zh", "yue", "fr"] as const) {
+    assert.match(
+      renderConversation("daniel", language, [productMessage]),
+      new RegExp(expected[language]),
+    );
+  }
+
+  assert.doesNotMatch(renderConversation("daniel"), /conversation-active-product/);
 });
 
 test("shared conversation labels adapt to Emily", () => {
@@ -328,7 +355,7 @@ test("microphone failure keeps the typed-question route visible", () => {
   assert.doesNotMatch(markup, /OpenAI|ElevenLabs|LiveAvatar|API key/);
 });
 
-test("active route bypasses introduction and separate voice activation", async () => {
+test("specialist selection stays passive until a question requires voice and avatar output", async () => {
   const source = await readFile(
     new URL("../../../app/page.tsx", import.meta.url),
     "utf8",
@@ -336,8 +363,17 @@ test("active route bypasses introduction and separate voice activation", async (
 
   assert.match(source, /function selectSpecialist/);
   assert.match(source, /setScreen\("conversation"\)/);
-  assert.match(source, /activateVoiceSession\(fallbackSpeechSynthesis\)/);
-  assert.match(source, /liveAvatarServices\[guideId\]\.connect\(\)/);
+  const selection = source.slice(
+    source.indexOf("function selectSpecialist"),
+    source.indexOf("function prepareSpecialistInteraction"),
+  );
+  assert.doesNotMatch(selection, /activateVoiceSession|\.connect\(/);
+  assert.match(
+    source,
+    /function prepareSpecialistInteraction[\s\S]*activateVoiceSession\(speechSynthesis\[selectedGuideId\]\)/,
+  );
+  assert.match(source, /audioActivationProvider=\{speechSynthesis\[selectedGuideId\]\}/);
+  assert.doesNotMatch(source, /audioActivationProvider=\{fallbackSpeechSynthesis\}/);
   assert.match(
     source,
     /emily: new LiveAvatarService\(\{ guideId: "emily" \}\)/,
@@ -439,11 +475,16 @@ test("responsive kiosk layout defines two areas without horizontal overflow", as
   assert.match(css, /\.voice-microphone-mark\s*{[^}]*white-space:\s*nowrap/s);
   assert.match(
     css,
-    /@media \(max-width: 29\.999rem\)\s*{[^}]*\.conversation-specialist \.voice-interaction\s*{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/s,
+    /@media \(max-width: 29\.999rem\)[\s\S]*?\.conversation-specialist \.voice-interaction\s*{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/s,
   );
   assert.match(
     css,
-    /\.conversation-specialist \.specialist-end-action\s*{[^}]*margin-top:\s*0/s,
+    /\.conversation-specialist \.specialist-end-action\s*{[^}]*border:\s*1px solid var\(--color-border-strong\)/s,
+  );
+  assert.match(css, /\.conversation-active-product\s*{/);
+  assert.match(
+    css,
+    /@media \(max-width: 29\.999rem\)[\s\S]*?\.idle-header h1\s*{[\s\S]*?font-size:\s*clamp\(2\.5rem, 11vw, 2\.75rem\)/,
   );
   assert.match(css, /grid-auto-rows:\s*1fr/);
   assert.match(css, /@media \(orientation: portrait\)/);

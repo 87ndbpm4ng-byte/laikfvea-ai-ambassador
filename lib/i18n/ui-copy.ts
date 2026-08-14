@@ -28,6 +28,7 @@ type UiCopy = {
   quickTopics: string;
   chooseStartingPoint: string;
   questionsAbout: (name: string) => string;
+  discussingProduct: (name: string) => string;
   topics: Record<GuideId, Record<string, TopicCopy>>;
   exploreProducts: string;
   viewProduct: (name: string) => string;
@@ -136,6 +137,7 @@ const en: UiCopy = {
   quickTopics: "Quick questions",
   chooseStartingPoint: "Choose a starting point",
   questionsAbout: (name) => `Questions about ${name}`,
+  discussingProduct: (name) => `Discussing: ${name}`,
   topics: {
     daniel: {
       "hydrogen-water-overview": { title: "Hydrogen technology", description: "Understand the core principles.", question: "How does hydrogen water work?" },
@@ -264,6 +266,7 @@ const ru: UiCopy = {
   quickTopics: "Быстрые вопросы",
   chooseStartingPoint: "Выберите вопрос",
   questionsAbout: (name) => `Вопросы о продукте «${name}»`,
+  discussingProduct: (name) => `Сейчас обсуждаем: ${name}`,
   topics: {
     daniel: {
       "hydrogen-water-overview": { title: "Водородная технология", description: "Как работает технология насыщения воды водородом.", question: "Как работает водородная вода?" },
@@ -392,6 +395,7 @@ const zh: UiCopy = {
   quickTopics: "快捷问题",
   chooseStartingPoint: "请选择一个问题",
   questionsAbout: (name) => `关于${name}的问题`,
+  discussingProduct: (name) => `正在了解：${name}`,
   topics: {
     daniel: {
       "hydrogen-water-overview": { title: "氢水技术", description: "了解水中溶解氢气的基本原理。", question: "氢水是如何工作的？" },
@@ -520,6 +524,7 @@ const yue: UiCopy = {
   quickTopics: "快速問題",
   chooseStartingPoint: "請揀一條問題",
   questionsAbout: (name) => `關於${name}嘅問題`,
+  discussingProduct: (name) => `而家了解緊：${name}`,
   topics: {
     daniel: {
       "hydrogen-water-overview": { title: "氫水科技", description: "了解將氫氣溶入水嘅基本原理。", question: "氫水係點樣運作㗎？" },
@@ -648,6 +653,7 @@ const fr: UiCopy = {
   quickTopics: "Questions rapides",
   chooseStartingPoint: "Choisissez une question",
   questionsAbout: (name) => `Questions sur ${name}`,
+  discussingProduct: (name) => `Produit en cours : ${name}`,
   topics: {
     daniel: {
       "hydrogen-water-overview": { title: "Technologie de l’hydrogène", description: "Découvrez les principes de l’eau enrichie en hydrogène.", question: "Comment fonctionne l’eau hydrogénée ?" },

@@ -92,6 +92,7 @@ export default function Home() {
   }
 
   async function askAboutProduct() {
+    prepareSpecialistInteraction();
     await conversation.submitQuestion({
       content: createAskAboutProductQuestion(selectedProduct, activeLanguage),
       source: "product",
@@ -104,6 +105,7 @@ export default function Home() {
     const comparisonQuestion = getSuggestedQuestion("product-comparison");
 
     if (comparisonQuestion) {
+      prepareSpecialistInteraction();
       await conversation.submitQuestion({
         content:
           copy.topics[selectedGuideId ?? "daniel"][comparisonQuestion.id]
@@ -165,14 +167,17 @@ export default function Home() {
   }
 
   function selectSpecialist(guideId: GuideId) {
-    // Audio unlock starts synchronously inside the visitor's direct tap.
-    const activation = activateVoiceSession(fallbackSpeechSynthesis);
-    setVoiceActivation(activation);
     setSelectedGuideId(guideId);
     setScreen("conversation");
+  }
 
-    // The optional visual session prepares in parallel and never blocks voice.
-    void liveAvatarServices[guideId].connect();
+  function prepareSpecialistInteraction() {
+    if (!selectedGuideId) return;
+
+    // A question is the first point at which voice and avatar output are needed.
+    // LiveAvatarService deduplicates this with any concurrent speech connection.
+    const activation = activateVoiceSession(speechSynthesis[selectedGuideId]);
+    setVoiceActivation(activation);
   }
 
   return (
@@ -225,7 +230,7 @@ export default function Home() {
             onEnd={endSession}
             onIdleTimeout={resetVisitorSession}
             synthesisProvider={speechSynthesis[selectedGuideId]}
-            audioActivationProvider={fallbackSpeechSynthesis}
+            audioActivationProvider={speechSynthesis[selectedGuideId]}
             voiceActivationPromise={voiceActivation}
             liveAvatarService={liveAvatarServices[selectedGuideId]}
           />

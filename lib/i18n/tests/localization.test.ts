@@ -39,6 +39,14 @@ test("connection-loss recovery copy exists in every supported language", () => {
   }
 });
 
+test("active-product context is localized in every supported language", () => {
+  assert.equal(getUiCopy("en").discussingProduct("Air Purifier"), "Discussing: Air Purifier");
+  assert.equal(getUiCopy("ru").discussingProduct("Очиститель воздуха"), "Сейчас обсуждаем: Очиститель воздуха");
+  assert.equal(getUiCopy("zh").discussingProduct("空气净化器"), "正在了解：空气净化器");
+  assert.equal(getUiCopy("yue").discussingProduct("空氣淨化器"), "而家了解緊：空氣淨化器");
+  assert.equal(getUiCopy("fr").discussingProduct("Purificateur d’air"), "Produit en cours : Purificateur d’air");
+});
+
 test("French visitor copy and Quick Topics are localized", () => {
   const copy = getUiCopy("fr");
   assert.equal(copy.specialistsHeading, "Rencontrez nos spécialistes IA");

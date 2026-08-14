@@ -103,6 +103,48 @@ test("constructing the service does not create a session on page load", () => {
   assert.equal(sessionCount, 0);
 });
 
+test("passive specialist browsing creates no session and the first interaction creates at most one", async () => {
+  let fetchCount = 0;
+  let sessionCount = 0;
+  const sessions: FakeSession[] = [];
+  const service = new LiveAvatarService({
+    fetcher: async () => {
+      fetchCount += 1;
+      return sessionResponse();
+    },
+    createSession: () => {
+      sessionCount += 1;
+      const session = new FakeSession();
+      sessions.push(session);
+      return session as never;
+    },
+  });
+
+  // Selection, conversation rendering, portfolio browsing and product detail
+  // rendering only subscribe and attach; neither operation may create a session.
+  const unsubscribe = service.subscribe(() => undefined);
+  service.attach(null);
+  service.setReady();
+  assert.equal(fetchCount, 0);
+  assert.equal(sessionCount, 0);
+
+  assert.deepEqual(
+    await Promise.all([service.connect(), service.connect()]),
+    [true, true],
+  );
+  assert.equal(fetchCount, 1);
+  assert.equal(sessionCount, 1);
+
+  await service.disconnect();
+  assert.equal(sessions[0].stopCount, 1);
+  assert.equal(await service.connect(), true);
+  assert.equal(fetchCount, 2);
+  assert.equal(sessionCount, 2);
+
+  unsubscribe();
+  await service.disconnect();
+});
+
 test("an explicit connect action creates exactly one session", async () => {
   let fetchCount = 0;
   let sessionCount = 0;

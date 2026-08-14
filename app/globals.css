@@ -4047,10 +4047,49 @@ h1 {
 
 .conversation-specialist .specialist-end-action {
   min-height: 3.5rem;
-  margin-top: 0;
+  margin-top: var(--space-2);
   padding: 0 var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
   align-self: stretch;
-  text-align: left;
+  text-align: center;
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+}
+
+.conversation-specialist .specialist-end-action:hover {
+  border-color: var(--color-text-primary);
+  background: var(--color-bg-subtle);
+}
+
+.conversation-specialist .specialist-end-action:active {
+  transform: scale(0.98);
+}
+
+.conversation-specialist .specialist-end-action:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+.conversation-active-product {
+  display: inline-flex;
+  min-height: 2rem;
+  margin: var(--space-3) 0 0;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 0.625rem;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.35;
+  align-items: center;
 }
 
 .conversation-dialogue {
@@ -4473,6 +4512,43 @@ h1 {
 }
 
 @media (max-width: 29.999rem) {
+  .screen-content,
+  .idle-header,
+  .idle-specialist-grid,
+  .idle-specialist-card,
+  .idle-specialist-copy,
+  .conversation-workspace,
+  .conversation-specialist,
+  .conversation-dialogue,
+  .products-content,
+  .detail-content,
+  .detail-copy {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .idle-header h1 {
+    max-width: 100%;
+    font-size: clamp(2.5rem, 11vw, 2.75rem);
+    overflow-wrap: anywhere;
+  }
+
+  .idle-content .idle-support,
+  .idle-specialist-copy > span,
+  .section-header h1,
+  .section-header p,
+  .detail-copy h1,
+  .product-name,
+  .quick-topic-card strong,
+  .conversation-active-product {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .idle-specialist-copy > span {
+    min-height: 0;
+  }
+
   .conversation-specialist .voice-interaction {
     grid-template-columns: minmax(0, 1fr);
     align-items: stretch;
