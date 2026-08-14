@@ -483,9 +483,14 @@ test("typed, voice and Quick Topic questions share one submission boundary", asy
   assert.doesNotMatch(conversationSource, /demoFallback:/);
   assert.match(conversationSource, /sessionIdRef\.current = response\.sessionId/);
   assert.match(voiceSource, /selectPendingGuideSpeech\(/);
+  assert.match(voiceSource, /latestGuideMessage\?\.speakable === false/);
   assert.match(
     voiceSource,
-    /synthesis\.speak\(normalizeSpeechText\(latestGuideMessage\.content\), guideId/,
+    /latestGuideMessage\?\.speakable === false[\s\S]*?setInputState\("idle"\)[\s\S]*?return;/,
+  );
+  assert.match(
+    voiceSource,
+    /synthesis\.speak\(normalizeSpeechText\(pendingGuideMessage\.content\), guideId/,
   );
   assert.doesNotMatch(
     voiceSource,
@@ -503,6 +508,28 @@ test("typed, voice and Quick Topic questions share one submission boundary", asy
   );
   assert.match(conversationSource, /source,\s*\n\s*};/);
   assert.match(conversationSource, /questionSource: source/);
+  assert.match(conversationSource, /response\.resolvedActiveProduct/);
+  assert.match(conversationSource, /const cancelPending = useCallback/);
+});
+
+test("conversation navigation cancels pending work and client input matches the server boundary", async () => {
+  const pageSource = await readFile(
+    new URL("../../../app/page.tsx", import.meta.url),
+    "utf8",
+  );
+  const screenSource = await readFile(
+    new URL("../../../components/screens/journey-screens.tsx", import.meta.url),
+    "utf8",
+  );
+  const routeSource = await readFile(
+    new URL("../../../app/api/conversation/route.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(pageSource, /conversation\.cancelPending\(\);\s*setScreen\("products"\)/);
+  assert.match(pageSource, /function openProduct[\s\S]*?conversation\.cancelPending\(\)/);
+  assert.match(screenSource, /maxLength={MAX_CONVERSATION_MESSAGE_LENGTH}/);
+  assert.match(routeSource, /MAX_CONVERSATION_MESSAGE_LENGTH/);
 });
 
 test("responsive kiosk layout defines two areas without horizontal overflow", async () => {

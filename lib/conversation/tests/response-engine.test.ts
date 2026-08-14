@@ -8,6 +8,7 @@ import {
 } from "@/lib/conversation/response-engine";
 import { placeholderResponses } from "@/lib/data/placeholder-responses";
 import { guides } from "@/lib/data/guides";
+import { reconcileActiveProduct } from "@/lib/conversation/active-product-context";
 
 const originalFetch = globalThis.fetch;
 const originalConsoleError = console.error;
@@ -61,6 +62,44 @@ test("successful free-text request returns the server response", async () => {
   assert.equal(result.sessionId, "session-1");
 });
 
+test("server-resolved product context is returned independently of stale client context", async () => {
+  globalThis.fetch = async () =>
+    Response.json({
+      success: true,
+      response: "The Air Purifier uses its documented purification system.",
+      sessionId: "session-switch",
+      requestId: "request-switch",
+      resolvedActiveProduct: "air-purifier",
+    });
+
+  const result = await generateConversationResponse({
+    ...baseRequest,
+    content: "Tell me about the Air Purifier.",
+    relatedProduct: "advanced",
+  });
+
+  assert.equal(result.resolvedActiveProduct, "air-purifier");
+  assert.equal(result.relatedProduct, "advanced");
+});
+
+test("server product switches authoritatively replace stale Explorer context", () => {
+  const switches = [
+    ["advanced", "air-purifier"],
+    ["everyday", "water-ionizer"],
+    ["water-ionizer", "face-body-generator"],
+    ["air-purifier", "water-mineralizer"],
+    ["face-body-generator", "advanced"],
+  ] as const;
+
+  for (const [staleProduct, serverProduct] of switches) {
+    assert.equal(
+      reconcileActiveProduct(staleProduct, serverProduct),
+      serverProduct,
+    );
+  }
+  assert.equal(reconcileActiveProduct("advanced", undefined), "advanced");
+});
+
 test("selected exhibition product identity is sent to the conversation route", async () => {
   let requestBody: Record<string, unknown> | null = null;
   globalThis.fetch = async (_input, init) => {
@@ -106,6 +145,7 @@ test("failed free-text request never substitutes a local prototype answer", asyn
   });
 
   assert.equal(result.content, serviceUnavailableResponse);
+  assert.equal(result.speakable, false);
   assert.notEqual(result.content, placeholderResponses["product-comparison"]);
 });
 
@@ -138,6 +178,7 @@ test("request timeout produces concise retry guidance", async () => {
   const result = await generateConversationResponse(baseRequest);
 
   assert.equal(result.content, getConversationFailureResponse("timeout", "en"));
+  assert.equal(result.speakable, false);
   assert.doesNotMatch(result.content, /timeout|route|server|provider/i);
 });
 

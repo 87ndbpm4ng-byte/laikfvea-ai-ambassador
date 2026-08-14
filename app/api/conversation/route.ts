@@ -23,10 +23,10 @@ import type {
 import type { GuideId } from "@/types/guide";
 import { isSupportedLanguage } from "@/lib/i18n/languages";
 import { isProductId } from "@/lib/data/exhibition-products";
+import { MAX_CONVERSATION_MESSAGE_LENGTH } from "@/lib/conversation/conversation-limits";
 
 export const runtime = "nodejs";
 
-const MAX_MESSAGE_LENGTH = 1_000;
 const MAX_HISTORY_ITEM_LENGTH = 2_000;
 const MAX_RECEIVED_HISTORY_MESSAGES = 30;
 const MAX_SESSION_ID_LENGTH = 200;
@@ -87,7 +87,7 @@ function validateRequest(value: unknown): ConversationApiRequest | null {
   if (
     typeof request.message !== "string" ||
     request.message.trim().length === 0 ||
-    request.message.length > MAX_MESSAGE_LENGTH ||
+    request.message.length > MAX_CONVERSATION_MESSAGE_LENGTH ||
     !isGuideId(request.guideId) ||
     (request.language !== undefined && !isSupportedLanguage(request.language)) ||
     (request.sessionId !== undefined &&
@@ -224,6 +224,9 @@ export async function POST(request: Request) {
       response: result.response,
       sessionId: result.sessionId,
       requestId,
+      resolvedActiveProduct: isProductId(result.session.activeProduct)
+        ? result.session.activeProduct
+        : undefined,
     });
   } catch (error) {
     const status = getOpenAIErrorStatus(error);

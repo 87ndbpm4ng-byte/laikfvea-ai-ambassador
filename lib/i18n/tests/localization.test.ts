@@ -49,6 +49,16 @@ test("connection-loss recovery copy exists in every supported language", () => {
   assert.doesNotMatch(getUiCopy("yue").microphoneUnavailable, /麦克风|问题/);
 });
 
+test("the client input boundary has concise static copy in every language", () => {
+  for (const language of ["en", "ru", "zh", "yue", "fr"] as const) {
+    const message = getUiCopy(language).questionLimitReached(1_000);
+    assert.ok(message.length > 8, language);
+    assert.match(message, /1[\s,.  ]?000|1000/);
+  }
+  assert.match(getUiCopy("yue").questionLimitReached(1_000), /問題|字元/);
+  assert.doesNotMatch(getUiCopy("yue").questionLimitReached(1_000), /问题/);
+});
+
 test("active-product context is localized in every supported language", () => {
   assert.equal(getUiCopy("en").discussingProduct("Air Purifier"), "Discussing: Air Purifier");
   assert.equal(getUiCopy("ru").discussingProduct("Очиститель воздуха"), "Сейчас обсуждаем: Очиститель воздуха");

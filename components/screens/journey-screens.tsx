@@ -32,6 +32,7 @@ import type { GuideId } from "@/types/guide";
 import type { BottleProductId, ProductCategoryId, ProductId } from "@/types/product";
 import type { SupportedLanguage } from "@/types/language";
 import { getUiCopy } from "@/lib/i18n/ui-copy";
+import { MAX_CONVERSATION_MESSAGE_LENGTH } from "@/lib/conversation/conversation-limits";
 
 export function SpecialistSelectionScreen({
   language,
@@ -478,9 +479,19 @@ export function ConversationScreen({
               id="visitor-question"
               value={draft}
               disabled={isLoading}
-              onChange={(event) => setDraft(event.target.value)}
+              onChange={(event) =>
+                setDraft(
+                  event.target.value.slice(0, MAX_CONVERSATION_MESSAGE_LENGTH),
+                )
+              }
               onKeyDown={submitOnEnter}
               placeholder={copy.askQuestion(guide.name)}
+              maxLength={MAX_CONVERSATION_MESSAGE_LENGTH}
+              aria-describedby={
+                draft.length >= MAX_CONVERSATION_MESSAGE_LENGTH
+                  ? "visitor-question-limit"
+                  : undefined
+              }
             />
             <button
               className="composer-send"
@@ -489,6 +500,11 @@ export function ConversationScreen({
             >
               {isLoading ? copy.sending : copy.send}
             </button>
+            {draft.length >= MAX_CONVERSATION_MESSAGE_LENGTH ? (
+              <span className="composer-limit" id="visitor-question-limit" role="status">
+                {copy.questionLimitReached(MAX_CONVERSATION_MESSAGE_LENGTH)}
+              </span>
+            ) : null}
           </form>
         </main>
       </div>

@@ -11,6 +11,8 @@ import type { Guide } from "@/types/guide";
 import type { SupportedLanguage } from "@/types/language";
 import { VisitorSessionLifecycle } from "@/lib/kiosk/visitor-session-lifecycle";
 import type { ProductId } from "@/types/product";
+import { MAX_CONVERSATION_MESSAGE_LENGTH } from "@/lib/conversation/conversation-limits";
+import { reconcileActiveProduct } from "@/lib/conversation/active-product-context";
 
 let fallbackMessageSequence = 0;
 
@@ -44,7 +46,12 @@ export function useConversation(
       const normalizedContent = content.trim();
       const productContext = relatedProduct ?? activeProductRef.current;
 
-      if (!guide || !normalizedContent || loadingRef.current) {
+      if (
+        !guide ||
+        !normalizedContent ||
+        normalizedContent.length > MAX_CONVERSATION_MESSAGE_LENGTH ||
+        loadingRef.current
+      ) {
         return false;
       }
 
@@ -99,15 +106,23 @@ export function useConversation(
           return false;
         }
         sessionIdRef.current = response.sessionId;
+        activeProductRef.current = reconcileActiveProduct(
+          activeProductRef.current,
+          response.resolvedActiveProduct,
+        );
 
         const guideMessage: ConversationMessage = {
           id: createMessageId("guide"),
           role: "guide",
           content: response.content,
           timestamp: new Date().toISOString(),
-          relatedProduct: response.relatedProduct ?? productContext,
+          relatedProduct:
+            response.resolvedActiveProduct ??
+            response.relatedProduct ??
+            productContext,
           questionId,
           source,
+          speakable: response.speakable,
         };
 
         logVoiceDiagnostic("assistant-response", {
@@ -144,6 +159,19 @@ export function useConversation(
     activeProductRef.current = productId;
   }, []);
 
+  const cancelPending = useCallback(() => {
+    if (!loadingRef.current) return;
+    lifecycleRef.current.reset();
+    loadingRef.current = false;
+    setIsLoading(false);
+    setMessages((currentMessages) => {
+      const lastMessage = currentMessages.at(-1);
+      return lastMessage?.role === "visitor"
+        ? currentMessages.slice(0, -1)
+        : currentMessages;
+    });
+  }, []);
+
   useEffect(() => () => lifecycleRef.current.reset(), []);
 
   return {
@@ -152,5 +180,6 @@ export function useConversation(
     submitQuestion,
     clearHistory,
     selectProduct,
+    cancelPending,
   };
 }

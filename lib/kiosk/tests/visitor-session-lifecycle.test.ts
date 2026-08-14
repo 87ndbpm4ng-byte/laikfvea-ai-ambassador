@@ -13,6 +13,23 @@ test("reset aborts and invalidates an in-flight visitor request", () => {
   assert.equal(lifecycle.hasActiveRequest, false);
 });
 
+test("navigation invalidation prevents a late generation from becoming current", () => {
+  const lifecycle = new VisitorSessionLifecycle();
+  const request = lifecycle.beginRequest();
+
+  lifecycle.reset();
+
+  assert.equal(request.controller.signal.aborted, true);
+  assert.equal(lifecycle.isCurrent(request.generation, request.controller), false);
+  assert.equal(lifecycle.hasActiveRequest, false);
+
+  const nextRequest = lifecycle.beginRequest();
+  assert.equal(
+    lifecycle.isCurrent(nextRequest.generation, nextRequest.controller),
+    true,
+  );
+});
+
 test("25 sequential visitors leave no active request or stale generation", () => {
   const lifecycle = new VisitorSessionLifecycle();
 

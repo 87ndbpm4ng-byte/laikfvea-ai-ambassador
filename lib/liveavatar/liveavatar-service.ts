@@ -57,7 +57,10 @@ type LiveAvatarServiceOptions = {
   keepAliveIntervalMs?: number;
   maxAutomaticReconnects?: number;
   guideId?: GuideId;
+  sessionCreationTimeoutMs?: number;
 };
+
+export const LIVEAVATAR_SESSION_CREATION_TIMEOUT_MS = 20_000;
 
 const SAFE_CONNECTION_ERROR =
   "The visual connection is unavailable. Voice playback will continue.";
@@ -80,6 +83,7 @@ export class LiveAvatarService implements LiveAvatarOutput {
   private readonly createSession: (token: string) => AvatarSession;
   private readonly reconnectDelayMs: number;
   private readonly keepAliveIntervalMs: number;
+  private readonly sessionCreationTimeoutMs: number;
   private readonly listeners = new Set<LiveAvatarStateListener>();
   private snapshot: LiveAvatarSnapshot = {
     state: "disconnected",
@@ -97,6 +101,8 @@ export class LiveAvatarService implements LiveAvatarOutput {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private keepAliveTimer: ReturnType<typeof setInterval> | null = null;
   private desiredConnection = false;
+  private lifecycleGeneration = 0;
+  private activeConnectionController: AbortController | null = null;
   private disposed = false;
   private sessionGeneration = 0;
   private activeSessionGeneration = 0;
@@ -134,6 +140,8 @@ export class LiveAvatarService implements LiveAvatarOutput {
       ((token) => new LiveAvatarSession(token, { voiceChat: false }));
     this.reconnectDelayMs = options.reconnectDelayMs ?? 1_500;
     this.keepAliveIntervalMs = options.keepAliveIntervalMs ?? 30_000;
+    this.sessionCreationTimeoutMs =
+      options.sessionCreationTimeoutMs ?? LIVEAVATAR_SESSION_CREATION_TIMEOUT_MS;
     this.maxAutomaticReconnects = options.maxAutomaticReconnects ?? 2;
     this.guideId = options.guideId ?? "daniel";
 
@@ -153,6 +161,7 @@ export class LiveAvatarService implements LiveAvatarOutput {
 
   connect() {
     if (this.disposed) return Promise.resolve(false);
+    if (!this.desiredConnection) this.lifecycleGeneration += 1;
     this.desiredConnection = true;
 
     if (this.isConnected) {
@@ -160,9 +169,13 @@ export class LiveAvatarService implements LiveAvatarOutput {
     }
 
     if (!this.connectPromise) {
-      this.connectPromise = this.createConnection().finally(() => {
-        this.connectPromise = null;
+      const connection = this.createConnection();
+      const trackedConnection = connection.finally(() => {
+        if (this.connectPromise === trackedConnection) {
+          this.connectPromise = null;
+        }
       });
+      this.connectPromise = trackedConnection;
     }
 
     return this.connectPromise;
@@ -177,10 +190,19 @@ export class LiveAvatarService implements LiveAvatarOutput {
 
   async disconnect() {
     this.desiredConnection = false;
+    const disconnectGeneration = ++this.lifecycleGeneration;
+    this.activeConnectionController?.abort();
+    this.activeConnectionController = null;
+    this.connectPromise = null;
     this.reconnectAttemptCount = 0;
     this.clearReconnectTimer();
     await this.releaseSession();
-    this.update("disconnected", null, null, "elevenlabs-fallback");
+    if (
+      this.lifecycleGeneration === disconnectGeneration &&
+      !this.desiredConnection
+    ) {
+      this.update("disconnected", null, null, "elevenlabs-fallback");
+    }
   }
 
   async dispose() {
@@ -359,11 +381,27 @@ export class LiveAvatarService implements LiveAvatarOutput {
   }
 
   private async createConnection() {
+    const lifecycleGeneration = this.lifecycleGeneration;
+    const controller = new AbortController();
+    this.activeConnectionController = controller;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    const timeout = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        controller.abort();
+        reject(
+          new LiveAvatarSessionRequestError(
+            SAFE_CONNECTION_ERROR,
+            true,
+            "LIVEAVATAR_SESSION_TIMEOUT",
+          ),
+        );
+      }, this.sessionCreationTimeoutMs);
+    });
     this.clearReconnectTimer();
     this.update("connecting", null, null);
 
     try {
-      const response = await this.fetcher("/api/liveavatar/session", {
+      const response = await Promise.race([this.fetcher("/api/liveavatar/session", {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -371,7 +409,8 @@ export class LiveAvatarService implements LiveAvatarOutput {
         },
         body: JSON.stringify({ guideId: this.guideId }),
         cache: "no-store",
-      });
+        signal: controller.signal,
+      }), timeout]);
       const payload = (await response.json()) as SessionApiResponse;
 
       if (!response.ok || !payload.success) {
@@ -384,15 +423,22 @@ export class LiveAvatarService implements LiveAvatarOutput {
         );
       }
 
-      if (!this.desiredConnection) return false;
+      if (
+        !this.desiredConnection ||
+        lifecycleGeneration !== this.lifecycleGeneration
+      ) return false;
 
       const session = this.createSession(payload.sessionToken);
       this.session = session;
       this.activeSessionGeneration = ++this.sessionGeneration;
       this.bindSession(session, payload.sessionId);
-      await session.start();
+      await Promise.race([session.start(), timeout]);
 
-      if (this.session !== session || !this.desiredConnection) {
+      if (
+        this.session !== session ||
+        !this.desiredConnection ||
+        lifecycleGeneration !== this.lifecycleGeneration
+      ) {
         await session.stop().catch(() => undefined);
         return false;
       }
@@ -407,6 +453,12 @@ export class LiveAvatarService implements LiveAvatarOutput {
       this.startKeepAlive(session);
       return true;
     } catch (error) {
+      if (
+        lifecycleGeneration !== this.lifecycleGeneration ||
+        !this.desiredConnection
+      ) {
+        return false;
+      }
       const classification = classifyLiveAvatarError(error);
       console.warn("[liveavatar] Connection failed.", {
         name: error instanceof Error ? error.name : "UnknownError",
@@ -432,6 +484,11 @@ export class LiveAvatarService implements LiveAvatarOutput {
       );
       if (retryable) this.scheduleReconnect();
       return false;
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (this.activeConnectionController === controller) {
+        this.activeConnectionController = null;
+      }
     }
   }
 
@@ -602,8 +659,8 @@ export class LiveAvatarService implements LiveAvatarOutput {
     this.activeSessionGeneration = 0;
     this.sessionGeneration += 1;
     session?.removeAllListeners();
-    if (session) await session.stop().catch(() => undefined);
     this.clearVideo();
+    if (session) await session.stop().catch(() => undefined);
   }
 
   private getValidSession() {

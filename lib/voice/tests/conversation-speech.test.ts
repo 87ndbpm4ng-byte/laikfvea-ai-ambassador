@@ -38,3 +38,14 @@ test("a second Quick Topic is spoken while the previous response is not duplicat
     second,
   );
 });
+
+test("recovery guidance is displayed but never selected for speech", () => {
+  const grounded = guideMessage("guide-grounded", "typed");
+  const recovery = {
+    ...guideMessage("guide-recovery", "typed"),
+    speakable: false,
+  };
+
+  assert.equal(selectPendingGuideSpeech([grounded, recovery], grounded.id), null);
+  assert.equal(selectPendingGuideSpeech([grounded, recovery], null), null);
+});

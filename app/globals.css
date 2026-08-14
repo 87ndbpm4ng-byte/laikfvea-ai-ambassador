@@ -1161,6 +1161,14 @@ h1 {
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
+.composer-limit {
+  grid-column: 1 / -1;
+  color: var(--color-text-tertiary);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  padding-inline: 0.25rem;
+}
+
 .composer:focus-within {
   outline: 3px solid var(--color-focus);
   outline-offset: 3px;

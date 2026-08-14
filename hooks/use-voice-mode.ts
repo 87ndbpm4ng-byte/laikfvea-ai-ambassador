@@ -307,20 +307,35 @@ export function useVoiceMode({
       return;
     }
 
-    const latestGuideMessage = selectPendingGuideSpeech(
+    const latestGuideMessage = messages.findLast(
+      (message) => message.role === "guide",
+    );
+    if (
+      latestGuideMessage?.speakable === false &&
+      latestGuideMessage.id !== lastSpokenMessageRef.current
+    ) {
+      lastSpokenMessageRef.current = latestGuideMessage.id;
+      synthesis.setReady?.();
+      setInputState("idle");
+      setOutputState("idle");
+      clearSpokenHighlight();
+      return;
+    }
+
+    const pendingGuideMessage = selectPendingGuideSpeech(
       messages,
       lastSpokenMessageRef.current,
     );
 
-    if (!latestGuideMessage) return;
+    if (!pendingGuideMessage) return;
 
-    lastSpokenMessageRef.current = latestGuideMessage.id;
+    lastSpokenMessageRef.current = pendingGuideMessage.id;
     logVoiceDiagnostic("speech-trigger", {
-      questionSource: latestGuideMessage.source ?? "unknown",
+      questionSource: pendingGuideMessage.source ?? "unknown",
       speechTriggerCalled: true,
       audioSessionActivated: isAudioSessionActivated,
     });
-    synthesis.speak(normalizeSpeechText(latestGuideMessage.content), guideId, {
+    synthesis.speak(normalizeSpeechText(pendingGuideMessage.content), guideId, {
       onTiming: (timing) => {
         clearSpokenHighlight();
         pendingTimingRef.current = timing;
@@ -329,12 +344,12 @@ export function useVoiceMode({
         const timing = pendingTimingRef.current;
         if (!timing) return;
         const segments = segmentSpokenText(
-          latestGuideMessage.content,
+          pendingGuideMessage.content,
           language,
         );
         const alignedStarts = timing.alignment
           ? getAlignedSegmentStartTimes(
-              latestGuideMessage.content,
+              pendingGuideMessage.content,
               segments,
               timing.alignment,
             )
@@ -351,10 +366,10 @@ export function useVoiceMode({
           );
           if (activeIndex < 0) return;
           setSpokenHighlight((current) =>
-            current?.messageId === latestGuideMessage.id &&
+            current?.messageId === pendingGuideMessage.id &&
             current.activeIndex === activeIndex
               ? current
-              : { messageId: latestGuideMessage.id, segments, activeIndex },
+              : { messageId: pendingGuideMessage.id, segments, activeIndex },
           );
         };
         updateHighlight();
@@ -367,7 +382,7 @@ export function useVoiceMode({
       onActivationRequired: () => {
         lastSpokenMessageRef.current = null;
         logVoiceDiagnostic("audio-activation-required", {
-          questionSource: latestGuideMessage.source ?? "unknown",
+          questionSource: pendingGuideMessage.source ?? "unknown",
         });
         setIsAudioSessionActivated(false);
         setActivationFailed(true);

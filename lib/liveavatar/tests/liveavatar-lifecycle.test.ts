@@ -16,6 +16,7 @@ class FakeSession {
   failStart: Error | null = null;
   failRepeat: Error | null = null;
   failInterrupt: Error | null = null;
+  stopGate: Promise<void> | null = null;
 
   async start() {
     this.startCount += 1;
@@ -23,6 +24,7 @@ class FakeSession {
   }
   async stop() {
     this.stopCount += 1;
+    if (this.stopGate) await this.stopGate;
   }
   attach() {}
   repeatAudio() {
@@ -83,6 +85,64 @@ function failedSessionResponse(status: number, retryable: boolean) {
     { status },
   );
 }
+
+test("session creation has an application timeout and readable fallback", async () => {
+  let fetchCount = 0;
+  let latestSnapshot: LiveAvatarSnapshot | null = null;
+  const service = new LiveAvatarService({
+    sessionCreationTimeoutMs: 5,
+    maxAutomaticReconnects: 0,
+    fetcher: async (_input, init) => {
+      fetchCount += 1;
+      return await new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => {
+          reject(new DOMException("Aborted", "AbortError"));
+        });
+      });
+    },
+  });
+  service.subscribe((snapshot) => {
+    latestSnapshot = snapshot;
+  });
+
+  assert.equal(await service.connect(), false);
+  assert.equal(fetchCount, 1);
+  assert.equal((latestSnapshot as LiveAvatarSnapshot | null)?.state, "disconnected");
+  assert.equal(
+    (latestSnapshot as LiveAvatarSnapshot | null)?.outputPath,
+    "elevenlabs-fallback",
+  );
+  await service.disconnect();
+});
+
+test("old visitor teardown cannot disconnect an immediate next visitor", async () => {
+  let releaseOldStop: (() => void) | undefined;
+  const oldStopGate = new Promise<void>((resolve) => {
+    releaseOldStop = resolve;
+  });
+  const sessions: FakeSession[] = [];
+  const service = new LiveAvatarService({
+    fetcher: async () => sessionResponse(),
+    createSession: () => {
+      const session = new FakeSession();
+      if (sessions.length === 0) session.stopGate = oldStopGate;
+      sessions.push(session);
+      return session as never;
+    },
+  });
+
+  assert.equal(await service.connect(), true);
+  const teardown = service.disconnect();
+  assert.equal(await service.connect(), true);
+  releaseOldStop?.();
+  await teardown;
+
+  assert.equal(service.isConnected, true);
+  assert.equal(sessions.length, 2);
+  assert.equal(sessions[0].stopCount, 1);
+  assert.equal(sessions[1].stopCount, 0);
+  await service.disconnect();
+});
 
 test("constructing the service does not create a session on page load", () => {
   let fetchCount = 0;

@@ -86,6 +86,7 @@ export default function Home() {
   }, [liveAvatarServices, selectedGuideId]);
 
   function openProduct(product: ProductId) {
+    conversation.cancelPending();
     conversation.selectProduct(product);
     setSelectedProduct(product);
     setScreen("product-detail");
@@ -225,7 +226,10 @@ export default function Home() {
             messages={conversation.messages}
             isLoading={conversation.isLoading}
             onSubmitQuestion={conversation.submitQuestion}
-            onProducts={() => setScreen("products")}
+            onProducts={() => {
+              conversation.cancelPending();
+              setScreen("products");
+            }}
             onOpenProduct={openProduct}
             onEnd={endSession}
             onIdleTimeout={resetVisitorSession}

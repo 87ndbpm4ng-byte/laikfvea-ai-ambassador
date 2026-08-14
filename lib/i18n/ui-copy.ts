@@ -21,6 +21,7 @@ type UiCopy = {
   conversationWith: (name: string) => string;
   conversationAria: string;
   askQuestion: (name: string) => string;
+  questionLimitReached: (limit: number) => string;
   whatToUnderstand: string;
   welcomeSupport: (name: string) => string;
   youAsked: string;
@@ -130,6 +131,7 @@ const en: UiCopy = {
   conversationWith: (name) => `Conversation with ${name}`,
   conversationAria: "Conversation",
   askQuestion: (name) => `Ask ${name} a question`,
+  questionLimitReached: (limit) => `Questions can be up to ${limit.toLocaleString("en")} characters.`,
   whatToUnderstand: "What would you like to understand?",
   welcomeSupport: (name) =>
     `Speak or type a product question for ${name}, or choose a shortcut below.`,
@@ -261,6 +263,7 @@ const ru: UiCopy = {
   conversationWith: (name) => `Разговор с ${name === "Daniel" ? "Дэниелом" : "Эмили"}`,
   conversationAria: "Разговор",
   askQuestion: (name) => `Задайте вопрос ${name === "Daniel" ? "Дэниелу" : "Эмили"}`,
+  questionLimitReached: (limit) => `Вопрос может содержать не более ${limit.toLocaleString("ru")} знаков.`,
   whatToUnderstand: "Что вас интересует?",
   welcomeSupport: (name) => `Задайте вопрос ${name === "Daniel" ? "Дэниелу" : "Эмили"} голосом или текстом либо выберите готовый вопрос ниже.`,
   youAsked: "Ваш вопрос",
@@ -391,6 +394,7 @@ const zh: UiCopy = {
   conversationWith: (name) => `与 ${name} 对话`,
   conversationAria: "对话",
   askQuestion: (name) => `向 ${name} 提问`,
+  questionLimitReached: (limit) => `问题最多可输入 ${limit.toLocaleString("zh-CN")} 个字符。`,
   whatToUnderstand: "您想了解什么？",
   welcomeSupport: (name) => `您可以语音或文字向 ${name} 提问，也可以选择下方的快捷问题。`,
   youAsked: "您的问题",
@@ -521,6 +525,7 @@ const yue: UiCopy = {
   conversationWith: (name) => `同 ${name} 傾偈`,
   conversationAria: "對話",
   askQuestion: (name) => `問 ${name} 一個問題`,
+  questionLimitReached: (limit) => `問題最多可以輸入 ${limit.toLocaleString("zh-HK")} 個字元。`,
   whatToUnderstand: "您想了解啲咩？",
   welcomeSupport: (name) => `您可以用語音或者打字問 ${name}，亦可以揀下面嘅快速問題。`,
   youAsked: "您的問題",
@@ -651,6 +656,7 @@ const fr: UiCopy = {
   conversationWith: (name) => `Conversation avec ${name}`,
   conversationAria: "Conversation",
   askQuestion: (name) => `Posez une question à ${name}`,
+  questionLimitReached: (limit) => `La question peut contenir jusqu’à ${limit.toLocaleString("fr")} caractères.`,
   whatToUnderstand: "Que souhaitez-vous découvrir ?",
   welcomeSupport: (name) => `Posez votre question à ${name} à l’oral ou par écrit, ou choisissez un raccourci ci-dessous.`,
   youAsked: "Votre question",

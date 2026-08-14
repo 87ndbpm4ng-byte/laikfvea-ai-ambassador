@@ -12,6 +12,7 @@ import type {
 import type { Guide } from "@/types/guide";
 import type { ProductId } from "@/types/product";
 import type { SupportedLanguage } from "@/types/language";
+import { isProductId } from "@/lib/data/exhibition-products";
 
 export type ResponseRequest = {
   content: string;
@@ -29,6 +30,8 @@ export type ResponseResult = {
   content: string;
   relatedProduct?: ProductId;
   sessionId?: string;
+  resolvedActiveProduct?: ProductId;
+  speakable?: boolean;
 };
 
 export const serviceUnavailableResponse =
@@ -240,7 +243,9 @@ function isConversationApiResponse(
       (result.sessionId === undefined ||
         typeof result.sessionId === "string") &&
       (result.requestId === undefined ||
-        typeof result.requestId === "string")
+        typeof result.requestId === "string") &&
+      (result.resolvedActiveProduct === undefined ||
+        isProductId(result.resolvedActiveProduct))
     );
   }
 
@@ -274,6 +279,7 @@ export async function generateConversationResponse(
       content: response.response,
       relatedProduct: request.relatedProduct,
       sessionId: response.sessionId,
+      resolvedActiveProduct: response.resolvedActiveProduct,
     };
   } catch (error) {
     const requestError =
@@ -290,6 +296,7 @@ export async function generateConversationResponse(
     return {
       content: getConversationFailureResponse(requestError.kind, request.language),
       relatedProduct: request.relatedProduct,
+      speakable: false,
     };
   }
 }

@@ -11,6 +11,7 @@ export function selectPendingGuideSpeech(
 
   if (
     !latestGuideMessage ||
+    latestGuideMessage.speakable === false ||
     latestGuideMessage.id === lastSpokenMessageId
   ) {
     return null;

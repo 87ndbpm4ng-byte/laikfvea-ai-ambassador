@@ -18,6 +18,7 @@ export type ConversationMessage = {
   relatedProduct?: ProductId;
   questionId?: string;
   source?: QuestionSubmissionSource;
+  speakable?: boolean;
 };
 
 export type ConversationHistoryItem = {
@@ -59,6 +60,7 @@ export type ConversationApiSuccessResponse = {
   response: string;
   sessionId?: string;
   requestId?: string;
+  resolvedActiveProduct?: ProductId;
 };
 
 export type ConversationApiErrorResponse = {
