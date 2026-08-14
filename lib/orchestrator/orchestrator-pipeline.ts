@@ -47,6 +47,13 @@ import type { KnowledgeRetriever } from "@/lib/retrieval/retrieval-types";
 import { createRetrievalDiagnostics } from "@/lib/retrieval/retrieval-diagnostics";
 import { validateGroundedResponse } from "@/lib/retrieval/retrieval-answer-validator";
 import { resolveSupportedLanguage } from "@/lib/i18n/languages";
+import { createKnowledgeQueryText } from "@/lib/i18n/knowledge-query";
+import { resolveConversationFocus } from "@/lib/session/conversation-context";
+import type { VisitorSession } from "@/lib/session/session-types";
+import {
+  analyzeCommercialIntent,
+  commercialHandoffResponse,
+} from "@/lib/orchestrator/commercial-handoff";
 
 const INSUFFICIENT_KNOWLEDGE_RESPONSE =
   "The available product documentation does not give me enough information to answer that reliably.";
@@ -83,6 +90,37 @@ function defaultIdFactory() {
   }
 
   return `orchestration-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function productOnlySession(
+  previousSession: VisitorSession,
+  activeSession: VisitorSession,
+  productMessage: string,
+): VisitorSession {
+  const focus = resolveConversationFocus(
+    createKnowledgeQueryText(productMessage, activeSession.language),
+    {
+      ...previousSession,
+      activeProduct: activeSession.activeProduct,
+      viewedProducts: activeSession.viewedProducts,
+    },
+  );
+  const conversationHistory = [...activeSession.conversationHistory];
+  const latestMessage = conversationHistory.at(-1);
+
+  if (latestMessage?.role === "visitor") {
+    conversationHistory[conversationHistory.length - 1] = {
+      ...latestMessage,
+      content: productMessage,
+    };
+  }
+
+  return {
+    ...activeSession,
+    ...focus,
+    previousQuestion: productMessage,
+    conversationHistory,
+  };
 }
 
 function toOpenAIHistory(
@@ -177,33 +215,66 @@ export class OrchestratorPipeline {
         session.sessionId,
         message,
       );
+      const commercialIntent = analyzeCommercialIntent(
+        message,
+        activeSession.language,
+      );
+      const responseSession =
+        commercialIntent.kind === "mixed" && commercialIntent.productMessage
+          ? productOnlySession(
+              session,
+              activeSession,
+              commercialIntent.productMessage,
+            )
+          : activeSession;
       const experience = getExperienceRecommendation({
-        currentStage: activeSession.currentConversationStage,
-        visitorIntent: activeSession.currentIntent ?? undefined,
+        currentStage: responseSession.currentConversationStage,
+        visitorIntent: responseSession.currentIntent ?? undefined,
       });
       const responseContext = createResponseContext({
-        session: activeSession,
+        session: responseSession,
         experience,
       });
       const responseStrategy = this.createStrategy(responseContext);
       const retrievalMessage =
-        activeSession.resolvedQuestion?.trim() || message;
+        commercialIntent.productMessage ??
+        responseSession.resolvedQuestion?.trim() ??
+        message;
       const retrievalQuery = createRetrievalQuery({
         message: retrievalMessage,
-        session: activeSession,
+        session: responseSession,
       });
+
+      if (commercialIntent.kind === "pure") {
+        const retrievalResult = createSkippedRetrievalResult(retrievalQuery);
+        const response = commercialHandoffResponse(activeSession.language);
+        const updatedSession = this.sessionManager.recordAssistantMessage(
+          activeSession.sessionId,
+          { content: response },
+        );
+
+        return {
+          sessionId: updatedSession.sessionId,
+          response,
+          responseStrategy,
+          session: updatedSession,
+          retrieval: retrievalResult,
+          diagnostics: createRetrievalDiagnostics(retrievalResult),
+        };
+      }
+
       const retrievalResult = shouldRunRetrieval(
         retrievalMessage,
-        activeSession.language,
-        activeSession,
+        responseSession.language,
+        responseSession,
       )
         ? await this.retrieval.search(retrievalQuery)
         : createSkippedRetrievalResult(retrievalQuery);
       const context = createOrchestratorContext({
-        session: activeSession,
+        session: responseSession,
         experience,
         responseStrategy,
-        userMessage: message,
+        userMessage: commercialIntent.productMessage ?? message,
         metadata: {
           requestId: this.createId(),
           receivedAt: this.clock().toISOString(),
@@ -219,7 +290,7 @@ export class OrchestratorPipeline {
         input.supplementalContext,
       );
       const retrievalContext = context.retrievalContext;
-      const failSafe = insufficientKnowledgeResponse(activeSession.language);
+      const failSafe = insufficientKnowledgeResponse(responseSession.language);
       let response = failSafe;
       if (!retrievalResult.insufficientKnowledge) {
         const generated = sanitizeVisitorResponse(
@@ -251,6 +322,9 @@ export class OrchestratorPipeline {
         ).valid
           ? clarified
           : failSafe;
+      }
+      if (commercialIntent.kind === "mixed") {
+        response = `${response}\n\n${commercialHandoffResponse(activeSession.language)}`;
       }
       const updatedSession = this.sessionManager.recordAssistantMessage(
         activeSession.sessionId,

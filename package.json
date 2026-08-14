@@ -13,7 +13,7 @@
     "test:retrieval": "tsx --test lib/retrieval/tests/*.test.ts",
     "test:conversation": "tsx --test lib/conversation/tests/response-engine.test.ts",
     "test:prompts": "tsx --test lib/orchestrator/tests/prompt-builder.test.ts",
-    "test:orchestrator": "NODE_OPTIONS=--conditions=react-server tsx --test lib/orchestrator/tests/grounded-answer-clarification.test.ts",
+    "test:orchestrator": "NODE_OPTIONS=--conditions=react-server tsx --test lib/orchestrator/tests/*.test.ts",
     "test:session-context": "tsx --test lib/session/tests/conversation-context.test.ts",
     "test:multi-source": "tsx --test lib/retrieval/tests/multi-source.test.ts",
     "test:voice": "tsx --test lib/voice/tests/*.test.ts",

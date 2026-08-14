@@ -110,7 +110,7 @@ export const RETRIEVAL_TOPIC_GROUPS = {
   },
   operation: {
     rules: [
-      { pattern: /\b(?:operate|operation|setup|turn on|won't turn on|display|light|leak|bubbles?|hydrogen generation|electrolysis)\b/i, terms: [] },
+      { pattern: /\b(?:how does (?:go|pro|the (?:product|device|bottle)|this (?:product|device|bottle)) work|operate|operation|setup|turn on|won't turn on|display|light|leak|bubbles?|hydrogen generation|electrolysis)\b/i, terms: [] },
       { pattern: /\b(?:mineralisation|mineralization|filter|cartridge)\b/i, terms: ["mineral cartridge"] },
     ],
   },
