@@ -27,6 +27,7 @@ type UiCopy = {
   preparingResponse: string;
   quickTopics: string;
   chooseStartingPoint: string;
+  questionsAbout: (name: string) => string;
   topics: Record<GuideId, Record<string, TopicCopy>>;
   exploreProducts: string;
   viewProduct: (name: string) => string;
@@ -79,6 +80,7 @@ type UiCopy = {
   portfolioBack: string;
   productVisualUnavailable: string;
   askAboutProduct: (guide: string, name: string) => string;
+  productQuestionPrompt: string;
   compareGoPro: string;
   viewProductLabel: string;
   compareProducts: string;
@@ -128,11 +130,12 @@ const en: UiCopy = {
   askQuestion: (name) => `Ask ${name} a question`,
   whatToUnderstand: "What would you like to understand?",
   welcomeSupport: (name) =>
-    `Ask ${name} directly, or begin with one of the topics below.`,
+    `Speak or type a product question for ${name}, or choose a shortcut below.`,
   youAsked: "You asked",
   preparingResponse: "Preparing response",
   quickTopics: "Quick questions",
   chooseStartingPoint: "Choose a starting point",
+  questionsAbout: (name) => `Questions about ${name}`,
   topics: {
     daniel: {
       "hydrogen-water-overview": { title: "Hydrogen technology", description: "Understand the core principles.", question: "How does hydrogen water work?" },
@@ -198,6 +201,7 @@ const en: UiCopy = {
   portfolioBack: "Back to portfolio",
   productVisualUnavailable: "Product visual coming soon",
   askAboutProduct: (guide) => `Ask ${guide}`,
+  productQuestionPrompt: "Ask about how it works, specifications, use or maintenance.",
   compareGoPro: "Compare GO and PRO",
   viewProductLabel: "View product",
   compareProducts: "Compare Products",
@@ -254,11 +258,12 @@ const ru: UiCopy = {
   conversationAria: "Разговор",
   askQuestion: (name) => `Задайте вопрос ${name === "Daniel" ? "Дэниелу" : "Эмили"}`,
   whatToUnderstand: "Что вас интересует?",
-  welcomeSupport: (name) => `Задайте вопрос ${name === "Daniel" ? "Дэниелу" : "Эмили"} или выберите одну из тем ниже.`,
+  welcomeSupport: (name) => `Задайте вопрос ${name === "Daniel" ? "Дэниелу" : "Эмили"} голосом или текстом либо выберите готовый вопрос ниже.`,
   youAsked: "Ваш вопрос",
   preparingResponse: "Подготовка ответа",
   quickTopics: "Быстрые вопросы",
   chooseStartingPoint: "Выберите вопрос",
+  questionsAbout: (name) => `Вопросы о продукте «${name}»`,
   topics: {
     daniel: {
       "hydrogen-water-overview": { title: "Водородная технология", description: "Как работает технология насыщения воды водородом.", question: "Как работает водородная вода?" },
@@ -324,6 +329,7 @@ const ru: UiCopy = {
   portfolioBack: "Вернуться к портфолио",
   productVisualUnavailable: "Изображение скоро появится",
   askAboutProduct: (guide) => `Спросить ${guide === "Daniel" ? "Дэниела" : "Эмили"}`,
+  productQuestionPrompt: "Спросите, как продукт работает, каковы его характеристики, правила использования или ухода.",
   compareGoPro: "Сравнить GO и PRO",
   viewProductLabel: "Открыть продукт",
   compareProducts: "Сравнить продукты",
@@ -380,11 +386,12 @@ const zh: UiCopy = {
   conversationAria: "对话",
   askQuestion: (name) => `向 ${name} 提问`,
   whatToUnderstand: "您想了解什么？",
-  welcomeSupport: (name) => `向 ${name} 提问，或从下方选择一个问题。`,
+  welcomeSupport: (name) => `您可以语音或文字向 ${name} 提问，也可以选择下方的快捷问题。`,
   youAsked: "您的问题",
   preparingResponse: "正在准备回答",
   quickTopics: "快捷问题",
   chooseStartingPoint: "请选择一个问题",
+  questionsAbout: (name) => `关于${name}的问题`,
   topics: {
     daniel: {
       "hydrogen-water-overview": { title: "氢水技术", description: "了解水中溶解氢气的基本原理。", question: "氢水是如何工作的？" },
@@ -450,6 +457,7 @@ const zh: UiCopy = {
   portfolioBack: "返回产品一览",
   productVisualUnavailable: "产品图片即将提供",
   askAboutProduct: (guide) => `咨询 ${guide}`,
+  productQuestionPrompt: "可以询问工作原理、技术规格、使用方法或维护保养。",
   compareGoPro: "比较 GO 和 PRO",
   viewProductLabel: "查看产品",
   compareProducts: "比较产品",
@@ -506,11 +514,12 @@ const yue: UiCopy = {
   conversationAria: "對話",
   askQuestion: (name) => `問 ${name} 一個問題`,
   whatToUnderstand: "您想了解啲咩？",
-  welcomeSupport: (name) => `直接問 ${name}，或者揀下面其中一條問題。`,
+  welcomeSupport: (name) => `您可以用語音或者打字問 ${name}，亦可以揀下面嘅快速問題。`,
   youAsked: "您的問題",
   preparingResponse: "準備緊答案",
   quickTopics: "快速問題",
   chooseStartingPoint: "請揀一條問題",
+  questionsAbout: (name) => `關於${name}嘅問題`,
   topics: {
     daniel: {
       "hydrogen-water-overview": { title: "氫水科技", description: "了解將氫氣溶入水嘅基本原理。", question: "氫水係點樣運作㗎？" },
@@ -576,6 +585,7 @@ const yue: UiCopy = {
   portfolioBack: "返回產品一覽",
   productVisualUnavailable: "產品圖片即將提供",
   askAboutProduct: (guide) => `問 ${guide}`,
+  productQuestionPrompt: "可以問產品點樣運作、規格、使用方法或者保養。",
   compareGoPro: "比較 GO 同 PRO",
   viewProductLabel: "查看產品",
   compareProducts: "比較產品",
@@ -632,11 +642,12 @@ const fr: UiCopy = {
   conversationAria: "Conversation",
   askQuestion: (name) => `Posez une question à ${name}`,
   whatToUnderstand: "Que souhaitez-vous découvrir ?",
-  welcomeSupport: (name) => `Posez directement votre question à ${name}, ou choisissez un sujet ci-dessous.`,
+  welcomeSupport: (name) => `Posez votre question à ${name} à l’oral ou par écrit, ou choisissez un raccourci ci-dessous.`,
   youAsked: "Votre question",
   preparingResponse: "Préparation de la réponse",
   quickTopics: "Questions rapides",
   chooseStartingPoint: "Choisissez une question",
+  questionsAbout: (name) => `Questions sur ${name}`,
   topics: {
     daniel: {
       "hydrogen-water-overview": { title: "Technologie de l’hydrogène", description: "Découvrez les principes de l’eau enrichie en hydrogène.", question: "Comment fonctionne l’eau hydrogénée ?" },
@@ -702,6 +713,7 @@ const fr: UiCopy = {
   portfolioBack: "Retour au portfolio",
   productVisualUnavailable: "Visuel du produit à venir",
   askAboutProduct: (guide) => `Demander à ${guide}`,
+  productQuestionPrompt: "Posez une question sur le fonctionnement, les caractéristiques, l’utilisation ou l’entretien.",
   compareGoPro: "Comparer GO et PRO",
   viewProductLabel: "Voir le produit",
   compareProducts: "Comparer les produits",

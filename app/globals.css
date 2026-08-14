@@ -4164,16 +4164,29 @@ h1 {
 
 .quick-topic-card {
   height: 100%;
-  min-height: 4.5rem;
-  padding: var(--space-4);
+  min-height: 4.75rem;
+  padding: var(--space-4) var(--space-5);
   border-color: var(--color-border-subtle);
   background: var(--color-bg-canvas);
   grid-template-columns: minmax(0, 1fr);
 }
 
+.quick-topic-card > strong {
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
 .quick-topic-card small {
   text-overflow: initial;
   white-space: normal;
+}
+
+.detail-question-prompt {
+  max-width: 36rem;
+  margin: var(--space-5) 0 0;
+  color: var(--color-text-secondary);
+  font-size: 1.0625rem;
+  line-height: 1.6;
 }
 
 .conversation-product-actions {

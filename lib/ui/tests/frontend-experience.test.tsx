@@ -12,7 +12,8 @@ import {
 import { VoiceControls } from "@/components/ui/voice-controls";
 import type { SpeechSynthesisProvider } from "@/lib/voice/voice-types";
 import type { SupportedLanguage } from "@/types/language";
-import { PRODUCT_IDS } from "@/types/product";
+import type { ConversationMessage } from "@/types/conversation";
+import { PRODUCT_IDS, type ProductId } from "@/types/product";
 import {
   exhibitionProducts,
   productCategoryNames,
@@ -28,12 +29,13 @@ const silentSpeechProvider: SpeechSynthesisProvider = {
 function renderConversation(
   guideId: "daniel" | "emily",
   language: SupportedLanguage = "en",
+  messages: ConversationMessage[] = [],
 ) {
   return renderToStaticMarkup(
     <ConversationScreen
       guideId={guideId}
       language={language}
-      messages={[]}
+      messages={messages}
       isLoading={false}
       onSubmitQuestion={async () => true}
       onProducts={() => undefined}
@@ -158,10 +160,41 @@ test("shared conversation labels adapt to Daniel", () => {
   assert.match(markup, /Talk to Daniel/);
   assert.match(markup, />Talk</);
   assert.match(markup, /Quick questions/);
+  assert.match(markup, /Explore products/);
+  assert.match(markup, /Compare GO and PRO/);
+  assert.match(markup, /How do I use the Water Ionizer/);
+  assert.match(markup, /Tell me about the Air Purifier/);
   assert.match(markup, /Explore products →/);
   assert.match(markup, /End conversation/);
   assert.doesNotMatch(markup, /Begin voice|Enable voice|Start conversation/);
   assert.match(markup, /Technology Specialist/);
+});
+
+test("conversation Quick Questions follow explicit product context changes", () => {
+  const productEntry = (content: string, relatedProduct: ProductId): ConversationMessage => ({
+    id: `visitor-${relatedProduct}`,
+    role: "visitor",
+    content,
+    timestamp: "2026-08-14T00:00:00.000Z",
+    relatedProduct,
+    source: "typed",
+  });
+
+  const pro = renderConversation("daniel", "en", [
+    productEntry("Tell me about PRO.", "advanced"),
+  ]);
+  assert.match(pro, /How does PRO work/);
+  assert.match(pro, /How does hydrogen inhalation work/);
+  assert.doesNotMatch(pro, /What room size is it designed for/);
+
+  const switched = renderConversation("daniel", "en", [
+    productEntry("Tell me about PRO.", "advanced"),
+    productEntry("Now tell me about the Air Purifier.", "advanced"),
+  ]);
+  assert.match(switched, /Questions about Air Purifier/);
+  assert.match(switched, /What room size is the Air Purifier designed for/);
+  assert.match(switched, /When should I replace the Air Purifier pre-filter/);
+  assert.doesNotMatch(switched, /How does hydrogen inhalation work/);
 });
 
 test("shared conversation labels adapt to Emily", () => {
@@ -553,6 +586,10 @@ test("product details stay structural for pending products and compare only GO w
     );
     assert.match(markup, /Back to portfolio/);
     assert.match(markup, /Ask Daniel/);
+    assert.match(
+      markup,
+      /Ask about how it works, specifications, use or maintenance/,
+    );
     if (productId === "everyday" || productId === "advanced") {
       assert.match(markup, /Compare GO and PRO/);
     } else {
@@ -594,4 +631,6 @@ test("portfolio CSS provides intentional landscape, portrait and mobile grids", 
   assert.match(css, /\.product-grid\s*\{[^}]*repeat\(3, minmax\(0, 1fr\)\)/s);
   assert.match(css, /@media \(orientation: portrait\)[\s\S]*?\.product-grid\s*\{[^}]*repeat\(2, minmax\(0, 1fr\)\)/s);
   assert.match(css, /@media \(max-width: 47\.999rem\)[\s\S]*?\.product-grid,[\s\S]*?grid-template-columns: minmax\(0, 1fr\)/s);
+  assert.match(css, /\.quick-topic-card\s*\{[^}]*min-height:\s*4\.75rem/s);
+  assert.match(css, /\.quick-topic-list\s*\{[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/s);
 });

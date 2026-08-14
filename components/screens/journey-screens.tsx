@@ -16,13 +16,17 @@ import {
   productCategoryNames,
 } from "@/lib/data/exhibition-products";
 import { getPresentationAsset } from "@/lib/presentation/asset-registry";
-import { suggestedQuestions } from "@/lib/data/suggested-questions";
+import {
+  getGeneralQuickQuestions,
+  getProductQuickQuestions,
+  resolveQuickQuestionProduct,
+  type QuickQuestion,
+} from "@/lib/data/quick-questions";
 import type { SpeechSynthesisProvider } from "@/lib/voice/voice-types";
 import type { LiveAvatarOutput } from "@/lib/liveavatar/liveavatar-types";
 import type {
   ConversationMessage,
   QuestionSubmission,
-  SuggestedQuestion,
 } from "@/types/conversation";
 import type { GuideId } from "@/types/guide";
 import type { BottleProductId, ProductCategoryId, ProductId } from "@/types/product";
@@ -142,10 +146,6 @@ export function ConversationScreen({
   const guide = guides[guideId];
   const copy = getUiCopy(language);
   const guideDisplayName = copy.guideDisplayName[guideId];
-  const quickTopics = suggestedQuestions.map((suggestedQuestion) => ({
-    suggestedQuestion,
-    ...copy.topics[guideId][suggestedQuestion.id],
-  }));
   const [draft, setDraft] = useState("");
   const [isOnline, setIsOnline] = useState(
     () => typeof navigator === "undefined" || navigator.onLine,
@@ -157,6 +157,15 @@ export function ConversationScreen({
   const latestRelatedProduct = [...messages]
     .reverse()
     .find((message) => message.relatedProduct)?.relatedProduct;
+  const latestExplicitProduct = [...messages]
+    .reverse()
+    .filter((message) => message.role === "visitor")
+    .map((message) => resolveQuickQuestionProduct(message.content, language))
+    .find((productId): productId is ProductId => productId !== null);
+  const quickQuestionProduct = latestExplicitProduct ?? latestRelatedProduct;
+  const quickQuestions = quickQuestionProduct
+    ? getProductQuickQuestions(quickQuestionProduct, language)
+    : getGeneralQuickQuestions(language);
   const isComparisonContext = Boolean(
     latestVisitorMessage &&
     /\b(compare|comparison|both|products)\b/i.test(
@@ -223,7 +232,12 @@ export function ConversationScreen({
     }
   }
 
-  async function submitQuickTopic(question: SuggestedQuestion) {
+  async function submitQuickTopic(question: QuickQuestion) {
+    if (question.action === "explore-products") {
+      onProducts();
+      return;
+    }
+
     voice.prepareQuestionSubmission();
     const submitted = await onSubmitQuestion({
       content: question.label,
@@ -408,30 +422,26 @@ export function ConversationScreen({
           >
             <div className="context-heading">
               <p id="quick-topics-heading">{copy.quickTopics}</p>
-              <span>{copy.chooseStartingPoint}</span>
+              <span>
+                {quickQuestionProduct
+                  ? copy.questionsAbout(
+                      exhibitionProducts[quickQuestionProduct].displayNames[language],
+                    )
+                  : copy.chooseStartingPoint}
+              </span>
             </div>
             <div className="quick-topic-list">
-              {quickTopics.map(
-                ({ suggestedQuestion, question, title, description }) => (
+              {quickQuestions.map((question) => (
                 <button
                   className="quick-topic-card"
                   type="button"
-                  key={suggestedQuestion.id}
+                  key={question.id}
                   disabled={isLoading}
-                  onClick={() =>
-                    void submitQuickTopic({
-                      ...suggestedQuestion,
-                      label: question,
-                    })
-                  }
+                  onClick={() => void submitQuickTopic(question)}
                 >
-                  <span>
-                    <strong>{title}</strong>
-                    <small>{description}</small>
-                  </span>
+                  <strong>{question.label}</strong>
                 </button>
-                ),
-              )}
+              ))}
             </div>
           </section>
 
@@ -596,6 +606,7 @@ export function ProductDetailScreen({
             {productCategoryNames[product.category][language]}
           </p>
           <h1 id="product-detail-heading">{displayName}</h1>
+          <p className="detail-question-prompt">{copy.productQuestionPrompt}</p>
 
           {isLegacyBottle && product.knowledgeStatus === "approved" ? (
           <div className="detail-lists">
