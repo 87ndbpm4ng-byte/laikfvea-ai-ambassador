@@ -54,10 +54,7 @@ export const responseRules: readonly ResponseRule[] = [
       }
 
       return applyRule(strategy, "prefer-concise-explanations", {
-        responseLength:
-          strategy.responseLength === "detailed"
-            ? "standard"
-            : strategy.responseLength,
+        responseLength: strategy.responseLength,
       });
     },
   },

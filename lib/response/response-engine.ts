@@ -16,6 +16,10 @@ import {
   ResponseStrategyValidationError,
   validateResponseStrategy,
 } from "@/lib/response/response-validator";
+import {
+  classifyAnswerDepth,
+  responseLengthForDepth,
+} from "@/lib/response/answer-depth";
 
 /**
  * Directs how the next assistant response should be constructed.
@@ -125,14 +129,12 @@ export class ResponseEngine {
       return "brief";
     }
 
-    if (
-      evaluation.goal === "COMPARE" ||
-      evaluation.profile === "technical"
-    ) {
-      return "standard";
-    }
-
-    return "concise";
+    return responseLengthForDepth(
+      classifyAnswerDepth(
+        context.session.previousQuestion ?? "",
+        context.session.language,
+      ),
+    );
   }
 
   determineQuestionStrategy(

@@ -49,15 +49,16 @@ test("prompt builder applies natural visitor-answer rules to supported questions
     const rendered = `${rules}\nVisitor message: ${question.message}\n${question.passage}`;
 
     assert.match(rendered, /VISITOR ANSWER STYLE/);
-    assert.match(rendered, /Rewrite source material into concise, natural/);
-    assert.match(rendered, /45–75 spoken words/);
-    assert.match(rendered, /20–35 seconds/);
-    assert.match(rendered, /25–55 words/);
-    assert.match(rendered, /direct answer, two to four useful points/);
+    assert.match(rendered, /QUICK FACT ANSWER/);
+    assert.match(rendered, /one or two spoken sentences/);
+    assert.match(rendered, /STANDARD EXHIBITION ANSWER/);
+    assert.match(rendered, /two to four spoken sentences/);
+    assert.match(rendered, /15–30 seconds/);
+    assert.match(rendered, /DETAILED ANSWER/);
     assert.match(rendered, /plain-text numbered list only when order matters/);
     assert.match(rendered, /plain 'Important:' label at the end/);
     assert.match(rendered, /Ask no more than one concise follow-up question/);
-    assert.match(rendered, /Do not end every answer/);
+    assert.match(rendered, /Do not add a generic closing invitation/);
     assert.match(rendered, /Persona changes tone only/);
     assert.match(rendered, new RegExp(question.message.replace(/[?.]/g, "\\$&")));
   }
@@ -66,12 +67,11 @@ test("prompt builder applies natural visitor-answer rules to supported questions
 test("visitor answer rules distinguish concise defaults from requested detail", () => {
   const rendered = VISITOR_ANSWER_RULES.join("\n");
 
-  assert.match(rendered, /simple answer should usually be 25–55 words/);
-  assert.match(rendered, /explicitly asks for a detailed or technical explanation/);
-  assert.match(rendered, /full comparison/);
-  assert.match(rendered, /complete instructions/);
-  assert.match(rendered, /says 'tell me more'/);
-  assert.match(rendered, /Begin a longer answer with a concise summary/);
+  assert.match(rendered, /State the requested fact immediately/);
+  assert.match(rendered, /Give the direct answer first/);
+  assert.match(rendered, /begin with a concise answer/);
+  assert.match(rendered, /never dump unrelated manual sections/);
+  assert.match(rendered, /interface already supports follow-up questions/);
 });
 
 test("Daniel and Emily share facts while differing only in delivery emphasis", () => {
