@@ -311,6 +311,19 @@
   overflow-wrap: anywhere;
 }
 
+.conversation-notice {
+  width: min(100%, 46rem);
+  margin: 0 auto 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(62, 112, 166, 0.18);
+  border-radius: 0.85rem;
+  background: rgba(230, 240, 249, 0.72);
+  color: var(--ink-secondary);
+  font-size: 0.95rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
 .liveavatar-idle-warning > div {
   width: min(100%, 28rem);
   padding: var(--space-8);

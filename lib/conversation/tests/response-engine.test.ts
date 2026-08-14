@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import {
   generateConversationResponse,
+  deleteConversationSession,
   getConversationFailureResponse,
   getServiceUnavailableResponse,
   serviceUnavailableResponse,
@@ -222,6 +223,45 @@ test("a visitor can retry immediately after a recoverable network failure", asyn
   const retried = await generateConversationResponse(baseRequest);
   assert.equal(failed.content, getConversationFailureResponse("network", "en"));
   assert.equal(retried.content, "The documented cycle lasts five minutes.");
+});
+
+test("commercial handoff remains available when the backend cannot be reached", async () => {
+  globalThis.fetch = async () => { throw new TypeError("Network unavailable"); };
+  const result = await generateConversationResponse({
+    ...baseRequest,
+    content: "Сколько это стоит?",
+    language: "en",
+  });
+  assert.match(result.content, /pricing, MOQ, OEM/);
+  assert.equal(result.speakable, false);
+});
+
+test("mixed commercial requests degrade to recovery guidance plus staff handoff", async () => {
+  globalThis.fetch = async () => { throw new TypeError("Network unavailable"); };
+  const result = await generateConversationResponse({
+    ...baseRequest,
+    content: "How does GO work and what does it cost?",
+    language: "en",
+  });
+  assert.match(result.content, /couldn’t connect/);
+  assert.match(result.content, /member of our team/);
+  assert.equal(result.speakable, false);
+});
+
+test("server-session deletion is best effort and idempotent for kiosk reset", async () => {
+  const calls: string[] = [];
+  globalThis.fetch = async (input, init) => {
+    calls.push(`${init?.method}:${String(input)}`);
+    return new Response(null, { status: 204 });
+  };
+  assert.equal(await deleteConversationSession("session one"), true);
+  assert.equal(await deleteConversationSession("session one"), true);
+  assert.deepEqual(calls, [
+    "DELETE:/api/conversation?sessionId=session%20one",
+    "DELETE:/api/conversation?sessionId=session%20one",
+  ]);
+  globalThis.fetch = async () => { throw new TypeError("offline"); };
+  assert.equal(await deleteConversationSession("session one"), false);
 });
 
 test("invalid server content is not exposed to visitors", async () => {

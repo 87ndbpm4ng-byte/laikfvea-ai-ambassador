@@ -123,6 +123,20 @@ test("ordinary product wording does not produce commercial false positives", () 
   }
 });
 
+test("commercial intent is detected across supported languages independently of UI locale", () => {
+  const cases: readonly [string, SupportedLanguage, RegExp][] = [
+    ["Сколько это стоит?", "en", /pricing/],
+    ["What is your MOQ?", "yue", /最低訂購量/],
+    ["你们的最低起订量是多少？", "fr", /quantités minimales/],
+    ["Puis-je acheter un échantillon ?", "ru", /минимального заказа/],
+    ["我可唔可以買一個樣品？", "zh", /最小起订量/],
+  ];
+  for (const [question, uiLanguage, responsePattern] of cases) {
+    assert.equal(analyzeCommercialIntent(question, uiLanguage).kind, "pure", question);
+    assert.match(commercialHandoffResponse(uiLanguage), responsePattern);
+  }
+});
+
 test("pure commercial requests bypass retrieval and the AI provider", async () => {
   const { pipeline, provider } = createPipeline();
   const result = await pipeline.execute({

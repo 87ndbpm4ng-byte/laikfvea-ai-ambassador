@@ -30,6 +30,9 @@ import type {
 } from "@/types/experience";
 import type { ProductId } from "@/types/product";
 import { createKnowledgeQueryText } from "@/lib/i18n/knowledge-query";
+import { MAX_STORED_QUESTIONS } from "@/lib/conversation/conversation-limits";
+
+export const ABANDONED_VISITOR_SESSION_TTL_MS = 10 * 60 * 1_000;
 
 export type SessionManagerDependencies = {
   store: SessionStore;
@@ -167,7 +170,7 @@ export class SessionManager {
     const sessionWithQuestion: VisitorSession = {
       ...updatedSession,
       questionsAsked: question
-        ? [...updatedSession.questionsAsked, question]
+        ? [...updatedSession.questionsAsked, question].slice(-MAX_STORED_QUESTIONS)
         : updatedSession.questionsAsked,
     };
 
@@ -375,6 +378,30 @@ export class SessionManager {
       endedSessionId: sessionId,
       replacementSession: this.createSession(),
     };
+  }
+
+  deleteSession(sessionId: SessionId) {
+    return this.store.delete(sessionId);
+  }
+
+  deleteExpiredSessions(
+    maxIdleMs = ABANDONED_VISITOR_SESSION_TTL_MS,
+    excludedSessionIds: ReadonlySet<SessionId> = new Set(),
+  ) {
+    const cutoff = this.clock().getTime() - maxIdleMs;
+
+    return this.store.list().reduce<SessionId[]>((deleted, session) => {
+      if (
+        excludedSessionIds.has(session.sessionId) ||
+        new Date(session.lastInteraction).getTime() > cutoff
+      ) {
+        return deleted;
+      }
+
+      this.store.delete(session.sessionId);
+      deleted.push(session.sessionId);
+      return deleted;
+    }, []);
   }
 
   private recordMessage(

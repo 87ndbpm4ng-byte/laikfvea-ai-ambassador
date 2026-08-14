@@ -44,7 +44,7 @@ const COMMERCIAL_PATTERNS: Record<SupportedLanguage, readonly RegExp[]> = {
   ],
   ru: [
     /(?:цен[аыуеы]|стоимост[ьи]|прайс(?:-лист)?|коммерческ\p{L}* предложен\p{L}*|котировк\p{L}*)/iu,
-    /сколько (?:стоит|будет стоить)/iu,
+    /сколько(?:\s+\p{L}+){0,3}\s+(?:стоит|будет стоить)/iu,
     /минимальн\p{L}* (?:заказ|парт\p{L}*)/iu,
     /минимальн\p{L}* объ[её]м\p{L}* заказ\p{L}*/iu,
     /(?:опт\p{L}*|дистрибьютор\p{L}*|дистрибуц\p{L}*|реселлер\p{L}*|розничн\p{L}* партнёр\p{L}*|эксклюзив\p{L}*)/iu,
@@ -99,15 +99,25 @@ const CLAUSE_SEPARATORS: Record<SupportedLanguage, RegExp> = {
   fr: /(?:[.!?;]+|,\s+|\s+(?:et|mais|ainsi que|plus)\s+)/iu,
 };
 
-function hasCommercialSignal(text: string, language: SupportedLanguage) {
-  return [...UNIVERSAL_COMMERCIAL_PATTERNS, ...COMMERCIAL_PATTERNS[language]].some(
+function hasCommercialSignal(text: string) {
+  return [
+    ...UNIVERSAL_COMMERCIAL_PATTERNS,
+    ...Object.values(COMMERCIAL_PATTERNS).flat(),
+  ].some(
     (pattern) => pattern.test(text),
   );
 }
 
-function normalizedClauses(message: string, language: SupportedLanguage) {
+const MULTILINGUAL_CLAUSE_SEPARATOR = new RegExp(
+  Object.values(CLAUSE_SEPARATORS)
+    .map((separator) => `(?:${separator.source})`)
+    .join("|"),
+  "iu",
+);
+
+function normalizedClauses(message: string) {
   return message
-    .split(CLAUSE_SEPARATORS[language])
+    .split(MULTILINGUAL_CLAUSE_SEPARATOR)
     .map((clause) => clause.trim())
     .filter(Boolean);
 }
@@ -118,18 +128,18 @@ export function commercialHandoffResponse(language?: string | null) {
 
 export function analyzeCommercialIntent(
   message: string,
-  language?: string | null,
+  _language?: string | null,
 ): CommercialIntentAnalysis {
+  void _language;
   const trimmed = message.trim();
-  const resolvedLanguage = resolveSupportedLanguage(language);
 
-  if (!trimmed || !hasCommercialSignal(trimmed, resolvedLanguage)) {
+  if (!trimmed || !hasCommercialSignal(trimmed)) {
     return { kind: "none", productMessage: null };
   }
 
-  const clauses = normalizedClauses(trimmed, resolvedLanguage);
+  const clauses = normalizedClauses(trimmed);
   const productClauses = clauses.filter(
-    (clause) => !hasCommercialSignal(clause, resolvedLanguage),
+    (clause) => !hasCommercialSignal(clause),
   );
 
   if (productClauses.length === 0) {

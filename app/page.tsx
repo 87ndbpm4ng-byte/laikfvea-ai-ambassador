@@ -225,6 +225,7 @@ export default function Home() {
             language={activeLanguage}
             messages={conversation.messages}
             isLoading={conversation.isLoading}
+            conversationNotice={conversation.conversationNotice}
             onSubmitQuestion={conversation.submitQuestion}
             onProducts={() => {
               conversation.cancelPending();

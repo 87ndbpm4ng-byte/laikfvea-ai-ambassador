@@ -2,6 +2,7 @@ import type {
   ConversationStageId,
   VisitorIntentId,
 } from "@/types/experience";
+import { MAX_STORED_CONVERSATION_MESSAGES } from "@/lib/conversation/conversation-limits";
 
 export type SessionConversationRole = "visitor" | "assistant";
 
@@ -51,7 +52,7 @@ export function appendConversationEntry(
   history: readonly SessionConversationEntry[],
   entry: SessionConversationEntry,
 ) {
-  return [...history, entry];
+  return [...history, entry].slice(-MAX_STORED_CONVERSATION_MESSAGES);
 }
 
 export function clearConversationHistory(): SessionConversationEntry[] {

@@ -13,6 +13,10 @@ import type { Guide } from "@/types/guide";
 import type { ProductId } from "@/types/product";
 import type { SupportedLanguage } from "@/types/language";
 import { isProductId } from "@/lib/data/exhibition-products";
+import {
+  analyzeCommercialIntent,
+  commercialHandoffResponse,
+} from "@/lib/orchestrator/commercial-handoff";
 
 export type ResponseRequest = {
   content: string;
@@ -51,6 +55,35 @@ export function getServiceUnavailableResponse(language?: SupportedLanguage) {
     return "Les informations produit sont momentanément indisponibles. Veuillez réessayer dans un instant.";
   }
   return serviceUnavailableResponse;
+}
+
+export async function deleteConversationSession(sessionId: string) {
+  try {
+    const response = await fetch(
+      `/api/conversation?sessionId=${encodeURIComponent(sessionId)}`,
+      { method: "DELETE", signal: AbortSignal.timeout(3_000) },
+    );
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+function unavailableResult(request: ResponseRequest, kind: ConversationFailureKind): ResponseResult {
+  const commercial = analyzeCommercialIntent(request.content, request.language);
+  const handoff = commercialHandoffResponse(request.language);
+  const recovery = getConversationFailureResponse(kind, request.language);
+
+  return {
+    content:
+      commercial.kind === "pure"
+        ? handoff
+        : commercial.kind === "mixed"
+          ? `${recovery} ${handoff}`
+          : recovery,
+    relatedProduct: request.relatedProduct,
+    speakable: false,
+  };
 }
 
 export function getConversationFailureResponse(
@@ -270,6 +303,10 @@ function isConversationApiResponse(
 export async function generateConversationResponse(
   request: ResponseRequest,
 ): Promise<ResponseResult> {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    return unavailableResult(request, "network");
+  }
+
   try {
     // A future knowledge-base or alternative provider can replace this
     // request while preserving the response-engine contract used by the UI.
@@ -293,10 +330,6 @@ export async function generateConversationResponse(
       return generateLocalConversationResponse(request);
     }
 
-    return {
-      content: getConversationFailureResponse(requestError.kind, request.language),
-      relatedProduct: request.relatedProduct,
-      speakable: false,
-    };
+    return unavailableResult(request, requestError.kind);
   }
 }

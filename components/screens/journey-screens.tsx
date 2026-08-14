@@ -97,6 +97,7 @@ type ConversationScreenProps = {
   language: SupportedLanguage;
   messages: ConversationMessage[];
   isLoading: boolean;
+  conversationNotice?: string | null;
   onSubmitQuestion: (question: QuestionSubmission) => Promise<boolean>;
   onProducts: () => void;
   onOpenProduct: (product: ProductId) => void;
@@ -134,6 +135,7 @@ export function ConversationScreen({
   language,
   messages,
   isLoading,
+  conversationNotice,
   onSubmitQuestion,
   onProducts,
   onOpenProduct,
@@ -268,6 +270,11 @@ export function ConversationScreen({
       {!isOnline ? (
         <p className="connection-status" role="status">
           {copy.connectionLost}
+        </p>
+      ) : null}
+      {conversationNotice ? (
+        <p className="conversation-notice" role="status">
+          {conversationNotice}
         </p>
       ) : null}
       {idleTimeout.showWarning && idleTimeout.remainingSeconds !== null ? (

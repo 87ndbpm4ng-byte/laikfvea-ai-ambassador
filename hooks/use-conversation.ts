@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { generateConversationResponse } from "@/lib/conversation/response-engine";
+import { deleteConversationSession, generateConversationResponse } from "@/lib/conversation/response-engine";
 import { logVoiceDiagnostic } from "@/lib/voice/voice-diagnostics";
 import type {
   ConversationMessage,
@@ -11,8 +11,9 @@ import type { Guide } from "@/types/guide";
 import type { SupportedLanguage } from "@/types/language";
 import { VisitorSessionLifecycle } from "@/lib/kiosk/visitor-session-lifecycle";
 import type { ProductId } from "@/types/product";
-import { MAX_CONVERSATION_MESSAGE_LENGTH } from "@/lib/conversation/conversation-limits";
+import { MAX_CONVERSATION_MESSAGE_LENGTH, MAX_VISIBLE_CONVERSATION_MESSAGES } from "@/lib/conversation/conversation-limits";
 import { reconcileActiveProduct } from "@/lib/conversation/active-product-context";
+import { classifyInputSignal, getInputSignalMessage, isAccidentalDuplicateSubmission, type RecentSubmission } from "@/lib/conversation/input-signal";
 
 let fallbackMessageSequence = 0;
 
@@ -31,10 +32,12 @@ export function useConversation(
 ) {
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [conversationNotice, setConversationNotice] = useState<string | null>(null);
   const loadingRef = useRef(false);
   const sessionIdRef = useRef<string | undefined>(undefined);
   const activeProductRef = useRef<ProductId | undefined>(undefined);
   const lifecycleRef = useRef(new VisitorSessionLifecycle());
+  const lastSubmissionRef = useRef<RecentSubmission>(null);
 
   const submitQuestion = useCallback(
     async ({
@@ -45,6 +48,21 @@ export function useConversation(
     }: QuestionSubmission) => {
       const normalizedContent = content.trim();
       const productContext = relatedProduct ?? activeProductRef.current;
+      const signalKind = classifyInputSignal(
+        content,
+        messages.length > 0 || Boolean(productContext),
+      );
+
+      if (signalKind !== "valid") {
+        setConversationNotice(getInputSignalMessage(signalKind, language));
+        return false;
+      }
+
+      const submissionKey = `${source}:${questionId ?? ""}:${productContext ?? ""}:${normalizedContent}`;
+      const now = Date.now();
+      if (isAccidentalDuplicateSubmission(lastSubmissionRef.current, submissionKey, now)) {
+        return false;
+      }
 
       if (
         !guide ||
@@ -55,6 +73,8 @@ export function useConversation(
         return false;
       }
 
+      lastSubmissionRef.current = { key: submissionKey, at: now };
+      setConversationNotice(null);
       loadingRef.current = true;
       setIsLoading(true);
       logVoiceDiagnostic("question-submitted", {
@@ -74,7 +94,7 @@ export function useConversation(
       setMessages((currentMessages) => [
         ...currentMessages,
         visitorMessage,
-      ]);
+      ].slice(-MAX_VISIBLE_CONVERSATION_MESSAGES));
 
       const request = lifecycleRef.current.beginRequest();
 
@@ -133,7 +153,7 @@ export function useConversation(
         setMessages((currentMessages) => [
           ...currentMessages,
           guideMessage,
-        ]);
+        ].slice(-MAX_VISIBLE_CONVERSATION_MESSAGES));
         return true;
       } finally {
         if (lifecycleRef.current.isCurrent(request.generation, request.controller)) {
@@ -147,12 +167,16 @@ export function useConversation(
   );
 
   const clearHistory = useCallback(() => {
+    const sessionId = sessionIdRef.current;
     lifecycleRef.current.reset();
     loadingRef.current = false;
     setIsLoading(false);
     setMessages([]);
+    setConversationNotice(null);
+    lastSubmissionRef.current = null;
     sessionIdRef.current = undefined;
     activeProductRef.current = undefined;
+    if (sessionId) void deleteConversationSession(sessionId);
   }, []);
 
   const selectProduct = useCallback((productId: ProductId) => {
@@ -177,6 +201,7 @@ export function useConversation(
   return {
     messages,
     isLoading,
+    conversationNotice,
     submitQuestion,
     clearHistory,
     selectProduct,

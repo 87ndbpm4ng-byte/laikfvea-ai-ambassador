@@ -33,6 +33,7 @@ const MAX_SESSION_ID_LENGTH = 200;
 const sessionManager = new SessionManager({
   store: new InMemorySessionStore(),
 });
+const inFlightSessionIds = new Set<string>();
 const orchestrator = new AIOrchestrator(
   new OrchestratorPipeline({ sessionManager }),
 );
@@ -205,19 +206,23 @@ export async function POST(request: Request) {
   }
 
   try {
+    sessionManager.deleteExpiredSessions(undefined, inFlightSessionIds);
     const usableSessionId =
       conversationRequest.sessionId &&
       sessionManager.readSession(conversationRequest.sessionId)?.status ===
         "active"
         ? conversationRequest.sessionId
         : undefined;
+    if (usableSessionId) inFlightSessionIds.add(usableSessionId);
     const result = await orchestrator.handleMessage({
-      message: conversationRequest.message,
-      guide: guides[conversationRequest.guideId],
-      sessionId: usableSessionId,
-      language: conversationRequest.language,
-      activeProduct: conversationRequest.activeProduct,
-    });
+        message: conversationRequest.message,
+        guide: guides[conversationRequest.guideId],
+        sessionId: usableSessionId,
+        language: conversationRequest.language,
+        activeProduct: conversationRequest.activeProduct,
+      }).finally(() => {
+        if (usableSessionId) inFlightSessionIds.delete(usableSessionId);
+      });
 
     return NextResponse.json<ConversationApiResponse>({
       success: true,
@@ -248,4 +253,15 @@ export async function POST(request: Request) {
       status,
     });
   }
+}
+
+export async function DELETE(request: Request) {
+  const sessionId = new URL(request.url).searchParams.get("sessionId")?.trim();
+
+  if (sessionId && sessionId.length <= MAX_SESSION_ID_LENGTH) {
+    sessionManager.deleteSession(sessionId);
+    inFlightSessionIds.delete(sessionId);
+  }
+
+  return new Response(null, { status: 204 });
 }
