@@ -142,7 +142,7 @@ export function VoiceControls({
         </div>
       </div>
 
-      {playbackBlocked && guideName === "Daniel" ? (
+      {playbackBlocked ? (
         <button className="voice-retry" type="button" onClick={onRetryPlayback}>
           {copy.playResponse}
         </button>
@@ -158,11 +158,15 @@ export function VoiceControls({
         <p className="voice-message" role="alert">
           {error.code === "permission-denied"
             ? copy.microphoneDenied
+            : error.code === "microphone-unavailable"
+              ? copy.microphoneUnavailable
             : error.code === "recognition-timeout"
               ? copy.recognitionTimeout
               : error.code === "recognition-failed"
                 ? copy.recognitionFailed
-                : error.message}
+                : error.code === "synthesis-unavailable"
+                  ? copy.synthesisUnavailable
+                  : copy.recognitionUnavailable}
         </p>
       ) : activationFailed && !audioSessionActivated ? (
         <p className="voice-message" role="status">

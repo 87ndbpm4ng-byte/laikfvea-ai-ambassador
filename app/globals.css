@@ -308,6 +308,7 @@
   color: var(--color-warning);
   font-size: var(--font-size-caption);
   line-height: var(--line-height-body);
+  overflow-wrap: anywhere;
 }
 
 .liveavatar-idle-warning > div {
@@ -1540,6 +1541,7 @@ h1 {
 
 .voice-message {
   color: #7a4d00;
+  overflow-wrap: anywhere;
 }
 
 @keyframes voice-state-dot {

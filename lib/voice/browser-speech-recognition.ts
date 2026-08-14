@@ -51,6 +51,13 @@ function recognitionError(error: string): VoiceError {
     };
   }
 
+  if (error === "audio-capture") {
+    return {
+      code: "microphone-unavailable",
+      message: "A microphone is not available right now.",
+    };
+  }
+
   return {
     code: "recognition-failed",
     message: "I couldn’t hear that clearly. Please try again or type your question.",
@@ -121,7 +128,11 @@ export class BrowserSpeechRecognitionProvider
         callbacks.onFinalTranscript(finalTranscript.trim());
       }
     };
-    recognition.onerror = (event) => callbacks.onError(recognitionError(event.error));
+    recognition.onerror = (event) => {
+      // abort() is an intentional lifecycle action during reset, interruption,
+      // product navigation and a new question. It is not a visitor-facing error.
+      if (event.error !== "aborted") callbacks.onError(recognitionError(event.error));
+    };
     recognition.onend = callbacks.onEnd;
     this.recognition = recognition;
 

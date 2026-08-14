@@ -352,7 +352,58 @@ test("microphone failure keeps the typed-question route visible", () => {
   );
 
   assert.match(markup, /You can still type your question/);
+  assert.match(markup, /Quick Question/);
   assert.doesNotMatch(markup, /OpenAI|ElevenLabs|LiveAvatar|API key/);
+});
+
+test("microphone hardware and speech failures never expose raw provider errors", () => {
+  const baseProps = {
+    inputState: "idle" as const,
+    outputState: "idle" as const,
+    playbackBlocked: false,
+    audioSessionActivated: true,
+    preparingVoice: false,
+    activationFailed: false,
+    guideName: "Emily",
+    language: "en" as const,
+    transcript: "",
+    recognitionSupported: true,
+    synthesisSupported: true,
+    disabled: false,
+    onStartListening: () => undefined,
+    onStopListening: () => undefined,
+    onRetryPlayback: () => undefined,
+  };
+  const microphone = renderToStaticMarkup(
+    <VoiceControls
+      {...baseProps}
+      error={{ code: "microphone-unavailable", message: "DOMException: audio-capture" }}
+    />,
+  );
+  const synthesis = renderToStaticMarkup(
+    <VoiceControls
+      {...baseProps}
+      error={{ code: "synthesis-unavailable", message: "ElevenLabs request failed" }}
+    />,
+  );
+  const blocked = renderToStaticMarkup(
+    <VoiceControls {...baseProps} playbackBlocked error={null} />,
+  );
+
+  assert.match(microphone, /microphone isn’t available right now/i);
+  assert.match(synthesis, /Answers will remain visible on screen/);
+  assert.match(blocked, /Play response/);
+  assert.doesNotMatch(`${microphone}${synthesis}`, /DOMException|audio-capture|ElevenLabs/);
+});
+
+test("recognition attempts are guarded against duplicates and stale callbacks", async () => {
+  const source = await readFile(
+    new URL("../../../hooks/use-voice-mode.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /listeningActiveRef\.current/);
+  assert.match(source, /recognitionGenerationRef\.current !== recognitionGeneration/);
+  assert.match(source, /recognitionGenerationRef\.current \+= 1;[\s\S]*recognition\.abort\(\)/);
 });
 
 test("specialist selection stays passive until a question requires voice and avatar output", async () => {

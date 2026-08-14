@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import {
   generateConversationResponse,
+  getConversationFailureResponse,
   getServiceUnavailableResponse,
   serviceUnavailableResponse,
 } from "@/lib/conversation/response-engine";
@@ -28,6 +29,18 @@ test("service failures use the selected visitor language", () => {
   assert.match(getServiceUnavailableResponse("zh"), /产品信息/);
   assert.match(getServiceUnavailableResponse("yue"), /產品資料/);
   assert.match(getServiceUnavailableResponse("fr"), /informations produit/);
+});
+
+test("network and timeout recovery guidance is localized without technical details", () => {
+  for (const language of ["en", "ru", "zh", "yue", "fr"] as const) {
+    const network = getConversationFailureResponse("network", language);
+    const timeout = getConversationFailureResponse("timeout", language);
+    assert.ok(network.length > 8, language);
+    assert.ok(timeout.length > 8, language);
+    assert.doesNotMatch(`${network} ${timeout}`, /\bHTTP\b|\bAPI\b|OpenAI|LiveAvatar|request ID/i);
+  }
+  assert.match(getConversationFailureResponse("network", "en"), /Quick Question/);
+  assert.match(getConversationFailureResponse("timeout", "en"), /ask your question again/i);
 });
 
 test("successful free-text request returns the server response", async () => {
@@ -117,15 +130,15 @@ test("missing API key produces a safe service-unavailable result", async () => {
   assert.doesNotMatch(result.content, /api|key|openai|retrieval|vercel/i);
 });
 
-test("request timeout produces the same safe visitor response", async () => {
+test("request timeout produces concise retry guidance", async () => {
   globalThis.fetch = async () => {
     throw new DOMException("The operation timed out.", "TimeoutError");
   };
 
   const result = await generateConversationResponse(baseRequest);
 
-  assert.equal(result.content, serviceUnavailableResponse);
-  assert.doesNotMatch(result.content, /timeout|route|server/i);
+  assert.equal(result.content, getConversationFailureResponse("timeout", "en"));
+  assert.doesNotMatch(result.content, /timeout|route|server|provider/i);
 });
 
 test("suggested-question demo fallback requires explicit opt-in", async () => {
@@ -145,11 +158,29 @@ test("suggested-question demo fallback requires explicit opt-in", async () => {
     demoFallback: "suggested-question",
   });
 
-  assert.equal(withoutDemoMode.content, serviceUnavailableResponse);
+  assert.equal(withoutDemoMode.content, getConversationFailureResponse("network", "en"));
   assert.equal(
     withDemoMode.content,
     placeholderResponses["product-comparison"],
   );
+});
+
+test("a visitor can retry immediately after a recoverable network failure", async () => {
+  let attempt = 0;
+  globalThis.fetch = async () => {
+    attempt += 1;
+    if (attempt === 1) throw new TypeError("Network unavailable");
+    return new Response(JSON.stringify({
+      success: true,
+      response: "The documented cycle lasts five minutes.",
+      requestId: "request-retry",
+    }));
+  };
+
+  const failed = await generateConversationResponse(baseRequest);
+  const retried = await generateConversationResponse(baseRequest);
+  assert.equal(failed.content, getConversationFailureResponse("network", "en"));
+  assert.equal(retried.content, "The documented cycle lasts five minutes.");
 });
 
 test("invalid server content is not exposed to visitors", async () => {

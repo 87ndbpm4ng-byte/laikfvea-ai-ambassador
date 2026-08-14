@@ -35,8 +35,18 @@ test("language configuration provides stable recognition locales", () => {
 
 test("connection-loss recovery copy exists in every supported language", () => {
   for (const language of ["en", "ru", "zh", "yue", "fr"] as const) {
-    assert.ok(getUiCopy(language).connectionLost.length > 20, language);
+    const copy = getUiCopy(language);
+    assert.ok(copy.connectionLost.length > 8, language);
+    assert.ok(copy.microphoneDenied.length > 8, language);
+    assert.ok(copy.microphoneUnavailable.length > 8, language);
+    assert.ok(copy.recognitionUnavailable.length > 8, language);
+    assert.doesNotMatch(
+      `${copy.connectionLost} ${copy.microphoneDenied} ${copy.microphoneUnavailable}`,
+      /OpenAI|ElevenLabs|LiveAvatar|DOMException|NotAllowedError|\bHTTP\b|API key/i,
+    );
   }
+  assert.match(getUiCopy("yue").microphoneUnavailable, /咪高峰|快速問題/);
+  assert.doesNotMatch(getUiCopy("yue").microphoneUnavailable, /麦克风|问题/);
 });
 
 test("active-product context is localized in every supported language", () => {

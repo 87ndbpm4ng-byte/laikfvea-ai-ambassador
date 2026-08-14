@@ -15,6 +15,7 @@ export type SpeechPlaybackProvider =
 
 export type VoiceErrorCode =
   | "permission-denied"
+  | "microphone-unavailable"
   | "recognition-unavailable"
   | "recognition-timeout"
   | "recognition-failed"

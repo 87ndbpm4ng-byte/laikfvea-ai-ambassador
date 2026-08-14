@@ -50,6 +50,29 @@ export function getServiceUnavailableResponse(language?: SupportedLanguage) {
   return serviceUnavailableResponse;
 }
 
+export function getConversationFailureResponse(
+  kind: ConversationFailureKind,
+  language?: SupportedLanguage,
+) {
+  if (kind === "network") {
+    if (language === "ru") return "Сейчас не удалось подключиться. Попробуйте ещё раз или выберите быстрый вопрос.";
+    if (language === "zh") return "目前无法连接。请重试或选择快捷问题。";
+    if (language === "yue") return "而家暫時連線唔到。請再試或者揀快速問題。";
+    if (language === "fr") return "Je ne peux pas me connecter pour le moment. Réessayez ou choisissez une question rapide.";
+    return "I couldn’t connect right now. Please try again, or choose a Quick Question.";
+  }
+
+  if (kind === "timeout") {
+    if (language === "ru") return "Ответ занял слишком много времени. Попробуйте задать вопрос ещё раз.";
+    if (language === "zh") return "回答时间过长，请重新提问。";
+    if (language === "yue") return "回答等咗太耐，請再問一次。";
+    if (language === "fr") return "La réponse prend trop de temps. Veuillez poser à nouveau votre question.";
+    return "The response is taking too long. Please ask your question again.";
+  }
+
+  return getServiceUnavailableResponse(language);
+}
+
 type ConversationFailureKind =
   | "http"
   | "invalid-json"
@@ -265,7 +288,7 @@ export async function generateConversationResponse(
     }
 
     return {
-      content: getServiceUnavailableResponse(request.language),
+      content: getConversationFailureResponse(requestError.kind, request.language),
       relatedProduct: request.relatedProduct,
     };
   }

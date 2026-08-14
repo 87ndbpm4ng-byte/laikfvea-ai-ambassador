@@ -82,6 +82,8 @@ export function useVoiceMode({
   const [transcript, setTranscript] = useState("");
   const [error, setError] = useState<VoiceError | null>(null);
   const submittedTranscriptRef = useRef(false);
+  const recognitionGenerationRef = useRef(0);
+  const listeningActiveRef = useRef(false);
   const lastSpokenMessageRef = useRef<string | null>(null);
   const activationPromiseRef = useRef<Promise<boolean> | null>(
     activationPromise ?? null,
@@ -102,6 +104,8 @@ export function useVoiceMode({
   }, []);
 
   const stopAll = useCallback(() => {
+    recognitionGenerationRef.current += 1;
+    listeningActiveRef.current = false;
     recognition.abort();
     synthesis.stop();
     setInputState("idle");
@@ -118,6 +122,8 @@ export function useVoiceMode({
       setTranscript("");
 
       if (!enabled) {
+        recognitionGenerationRef.current += 1;
+        listeningActiveRef.current = false;
         recognition.abort();
         synthesis.reset?.();
         setInputState("idle");
@@ -186,9 +192,13 @@ export function useVoiceMode({
   );
 
   const startListening = useCallback(() => {
-    if (!isEnabled || isConversationLoading) {
+    if (!isEnabled || isConversationLoading || listeningActiveRef.current) {
       return;
     }
+
+    const recognitionGeneration = recognitionGenerationRef.current + 1;
+    recognitionGenerationRef.current = recognitionGeneration;
+    listeningActiveRef.current = true;
 
     synthesis.stop();
     clearSpokenHighlight();
@@ -206,13 +216,18 @@ export function useVoiceMode({
     submittedTranscriptRef.current = false;
 
     recognition.start({
-      onInterimTranscript: setTranscript,
+      onInterimTranscript: (nextTranscript) => {
+        if (recognitionGenerationRef.current !== recognitionGeneration) return;
+        setTranscript(nextTranscript);
+      },
       onFinalTranscript: async (finalTranscript) => {
+        if (recognitionGenerationRef.current !== recognitionGeneration) return;
         if (submittedTranscriptRef.current) {
           return;
         }
 
         submittedTranscriptRef.current = true;
+        listeningActiveRef.current = false;
         setTranscript(finalTranscript);
         setInputState("processing");
         synthesis.stopListening?.();
@@ -225,12 +240,18 @@ export function useVoiceMode({
         }
       },
       onEnd: () => {
+        if (recognitionGenerationRef.current !== recognitionGeneration) return;
+        listeningActiveRef.current = false;
         if (!submittedTranscriptRef.current) synthesis.setReady?.();
         setInputState((current) =>
           current === "processing" ? current : "idle",
         );
       },
-      onError: handleError,
+      onError: (voiceError) => {
+        if (recognitionGenerationRef.current !== recognitionGeneration) return;
+        listeningActiveRef.current = false;
+        handleError(voiceError);
+      },
     });
   }, [
     handleError,
@@ -252,6 +273,8 @@ export function useVoiceMode({
   const prepareQuestionSubmission = useCallback(() => {
     if (!isEnabled || isConversationLoading) return false;
 
+    recognitionGenerationRef.current += 1;
+    listeningActiveRef.current = false;
     recognition.abort();
     synthesis.stop();
     clearSpokenHighlight();
@@ -388,6 +411,8 @@ export function useVoiceMode({
     window.addEventListener("keydown", handleEscape);
     return () => {
       window.removeEventListener("keydown", handleEscape);
+      recognitionGenerationRef.current += 1;
+      listeningActiveRef.current = false;
       recognition.abort();
       synthesis.stop();
       clearSpokenHighlight();
