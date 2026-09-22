@@ -41,7 +41,14 @@ export const exhibitionProducts = {
       yue: "GO 氫水樽",
       fr: "Bouteille d’eau hydrogénée GO",
     },
-    aliases: ["GO", "GO bottle", "Hydrogen Water Bottle GO", "Everyday Bottle"],
+    aliases: [
+      "GO",
+      "GO bottle",
+      "Hydrogen Water Bottle GO",
+      "Everyday Bottle",
+      "hydrogen GO bottle",
+      "GO hydrogen bottle",
+    ],
     knowledgeStatus: "approved",
     knowledgeProductNames: ["everyday", "Everyday Bottle"],
     presentationAssetId: "go-bottle",
@@ -59,7 +66,14 @@ export const exhibitionProducts = {
       yue: "PRO 氫水樽",
       fr: "Bouteille d’eau hydrogénée PRO",
     },
-    aliases: ["PRO", "PRO bottle", "Hydrogen Water Bottle PRO", "Advanced Bottle"],
+    aliases: [
+      "PRO",
+      "PRO bottle",
+      "Hydrogen Water Bottle PRO",
+      "Advanced Bottle",
+      "hydrogen PRO bottle",
+      "PRO hydrogen bottle",
+    ],
     knowledgeStatus: "approved",
     knowledgeProductNames: ["advanced", "Advanced Bottle"],
     presentationAssetId: "pro-bottle",
@@ -77,7 +91,14 @@ export const exhibitionProducts = {
       yue: "水離子機",
       fr: "Ioniseur d’eau",
     },
-    aliases: ["Water Ionizer"],
+    aliases: [
+      "Water Ionizer",
+      "water ioniser",
+      "water ionizr",
+      "water ionizer machine",
+      "ionizer",
+      "ioniser",
+    ],
     knowledgeStatus: "approved",
     knowledgeProductNames: ["water-ionizer", "Water Ionizer"],
     presentationAssetId: null,
@@ -95,7 +116,13 @@ export const exhibitionProducts = {
       yue: "面部及身體用氫水生成器",
       fr: "Générateur d’eau hydrogénée pour le visage et le corps",
     },
-    aliases: ["Hydrogen Water Generator for Face & Body"],
+    aliases: [
+      "Hydrogen Water Generator for Face & Body",
+      "face and body generator",
+      "face & body generator",
+      "face body generator",
+      "hydrogen face generator",
+    ],
     knowledgeStatus: "approved",
     knowledgeProductNames: [
       "face-body-generator",
@@ -116,7 +143,13 @@ export const exhibitionProducts = {
       yue: "水礦化器",
       fr: "Minéralisateur d’eau",
     },
-    aliases: ["Water Mineralizer"],
+    aliases: [
+      "Water Mineralizer",
+      "water mineraliser",
+      "water minerlizer",
+      "mineralizer",
+      "mineraliser",
+    ],
     knowledgeStatus: "approved",
     knowledgeProductNames: ["water-mineralizer", "Water Mineralizer"],
     presentationAssetId: null,
@@ -134,7 +167,13 @@ export const exhibitionProducts = {
       yue: "空氣淨化器",
       fr: "Purificateur d’air",
     },
-    aliases: ["Air Purifier", "Capsula M Size"],
+    aliases: [
+      "Air Purifier",
+      "Capsula M Size",
+      "air purifer",
+      "air purifyer",
+      "air cleaner",
+    ],
     knowledgeStatus: "approved",
     knowledgeProductNames: ["air-purifier", "Air Purifier", "Capsula M Size"],
     presentationAssetId: null,
@@ -148,6 +187,43 @@ export const exhibitionProductList: readonly ExhibitionProduct[] =
 
 export function isProductId(value: unknown): value is ProductId {
   return typeof value === "string" && value in exhibitionProducts;
+}
+
+function escapePattern(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function containsIdentity(text: string, identity: string) {
+  if (identity === "GO" || identity === "PRO") {
+    return new RegExp(`(^|[^\\p{L}\\p{N}])${identity}(?=$|[^\\p{L}\\p{N}])`, "u").test(text);
+  }
+
+  if (/\p{Script=Han}/u.test(identity)) {
+    return text
+      .toLocaleLowerCase("en")
+      .includes(identity.toLocaleLowerCase("en"));
+  }
+
+  const pattern = escapePattern(identity.toLocaleLowerCase("en"));
+  return new RegExp(
+    `(^|[^\\p{L}\\p{N}])${pattern}(?=$|[^\\p{L}\\p{N}])`,
+    "u",
+  ).test(text.toLocaleLowerCase("en"));
+}
+
+/** Resolves only exact, curated portfolio identities found inside visitor text. */
+export function resolveProductFromText(value: unknown): ProductId | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+
+  const matches = exhibitionProductList.filter((product) =>
+    [
+      product.exhibitionName,
+      ...Object.values(product.displayNames),
+      ...product.aliases,
+    ].some((identity) => containsIdentity(value, identity)),
+  );
+
+  return matches.length === 1 ? matches[0].id : null;
 }
 
 export function resolveKnowledgeProductId(value: unknown): ProductId | null {

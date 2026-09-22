@@ -9,7 +9,10 @@ import type {
   VisitorIntentId,
 } from "@/types/experience";
 import type { ProductId } from "@/types/product";
-import { exhibitionProducts } from "@/lib/data/exhibition-products";
+import {
+  exhibitionProducts,
+  resolveProductFromText,
+} from "@/lib/data/exhibition-products";
 
 const REFERENCE_PATTERN =
   /\b(the other one|the first one|the second one|which one|both|its|it|that|this)\b/gi;
@@ -35,29 +38,11 @@ function explicitProduct(
     return "both";
   }
 
-  if (/\beveryday(?:\s+bottle)?\b/.test(normalized)) {
-    return "everyday";
-  }
-
-  if (/\badvanced(?:\s+bottle)?\b/.test(normalized)) {
-    return "advanced";
-  }
-
-  if (/\b(?:water ionizer|ionized water|ionised water)\b/.test(normalized)) {
-    return "water-ionizer";
-  }
-
-  if (/\b(?:hydrogen water generator for face (?:&|and) body|face (?:&|and) body generator|portable hydrogen skin (?:humidifier|sprayer))\b/.test(normalized)) {
-    return "face-body-generator";
-  }
-
-  if (/\b(?:air purifier|capsula m size)\b/.test(normalized)) {
-    return "air-purifier";
-  }
-
-  if (/\b(?:water mineralizer|severyanka mineral additive)\b/.test(normalized)) {
-    return "water-mineralizer";
-  }
+  const registryProduct = resolveProductFromText(message);
+  if (registryProduct) return registryProduct;
+  if (/\b(?:ionized water|ionised water)\b/.test(normalized)) return "water-ionizer";
+  if (/\bportable hydrogen skin (?:humidifier|sprayer)\b/.test(normalized)) return "face-body-generator";
+  if (/\bseveryanka mineral additive\b/.test(normalized)) return "water-mineralizer";
 
   if (/\bthe first one\b/.test(normalized)) {
     return session.comparisonProducts?.[0] ?? "everyday";

@@ -1,4 +1,4 @@
-import { exhibitionProductList } from "@/lib/data/exhibition-products";
+import { resolveProductFromText } from "@/lib/data/exhibition-products";
 import { createKnowledgeQueryText } from "@/lib/i18n/knowledge-query";
 import type { SupportedLanguage } from "@/types/language";
 import type { ProductId } from "@/types/product";
@@ -269,17 +269,6 @@ export function resolveQuickQuestionProduct(
   message: string,
   language: SupportedLanguage,
 ): ProductId | null {
-  const normalized = createKnowledgeQueryText(message, language).toLocaleLowerCase("en");
-
-  if (/\bgo\b/.test(normalized) && /\bpro\b/.test(normalized)) return null;
-  if (/\bgo\b/.test(normalized)) return "everyday";
-  if (/\bpro\b/.test(normalized)) return "advanced";
-
-  return (
-    exhibitionProductList.find((product) =>
-      [product.exhibitionName, ...product.aliases].some((name) =>
-        normalized.includes(name.toLocaleLowerCase("en")),
-      ),
-    )?.id ?? null
-  );
+  const knowledgeText = createKnowledgeQueryText(message, language);
+  return resolveProductFromText(knowledgeText);
 }

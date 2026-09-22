@@ -11,7 +11,11 @@ import type {
 import type { SessionConversationEntry } from "@/lib/session/conversation-history";
 import type { VisitorSession } from "@/lib/session/session-types";
 import { createKnowledgeQueryText } from "@/lib/i18n/knowledge-query";
-import { isProductId } from "@/lib/data/exhibition-products";
+import {
+  exhibitionProducts,
+  isProductId,
+  resolveProductFromText,
+} from "@/lib/data/exhibition-products";
 
 const STOP_WORDS = new Set([
   "a",
@@ -149,26 +153,15 @@ export function tokenizeRetrievalText(text: string): string[] {
 
 function inferProduct(text: string): RetrievalProduct | null {
   const normalized = text.toLocaleLowerCase("en");
-  if (/\b(?:water ionizer|ionized water|ionised water)\b/.test(normalized)) {
-    return "water-ionizer";
-  }
-  if (/\b(?:hydrogen water generator for face (?:&|and) body|face (?:&|and) body generator|portable hydrogen skin (?:humidifier|sprayer))\b/.test(normalized)) {
-    return "face-body-generator";
-  }
-  if (/\b(?:air purifier|capsula m size)\b/.test(normalized)) {
-    return "air-purifier";
-  }
-  if (/\b(?:water mineralizer|severyanka mineral additive)\b/.test(normalized)) {
-    return "water-mineralizer";
-  }
+  const registryProduct = resolveProductFromText(text);
+  if (registryProduct) return registryProduct;
+  if (/\b(?:ionized water|ionised water)\b/.test(normalized)) return "water-ionizer";
+  if (/\bportable hydrogen skin (?:humidifier|sprayer)\b/.test(normalized)) return "face-body-generator";
+  if (/\bseveryanka mineral additive\b/.test(normalized)) return "water-mineralizer";
   const explicitlyNamesGo =
-    /\bGO\b/.test(text) ||
-    /\b(everyday|go bottle|hydrogen water bottle go|portable|compact)\b/.test(normalized);
+    /\b(everyday|portable|compact)\b/.test(normalized);
   const explicitlyNamesPro =
-    /\bPRO\b/.test(text) ||
-    /\b(advanced|pro bottle|hydrogen water bottle pro)\b/.test(
-      normalized,
-    );
+    /\badvanced\b/.test(normalized);
   if (explicitlyNamesGo && explicitlyNamesPro) return null;
   if (explicitlyNamesGo) return "everyday";
   if (explicitlyNamesPro) return "advanced";
@@ -238,6 +231,10 @@ export function createRetrievalQuery(input: {
     input.message,
     input.session.language,
   );
+  const recognizedProduct = inferProduct(knowledgeText);
+  const retrievalText = recognizedProduct
+    ? `${knowledgeText} ${exhibitionProducts[recognizedProduct].exhibitionName}`
+    : knowledgeText;
   const recentEntries: SessionConversationEntry[] = [
     ...input.session.conversationHistory,
   ].slice(-RETRIEVAL_CONFIG.maxRecentMessages);
@@ -249,15 +246,15 @@ export function createRetrievalQuery(input: {
     text: knowledgeText,
     normalizedTerms: [
       ...new Set([
-        ...tokenizeRetrievalText(knowledgeText),
-        ...expandedTerms(knowledgeText, input.session),
+        ...tokenizeRetrievalText(retrievalText),
+        ...expandedTerms(retrievalText, input.session),
       ]),
     ],
     activeProduct:
-      inferProduct(knowledgeText) ?? productFromSession(input.session),
+      recognizedProduct ?? productFromSession(input.session),
     visitorIntent: input.session.currentIntent,
     conversationStage: input.session.currentConversationStage,
     recentContext,
-    sectionTypes: sectionTypesFor(knowledgeText),
+    sectionTypes: sectionTypesFor(retrievalText),
   };
 }

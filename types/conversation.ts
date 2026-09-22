@@ -86,6 +86,7 @@ export type SuggestedQuestion = {
 };
 
 export type JourneyScreen =
+  | "attract"
   | "idle"
   | "language"
   | "conversation"

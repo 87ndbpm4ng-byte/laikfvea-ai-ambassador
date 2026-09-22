@@ -4,12 +4,18 @@ import test from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import Home from "@/app/page";
 import {
+  AttractScreen,
   ConversationScreen,
   ProductDetailScreen,
   ProductExplorerScreen,
   SpecialistSelectionScreen,
 } from "@/components/screens/journey-screens";
 import { VoiceControls } from "@/components/ui/voice-controls";
+import { LiveAvatarPresentation } from "@/components/liveavatar/liveavatar-renderer";
+import type {
+  LiveAvatarOutput,
+  LiveAvatarSnapshot,
+} from "@/lib/liveavatar/liveavatar-types";
 import type { SpeechSynthesisProvider } from "@/lib/voice/voice-types";
 import type { SupportedLanguage } from "@/types/language";
 import type { ConversationMessage } from "@/types/conversation";
@@ -25,6 +31,59 @@ const silentSpeechProvider: SpeechSynthesisProvider = {
   speak: () => undefined,
   stop: () => undefined,
 };
+
+const inertAvatarService: LiveAvatarOutput = {
+  isConnected: false,
+  supportsStreamingAudio: false,
+  connect: async () => false,
+  reconnect: async () => false,
+  disconnect: async () => undefined,
+  dispose: async () => undefined,
+  attach: () => undefined,
+  startListening: () => undefined,
+  stopListening: () => undefined,
+  setReady: () => undefined,
+  setThinking: () => undefined,
+  markFallback: () => undefined,
+  speakAudio: async () => undefined,
+  beginAudioStream: async () => undefined,
+  sendAudioChunk: () => undefined,
+  endAudioStream: () => undefined,
+  interruptAudioStream: () => undefined,
+  interrupt: () => undefined,
+  subscribe: () => () => undefined,
+};
+
+function avatarSnapshot(
+  state: LiveAvatarSnapshot["state"],
+  error: string | null = null,
+): LiveAvatarSnapshot {
+  return {
+    state,
+    sessionId: state === "disconnected" ? null : "mock-session",
+    error,
+    reconnectAttemptCount: 0,
+    outputPath: state === "disconnected" ? "elevenlabs-fallback" : "liveavatar",
+    environment: "sandbox",
+    idleTimeoutSeconds: 120,
+  };
+}
+
+function renderAvatarState(
+  state: LiveAvatarSnapshot["state"],
+  language: SupportedLanguage = "en",
+  guideId: "daniel" | "emily" = "daniel",
+  error: string | null = null,
+) {
+  return renderToStaticMarkup(
+    <LiveAvatarPresentation
+      service={inertAvatarService}
+      guideId={guideId}
+      language={language}
+      snapshot={avatarSnapshot(state, error)}
+    />,
+  );
+}
 
 function renderConversation(
   guideId: "daniel" | "emily",
@@ -47,12 +106,75 @@ function renderConversation(
   );
 }
 
-test("the visitor journey begins with language selection", () => {
+test("the visitor journey begins with a neutral portrait-first kiosk attract screen", () => {
   const markup = renderToStaticMarkup(<Home />);
 
-  assert.match(markup, /Choose your language/);
-  assert.match(markup, /English/);
+  assert.match(markup, /Explore water and air technology/);
+  assert.match(markup, /Touch to begin/);
+  assert.match(markup, /screen-container--full-bleed/);
+  assert.match(markup, /src="\/kiosk\/idle-bubbles\.mp4"/);
+  assert.match(markup, /autoPlay=""/);
+  assert.match(markup, /loop=""/);
+  assert.match(markup, /muted=""/);
+  assert.doesNotMatch(markup, /Choose your language/);
   assert.doesNotMatch(markup, /Meet your AI specialists/);
+});
+
+test("the kiosk attract screen localizes its neutral invitation in all five languages", () => {
+  const expected = {
+    en: /Explore water and air technology/,
+    ru: /Исследуйте технологии воды и воздуха/,
+    zh: /探索水与空气科技/,
+    yue: /探索水同空氣科技/,
+    fr: /Découvrez les technologies de l’eau et de l’air/,
+  } as const;
+
+  for (const language of ["en", "ru", "zh", "yue", "fr"] as const) {
+    const markup = renderToStaticMarkup(
+      <AttractScreen language={language} onBegin={() => undefined} />,
+    );
+    assert.match(markup, expected[language]);
+    assert.match(markup, /Touch|Коснитесь|轻触|輕觸|Touchez/);
+    assert.doesNotMatch(markup, /Hydrogen Water Bottle GO|Hydrogen Water Bottle PRO/);
+  }
+});
+
+test("the visual specialist panel distinguishes idle, connecting, and genuine failure", () => {
+  const idleDaniel = renderAvatarState("disconnected");
+  const idleEmily = renderAvatarState("disconnected", "en", "emily");
+  const connecting = renderAvatarState("connecting");
+  const failed = renderAvatarState("disconnected", "en", "daniel", "safe failure");
+  const connected = renderAvatarState("connected");
+
+  assert.match(idleDaniel, /data-visual-phase="idle"/);
+  assert.match(idleDaniel, /Ready when you are/);
+  assert.match(idleDaniel, /Daniel will appear when you start a conversation/);
+  assert.doesNotMatch(idleDaniel, /Visual specialist unavailable/);
+  assert.match(idleEmily, /Emily will appear when you start a conversation/);
+
+  assert.match(connecting, /data-visual-phase="connecting"/);
+  assert.match(connecting, /Daniel is getting ready/);
+  assert.match(failed, /data-visual-phase="fallback"/);
+  assert.match(failed, /Visual specialist unavailable/);
+  assert.match(failed, /You can still continue the conversation/);
+  assert.match(connected, /data-visual-phase="connected"/);
+  assert.doesNotMatch(connected, /liveavatar-ambassador-placeholder/);
+});
+
+test("the intentional avatar idle state renders safely in all five languages", () => {
+  const expected = {
+    en: /Ready when you are/,
+    ru: /Всё готово/,
+    zh: /随时可以开始/,
+    yue: /隨時可以開始/,
+    fr: /À vous de commencer/,
+  } as const;
+
+  for (const language of ["en", "ru", "zh", "yue", "fr"] as const) {
+    const markup = renderAvatarState("disconnected", language);
+    assert.match(markup, expected[language]);
+    assert.match(markup, /data-visual-phase="idle"/);
+  }
 });
 
 test("specialist selection presents Daniel and Emily as equal direct choices", () => {
@@ -233,7 +355,7 @@ test("shared conversation labels adapt to Emily", () => {
   assert.match(markup, />Talk</);
   assert.doesNotMatch(markup, /Begin voice|Enable voice|Start conversation/);
   assert.match(markup, /Wellness Specialist/);
-  assert.match(markup, /Visual session unavailable/);
+  assert.match(markup, /Visual specialist unavailable/);
 });
 
 test("fallback presentation remains usable and hides raw provider errors", () => {

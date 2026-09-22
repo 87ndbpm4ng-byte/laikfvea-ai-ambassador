@@ -49,6 +49,36 @@ test("connection-loss recovery copy exists in every supported language", () => {
   assert.doesNotMatch(getUiCopy("yue").microphoneUnavailable, /麦克风|问题/);
 });
 
+test("avatar idle, connecting, and fallback copy exists in every supported language", () => {
+  for (const language of ["en", "ru", "zh", "yue", "fr"] as const) {
+    const copy = getUiCopy(language);
+    const text = [
+      copy.visualIdleTitle,
+      copy.visualIdleDescription("Daniel"),
+      copy.gettingReady("Daniel"),
+      copy.visualUnavailable,
+      copy.visualFallbackDescription,
+    ].join(" ");
+
+    assert.ok(copy.visualIdleTitle.length > 3, language);
+    assert.ok(copy.visualIdleDescription("Daniel").length > 12, language);
+    assert.doesNotMatch(
+      text,
+      /LiveAvatar|provider|session ID|token|API|HTTP|DOMException/i,
+    );
+  }
+
+  const cantonese = getUiCopy("yue");
+  assert.match(
+    `${cantonese.visualIdleTitle} ${cantonese.visualIdleDescription("Daniel")} ${cantonese.visualFallbackDescription}`,
+    /隨時|對話|繼續/,
+  );
+  assert.doesNotMatch(
+    `${cantonese.visualIdleTitle} ${cantonese.visualIdleDescription("Daniel")}`,
+    /随时|对话|这里/,
+  );
+});
+
 test("the client input boundary has concise static copy in every language", () => {
   for (const language of ["en", "ru", "zh", "yue", "fr"] as const) {
     const message = getUiCopy(language).questionLimitReached(1_000);

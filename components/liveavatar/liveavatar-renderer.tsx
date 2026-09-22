@@ -44,9 +44,6 @@ export function LiveAvatarRenderer({
   idleSecondsRemaining?: number | null;
   language: SupportedLanguage;
 }) {
-  const guide = guides[guideId];
-  const copy = getUiCopy(language);
-  const guideDisplayName = copy.guideDisplayName[guideId];
   const [snapshot, setSnapshot] =
     useState<LiveAvatarSnapshot>(INITIAL_SNAPSHOT);
   const [developmentStatus, setDevelopmentStatus] =
@@ -83,6 +80,43 @@ export function LiveAvatarRenderer({
     };
   }, []);
 
+  return (
+    <LiveAvatarPresentation
+      service={service}
+      guideId={guideId}
+      language={language}
+      snapshot={snapshot}
+      videoRef={videoRef}
+      developmentStatus={developmentStatus}
+      lipSync={lipSync}
+      idleSecondsRemaining={idleSecondsRemaining}
+    />
+  );
+}
+
+export function LiveAvatarPresentation({
+  service,
+  guideId,
+  language,
+  snapshot,
+  videoRef,
+  developmentStatus = null,
+  lipSync = null,
+  idleSecondsRemaining,
+}: {
+  service: LiveAvatarOutput;
+  guideId: GuideId;
+  language: SupportedLanguage;
+  snapshot: LiveAvatarSnapshot;
+  videoRef?: (video: HTMLVideoElement | null) => void;
+  developmentStatus?: DevelopmentStatus | null;
+  lipSync?: LipSyncMeasurement | null;
+  idleSecondsRemaining?: number | null;
+}) {
+  const guide = guides[guideId];
+  const copy = getUiCopy(language);
+  const guideDisplayName = copy.guideDisplayName[guideId];
+
   const isUnavailable =
     snapshot.state === "disconnected" && Boolean(snapshot.error);
   const stateLabels = {
@@ -105,19 +139,40 @@ export function LiveAvatarRenderer({
     snapshot.state === "disconnected"
       ? isUnavailable
         ? copy.voiceOnlyMode
-        : copy.readyFor(guide.name)
+        : copy.visualIdleTitle
       : stateLabels[snapshot.state];
   const visibleStateDescription =
     snapshot.state === "disconnected"
       ? isUnavailable
-        ? `${guideDisplayName}: ${copy.voiceRemainsAvailable}`
-        : copy.visualReady
+        ? copy.visualFallbackDescription
+        : copy.visualIdleDescription(guide.name)
       : stateDescriptions[snapshot.state];
+  const placeholder =
+    snapshot.state === "connecting"
+      ? {
+          title: copy.gettingReady(guide.name),
+          description: copy.visualPreparing,
+          phase: "connecting",
+        }
+      : snapshot.state === "disconnected"
+        ? isUnavailable
+          ? {
+              title: copy.visualUnavailable,
+              description: copy.visualFallbackDescription,
+              phase: "fallback",
+            }
+          : {
+              title: copy.visualIdleTitle,
+              description: copy.visualIdleDescription(guide.name),
+              phase: "idle",
+            }
+        : null;
 
   return (
     <div
       className="liveavatar-ambassador"
       data-state={snapshot.state}
+      data-visual-phase={placeholder?.phase ?? "connected"}
       aria-label={`${guideDisplayName}: ${copy.visualPreview}`}
     >
       <div
@@ -133,15 +188,16 @@ export function LiveAvatarRenderer({
           playsInline
           aria-label={`${guideDisplayName}: ${copy.visualPreview}`}
         />
-        {snapshot.state === "disconnected" ? (
-          <div className="liveavatar-ambassador-placeholder">
+        {placeholder ? (
+          <div className="liveavatar-ambassador-placeholder" aria-hidden="true">
             <span className="specialist-silhouette" aria-hidden="true">
               <i />
               <i />
             </span>
-            <p>
-              {copy.visualUnavailable}
-            </p>
+            <div>
+              <strong>{placeholder.title}</strong>
+              <p>{placeholder.description}</p>
+            </div>
           </div>
         ) : null}
       </div>

@@ -5,6 +5,11 @@ import type { SupportedLanguage } from "@/types/language";
 type TopicCopy = { title: string; description: string; question: string };
 
 type UiCopy = {
+  attractEyebrow: string;
+  attractHeading: string;
+  attractSupport: string;
+  attractAction: string;
+  attractHint: string;
   languageHeading: string;
   languagesAria: string;
   back: string;
@@ -41,6 +46,9 @@ type UiCopy = {
   continueSession: string;
   visualUnavailable: string;
   voiceRemainsAvailable: string;
+  visualIdleTitle: string;
+  visualIdleDescription: (name: string) => string;
+  visualFallbackDescription: string;
   voiceOnlyMode: string;
   visualPreparing: string;
   visualReady: string;
@@ -110,6 +118,11 @@ type UiCopy = {
 };
 
 const en: UiCopy = {
+  attractEyebrow: "EXHIBITION PRODUCT GUIDE",
+  attractHeading: "Explore water and air technology.",
+  attractSupport: "Ask questions, compare products, and find the information you need.",
+  attractAction: "Touch to begin",
+  attractHint: "Choose a language to start",
   languageHeading: "Choose your language",
   languagesAria: "Languages",
   back: "Back",
@@ -163,8 +176,11 @@ const en: UiCopy = {
   stillExploring: "Still exploring?",
   restartCountdown: (seconds) => `This session will restart in ${seconds} seconds.`,
   continueSession: "Continue session",
-  visualUnavailable: "Visual session unavailable.",
+  visualUnavailable: "Visual specialist unavailable",
   voiceRemainsAvailable: "Voice conversation remains available.",
+  visualIdleTitle: "Ready when you are",
+  visualIdleDescription: (name) => `${name} will appear when you start a conversation.`,
+  visualFallbackDescription: "You can still continue the conversation.",
   voiceOnlyMode: "Voice-only mode",
   visualPreparing: "Preparing the visual connection.",
   visualReady: "Ask a question when you’re ready.",
@@ -244,6 +260,11 @@ const en: UiCopy = {
 
 const ru: UiCopy = {
   ...en,
+  attractEyebrow: "ВЫСТАВОЧНЫЙ ГИД ПО ПРОДУКТАМ",
+  attractHeading: "Исследуйте технологии воды и воздуха.",
+  attractSupport: "Задавайте вопросы, сравнивайте продукты и находите нужную информацию.",
+  attractAction: "Коснитесь, чтобы начать",
+  attractHint: "Сначала выберите язык",
   languageHeading: "Выберите язык",
   languagesAria: "Языки",
   back: "Назад",
@@ -294,8 +315,11 @@ const ru: UiCopy = {
   stillExploring: "Продолжаете знакомство?",
   restartCountdown: (seconds) => `Сеанс перезапустится через ${seconds} сек.`,
   continueSession: "Продолжить сеанс",
-  visualUnavailable: "Видеосеанс недоступен.",
+  visualUnavailable: "Изображение специалиста недоступно",
   voiceRemainsAvailable: "Голосовой разговор остаётся доступным.",
+  visualIdleTitle: "Всё готово",
+  visualIdleDescription: (name) => `${name === "Daniel" ? "Дэниел" : "Эмили"} появится, когда вы начнёте разговор.`,
+  visualFallbackDescription: "Вы всё равно можете продолжить разговор.",
   voiceOnlyMode: "Голосовой режим",
   visualPreparing: "Подготавливаем видеосвязь.",
   visualReady: "Задайте вопрос, когда будете готовы.",
@@ -375,6 +399,11 @@ const ru: UiCopy = {
 
 const zh: UiCopy = {
   ...en,
+  attractEyebrow: "展会产品导览",
+  attractHeading: "探索水与空气科技。",
+  attractSupport: "提出问题、比较产品，并找到您需要的信息。",
+  attractAction: "轻触开始",
+  attractHint: "选择语言后开始",
   languageHeading: "请选择语言",
   languagesAria: "语言",
   back: "返回",
@@ -425,8 +454,11 @@ const zh: UiCopy = {
   stillExploring: "还在了解吗？",
   restartCountdown: (seconds) => `本次对话将在 ${seconds} 秒后重置。`,
   continueSession: "继续对话",
-  visualUnavailable: "视频形象暂时不可用。",
+  visualUnavailable: "视频专家暂时不可用",
   voiceRemainsAvailable: "仍可继续语音对话。",
+  visualIdleTitle: "随时可以开始",
+  visualIdleDescription: (name) => `开始对话后，${name} 将出现在这里。`,
+  visualFallbackDescription: "您仍可继续对话。",
   voiceOnlyMode: "纯语音模式",
   visualPreparing: "正在准备视频连接。",
   visualReady: "准备好后，请提出您的问题。",
@@ -506,6 +538,11 @@ const zh: UiCopy = {
 
 const yue: UiCopy = {
   ...zh,
+  attractEyebrow: "展覽產品導覽",
+  attractHeading: "探索水同空氣科技。",
+  attractSupport: "可以問問題、比較產品，搵到您需要嘅資料。",
+  attractAction: "輕觸開始",
+  attractHint: "揀語言後開始",
   languageHeading: "請選擇語言",
   languagesAria: "語言",
   back: "返回",
@@ -556,8 +593,11 @@ const yue: UiCopy = {
   stillExploring: "仲想繼續了解？",
   restartCountdown: (seconds) => `今次對話會喺 ${seconds} 秒後重新開始。`,
   continueSession: "繼續對話",
-  visualUnavailable: "視像形象暫時未能提供。",
+  visualUnavailable: "視像專員暫時未能提供",
   voiceRemainsAvailable: "您仍然可以用語音繼續傾談。",
+  visualIdleTitle: "隨時可以開始",
+  visualIdleDescription: (name) => `開始對話之後，${name} 就會喺呢度出現。`,
+  visualFallbackDescription: "你仍然可以繼續對話。",
   voiceOnlyMode: "純語音模式",
   visualPreparing: "準備緊視像連線。",
   visualReady: "準備好就可以問問題。",
@@ -637,6 +677,11 @@ const yue: UiCopy = {
 
 const fr: UiCopy = {
   ...en,
+  attractEyebrow: "GUIDE PRODUITS DU SALON",
+  attractHeading: "Découvrez les technologies de l’eau et de l’air.",
+  attractSupport: "Posez vos questions, comparez les produits et trouvez les informations dont vous avez besoin.",
+  attractAction: "Touchez pour commencer",
+  attractHint: "Choisissez une langue pour démarrer",
   languageHeading: "Choisissez votre langue",
   languagesAria: "Langues",
   back: "Retour",
@@ -687,8 +732,11 @@ const fr: UiCopy = {
   stillExploring: "Vous souhaitez continuer ?",
   restartCountdown: (seconds) => `Cette conversation redémarrera dans ${seconds} secondes.`,
   continueSession: "Continuer la conversation",
-  visualUnavailable: "L’avatar visuel est momentanément indisponible.",
+  visualUnavailable: "Spécialiste visuel indisponible",
   voiceRemainsAvailable: "La conversation vocale reste disponible.",
+  visualIdleTitle: "À vous de commencer",
+  visualIdleDescription: (name) => `${name} apparaîtra lorsque vous commencerez la conversation.`,
+  visualFallbackDescription: "Vous pouvez tout de même poursuivre la conversation.",
   voiceOnlyMode: "Mode vocal uniquement",
   visualPreparing: "Préparation de la connexion visuelle.",
   visualReady: "Posez votre question lorsque vous êtes prêt.",

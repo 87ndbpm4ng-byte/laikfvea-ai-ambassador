@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScreenContainer } from "@/components/layout/screen-container";
 import {
+  AttractScreen,
   ConversationScreen,
   ProductComparisonScreen,
   ProductDetailScreen,
@@ -28,7 +29,7 @@ import type { ProductId } from "@/types/product";
 import type { SupportedLanguage } from "@/types/language";
 
 export default function Home() {
-  const [screen, setScreen] = useState<JourneyScreen>("language");
+  const [screen, setScreen] = useState<JourneyScreen>("attract");
   const [selectedLanguage, setSelectedLanguage] =
     useState<SupportedLanguage | null>(null);
   const [selectedGuideId, setSelectedGuideId] = useState<GuideId | null>(null);
@@ -132,7 +133,7 @@ export default function Home() {
     setSelectedGuideId(null);
     setSelectedProduct("everyday");
     setVoiceActivation(null);
-    setScreen("language");
+    setScreen("attract");
 
     void Promise.all([
       liveAvatarServices.daniel.disconnect(),
@@ -183,8 +184,13 @@ export default function Home() {
 
   return (
     <main>
-      <ScreenContainer>
-        {screen === "language" ? (
+      <ScreenContainer fullBleed={screen === "attract"}>
+        {screen === "attract" ? (
+          <AttractScreen
+            language={activeLanguage}
+            onBegin={() => setScreen("language")}
+          />
+        ) : screen === "language" ? (
           <section
             className="screen-content language-content"
             aria-labelledby="language-heading"

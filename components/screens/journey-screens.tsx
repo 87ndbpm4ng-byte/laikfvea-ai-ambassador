@@ -34,6 +34,42 @@ import type { SupportedLanguage } from "@/types/language";
 import { getUiCopy } from "@/lib/i18n/ui-copy";
 import { MAX_CONVERSATION_MESSAGE_LENGTH } from "@/lib/conversation/conversation-limits";
 
+export function AttractScreen({
+  language,
+  onBegin,
+}: {
+  language: SupportedLanguage;
+  onBegin: () => void;
+}) {
+  const copy = getUiCopy(language);
+
+  return (
+    <section
+      className="screen-content attract-content attract-content-video"
+      aria-labelledby="attract-heading"
+    >
+      <video
+        className="attract-video"
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+        aria-hidden="true"
+      >
+        <source src="/kiosk/idle-bubbles.mp4" type="video/mp4" />
+      </video>
+      <div className="attract-veil" aria-hidden="true" />
+      <h1 id="attract-heading" className="sr-only">
+        {copy.attractHeading}
+      </h1>
+      <button className="attract-action" type="button" onClick={onBegin}>
+        <span>{copy.attractAction}</span>
+      </button>
+    </section>
+  );
+}
+
 export function SpecialistSelectionScreen({
   language,
   onSelect,
