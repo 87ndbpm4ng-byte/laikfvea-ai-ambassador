@@ -54,6 +54,11 @@ import {
   analyzeCommercialIntent,
   commercialHandoffResponse,
 } from "@/lib/orchestrator/commercial-handoff";
+import {
+  latencyDuration,
+  latencyNow,
+  logTurnLatency,
+} from "@/lib/observability/turn-latency";
 
 const INSUFFICIENT_KNOWLEDGE_RESPONSE =
   "The available product documentation does not give me enough information to answer that reliably.";
@@ -147,12 +152,14 @@ export class ExistingOpenAIProvider implements OrchestratorAIProvider {
 
   constructor(private readonly promptBuilder: PromptBuilder) {}
 
-  async generate(prompt: OrchestratorPrompt, guide: Guide) {
+  async generate(prompt: OrchestratorPrompt, guide: Guide, attempt = 1) {
     return generateOpenAIResponse({
       message: this.promptBuilder.renderForExistingService(prompt),
       guide,
       history: toOpenAIHistory(prompt),
       language: resolveSupportedLanguage(prompt.sessionContext.language),
+      turnId: prompt.turnId,
+      attempt,
     });
   }
 }
@@ -246,7 +253,7 @@ export class OrchestratorPipeline {
       });
 
       if (commercialIntent.kind === "pure") {
-        const retrievalResult = createSkippedRetrievalResult(retrievalQuery);
+        const retrievalResult = this.skipRetrieval(retrievalQuery, input.turnId);
         const response = commercialHandoffResponse(activeSession.language);
         const updatedSession = this.sessionManager.recordAssistantMessage(
           activeSession.sessionId,
@@ -268,8 +275,8 @@ export class OrchestratorPipeline {
         responseSession.language,
         responseSession,
       )
-        ? await this.retrieval.search(retrievalQuery)
-        : createSkippedRetrievalResult(retrievalQuery);
+        ? await this.runRetrieval(retrievalQuery, input.turnId)
+        : this.skipRetrieval(retrievalQuery, input.turnId);
       const context = createOrchestratorContext({
         session: responseSession,
         experience,
@@ -277,6 +284,7 @@ export class OrchestratorPipeline {
         userMessage: commercialIntent.productMessage ?? message,
         metadata: {
           requestId: this.createId(),
+          turnId: input.turnId,
           receivedAt: this.clock().toISOString(),
           providerId: this.provider.id,
           guide: input.guide,
@@ -313,6 +321,7 @@ export class OrchestratorPipeline {
                   ],
                 },
                 input.guide,
+                2,
               ),
             )
           : generated;
@@ -416,9 +425,10 @@ export class OrchestratorPipeline {
   private async requestResponse(
     prompt: OrchestratorPrompt,
     guide: Guide,
+    attempt = 1,
   ) {
     try {
-      const response = (await this.provider.generate(prompt, guide)).trim();
+      const response = (await this.provider.generate(prompt, guide, attempt)).trim();
 
       if (!response) {
         throw new Error("The AI provider returned an empty response.");
@@ -428,5 +438,32 @@ export class OrchestratorPipeline {
     } catch (error) {
       throw new OpenAIFailureError({ cause: error });
     }
+  }
+
+  private async runRetrieval(
+    query: Parameters<KnowledgeRetriever["search"]>[0],
+    turnId?: string,
+  ) {
+    const startedAt = latencyNow();
+    logTurnLatency(turnId, "retrieval.start");
+    const result = await this.retrieval.search(query);
+    logTurnLatency(turnId, "retrieval.end", {
+      durationMs: latencyDuration(startedAt),
+      skipped: false,
+      confidence: result.confidence,
+    });
+    return result;
+  }
+
+  private skipRetrieval(
+    query: Parameters<KnowledgeRetriever["search"]>[0],
+    turnId?: string,
+  ) {
+    logTurnLatency(turnId, "retrieval.start", { skipped: true });
+    logTurnLatency(turnId, "retrieval.end", {
+      durationMs: 0,
+      skipped: true,
+    });
+    return createSkippedRetrievalResult(query);
   }
 }

@@ -22,6 +22,11 @@ import {
   markStreamingProgress,
 } from "@/lib/voice/lip-sync-diagnostics";
 import { PcmStreamChunker } from "@/lib/voice/pcm-stream-chunker";
+import {
+  latencyDuration,
+  latencyNow,
+  logTurnLatency,
+} from "@/lib/observability/turn-latency";
 
 type LiveAvatarSpeechOptions = {
   avatar: LiveAvatarOutput;
@@ -175,9 +180,12 @@ export class LiveAvatarSpeechSynthesisProvider
     requestId: number,
   ) {
     const diagnosticId = `${this.guideId}-${requestId}-${Date.now()}`;
-    const ttsStartedAt = performance.now();
+    const turnId = `${this.guideId}:${requestId}`;
+    const ttsStartedAt = latencyNow();
+    const latency = callbacks.latency;
     beginLipSyncMeasurement(diagnosticId);
     try {
+      logTurnLatency(latency?.turnId, "liveavatar-speech-client.start");
       const response = await this.fetcher("/api/liveavatar/speech", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -185,6 +193,7 @@ export class LiveAvatarSpeechSynthesisProvider
           text,
           guideId: this.guideId,
           language: this.language(),
+          latencyTurnId: latency?.turnId,
         }),
         signal: controller.signal,
       });
@@ -231,7 +240,7 @@ export class LiveAvatarSpeechSynthesisProvider
               payload.alignment.character_end_times_seconds,
           }
         : undefined;
-      const ttsCompletedAt = performance.now();
+      const ttsCompletedAt = latencyNow();
 
       if (
         controller.signal.aborted ||
@@ -240,6 +249,10 @@ export class LiveAvatarSpeechSynthesisProvider
       ) {
         return;
       }
+
+      logTurnLatency(latency?.turnId, "liveavatar-speech-client.buffered-decoded", {
+        durationMs: latencyDuration(ttsStartedAt),
+      });
 
       const analysis = analyseLiveAvatarPcm(audio);
       const upstreamFirstByteMs = Number(
@@ -268,6 +281,9 @@ export class LiveAvatarSpeechSynthesisProvider
       let playbackStartedAt = 0;
       await this.avatar.speakAudio(arrayBufferToBase64(audio), {
         diagnosticId,
+        turnId,
+        latencyTurnId: latency?.turnId,
+        questionSubmittedAtMs: latency?.questionSubmittedAtMs,
         onPlaybackStarted: () => {
           playbackStartedAt = performance.now();
           callbacks.onPlaybackClock?.({
@@ -330,6 +346,9 @@ export class LiveAvatarSpeechSynthesisProvider
     callbacks.onProvider?.("liveavatar");
     const completion = this.avatar.beginAudioStream(eventId, {
       diagnosticId,
+      turnId: `${this.guideId}:${requestId}`,
+      latencyTurnId: callbacks.latency?.turnId,
+      questionSubmittedAtMs: callbacks.latency?.questionSubmittedAtMs,
       onPlaybackStarted: () => {
         playbackStarted = true;
         callbacks.onStart();

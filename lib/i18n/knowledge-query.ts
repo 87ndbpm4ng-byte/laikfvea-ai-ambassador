@@ -174,6 +174,10 @@ const CANTONESE_QUERY_TERMS: readonly [RegExp, string][] = [
 ];
 
 const FRENCH_QUERY_TERMS: readonly [RegExp, string][] = [
+  [/comment fonctionne l['’]ioniseur d['’]eau/giu, " how does the water ionizer work "],
+  [/quels types d['’]eau l['’]ioniseur d['’]eau peut-il produire/giu, " what types of water can the water ionizer make "],
+  [/comment s[ée]lectionner un niveau de pH/giu, " how do i select a pH level "],
+  [/comment le nettoyer/giu, " how do i clean it "],
   [/comment fonctionne-t-il|comment fonctionne-t-elle|comment fonctionne (?:ce produit|cet appareil)/giu, " how does it work "],
   [/comment l['’]utiliser|comment utiliser (?:ce produit|cet appareil)/giu, " how do i use it "],
   [/quels min[ée]raux contient-il|quels min[ée]raux contient-elle/giu, " what minerals does it contain "],

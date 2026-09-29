@@ -117,8 +117,9 @@ export function LiveAvatarPresentation({
   const copy = getUiCopy(language);
   const guideDisplayName = copy.guideDisplayName[guideId];
 
-  const isUnavailable =
-    snapshot.state === "disconnected" && Boolean(snapshot.error);
+  const hasVisualFallback =
+    snapshot.outputPath === "elevenlabs-fallback" && Boolean(snapshot.error);
+  const isUnavailable = snapshot.state === "disconnected" && hasVisualFallback;
   const stateLabels = {
     disconnected: copy.readyFor(guide.name),
     connecting: copy.gettingReady(guide.name),
@@ -154,8 +155,8 @@ export function LiveAvatarPresentation({
           description: copy.visualPreparing,
           phase: "connecting",
         }
-      : snapshot.state === "disconnected"
-        ? isUnavailable
+      : snapshot.state === "disconnected" || hasVisualFallback
+        ? hasVisualFallback
           ? {
               title: copy.visualUnavailable,
               description: copy.visualFallbackDescription,

@@ -1,21 +1,24 @@
 "use client";
 
-import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { LiveAvatarRenderer } from "@/components/liveavatar/liveavatar-renderer";
 import { PresentationLayer } from "@/components/presentation/presentation-layer";
 import { PrimaryButton } from "@/components/ui/primary-button";
+import { ProductManualDialog } from "@/components/ui/product-manual-dialog";
 import { VoiceControls } from "@/components/ui/voice-controls";
 import { useVoiceMode } from "@/hooks/use-voice-mode";
 import { useLiveAvatarIdleTimeout } from "@/hooks/use-liveavatar-idle-timeout";
 import { guides } from "@/lib/data/guides";
 import { products } from "@/lib/data/products";
 import {
+  getExhibitionProductCatalog,
+} from "@/lib/data/exhibition-product-catalog";
+import {
   exhibitionProductList,
   exhibitionProducts,
   productCategoryNames,
 } from "@/lib/data/exhibition-products";
-import { getPresentationAsset } from "@/lib/presentation/asset-registry";
 import {
   getGeneralQuickQuestions,
   getProductQuickQuestions,
@@ -29,10 +32,31 @@ import type {
   QuestionSubmission,
 } from "@/types/conversation";
 import type { GuideId } from "@/types/guide";
-import type { BottleProductId, ProductCategoryId, ProductId } from "@/types/product";
+import type {
+  BottleProductId,
+  ExhibitionProductId,
+  ProductCategoryId,
+  ProductId,
+} from "@/types/product";
 import type { SupportedLanguage } from "@/types/language";
 import { getUiCopy } from "@/lib/i18n/ui-copy";
 import { MAX_CONVERSATION_MESSAGE_LENGTH } from "@/lib/conversation/conversation-limits";
+
+const specialistPreviews = {
+  emily: {
+    src: "/specialists/emily-preview.png",
+    alt: "Emily — Wellness Specialist",
+    objectPosition: "50% 34%",
+  },
+  daniel: {
+    src: "/specialists/daniel-preview.png",
+    alt: "Daniel — Technology Specialist",
+    objectPosition: "50% 30%",
+  },
+} satisfies Record<
+  GuideId,
+  { src: string; alt: string; objectPosition: string }
+>;
 
 export function AttractScreen({
   language,
@@ -95,34 +119,38 @@ export function SpecialistSelectionScreen({
       </header>
 
       <div className="idle-specialist-grid" aria-label={copy.specialistsAria}>
-        {Object.values(guides).map((guide) => (
-          <article className="idle-specialist-card" key={guide.id}>
-            <div
-              className="idle-specialist-portrait"
-              role="img"
-              aria-label={copy.visualPreviewUnavailable(guide.name)}
-            >
-              <span className="specialist-silhouette" aria-hidden="true">
-                <i />
-                <i />
-              </span>
-              <small>{copy.visualPreview}</small>
-            </div>
-            <div className="idle-specialist-copy">
-              <h2>{copy.guideDisplayName[guide.id]}</h2>
-              <p>{copy.guideRole[guide.id]}</p>
-              <span>{copy.guideDescription[guide.id]}</span>
-              <button
-                className="idle-specialist-action"
-                type="button"
-                onClick={() => onSelect(guide.id)}
-                aria-label={`${copy.speakWith(guide.name)}, ${copy.guideRole[guide.id]}`}
-              >
-                {copy.speakWith(guide.name)}
-              </button>
-            </div>
-          </article>
-        ))}
+        {Object.values(guides).map((guide) => {
+          const preview = specialistPreviews[guide.id];
+
+          return (
+            <article className="idle-specialist-card" key={guide.id}>
+              <div className="idle-specialist-portrait">
+                <Image
+                  className="idle-specialist-preview"
+                  src={preview.src}
+                  alt={preview.alt}
+                  fill
+                  priority
+                  sizes="(max-width: 47.999rem) 8.5rem, (max-width: 63.999rem) 100vw, 42vw"
+                  style={{ objectPosition: preview.objectPosition }}
+                />
+              </div>
+              <div className="idle-specialist-copy">
+                <h2>{copy.guideDisplayName[guide.id]}</h2>
+                <p>{copy.guideRole[guide.id]}</p>
+                <span>{copy.guideDescription[guide.id]}</span>
+                <button
+                  className="idle-specialist-action"
+                  type="button"
+                  onClick={() => onSelect(guide.id)}
+                  aria-label={`${copy.speakWith(guide.name)}, ${copy.guideRole[guide.id]}`}
+                >
+                  {copy.speakWith(guide.name)}
+                </button>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </section>
   );
@@ -135,6 +163,7 @@ type ConversationScreenProps = {
   isLoading: boolean;
   conversationNotice?: string | null;
   onSubmitQuestion: (question: QuestionSubmission) => Promise<boolean>;
+  onRetryLastQuestion: () => Promise<boolean>;
   onProducts: () => void;
   onOpenProduct: (product: ProductId) => void;
   onEnd: () => void;
@@ -173,6 +202,7 @@ export function ConversationScreen({
   isLoading,
   conversationNotice,
   onSubmitQuestion,
+  onRetryLastQuestion,
   onProducts,
   onOpenProduct,
   onEnd,
@@ -186,6 +216,9 @@ export function ConversationScreen({
   const copy = getUiCopy(language);
   const guideDisplayName = copy.guideDisplayName[guideId];
   const [draft, setDraft] = useState("");
+  const [isEndConfirmationOpen, setIsEndConfirmationOpen] = useState(false);
+  const [isManualDialogOpen, setIsManualDialogOpen] = useState(false);
+  const latestTurnRef = useRef<HTMLLIElement | null>(null);
   const [isOnline, setIsOnline] = useState(
     () => typeof navigator === "undefined" || navigator.onLine,
   );
@@ -253,6 +286,20 @@ export function ConversationScreen({
     };
   }, []);
 
+  useEffect(() => {
+    const latestTurn = latestTurnRef.current;
+
+    if (!latestTurn) return;
+
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    latestTurn.scrollIntoView({
+      behavior: reducedMotion ? "auto" : "smooth",
+      block: "center",
+    });
+  }, [isLoading, messages.length]);
+
   async function submitTypedQuestion(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const question = draft.trim();
@@ -291,11 +338,25 @@ export function ConversationScreen({
     if (!submitted) voice.cancelQuestionSubmission();
   }
 
+  async function retryLastQuestion() {
+    voice.prepareQuestionSubmission();
+    const retried = await onRetryLastQuestion();
+
+    if (!retried) voice.cancelQuestionSubmission();
+  }
+
   function submitOnEnter(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key === "Enter" && !event.nativeEvent.isComposing) {
       event.preventDefault();
       event.currentTarget.form?.requestSubmit();
     }
+  }
+
+  function openManuals() {
+    if (voice.outputState === "speaking") {
+      voice.stopSpeaking();
+    }
+    setIsManualDialogOpen(true);
   }
 
   return (
@@ -313,6 +374,36 @@ export function ConversationScreen({
           {conversationNotice}
         </p>
       ) : null}
+      {isEndConfirmationOpen ? (
+        <div
+          className="conversation-end-confirmation"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="conversation-end-confirmation-title"
+          aria-describedby="conversation-end-confirmation-description"
+        >
+          <div>
+            <h2 id="conversation-end-confirmation-title">
+              {copy.endConversationConfirmationTitle}
+            </h2>
+            <p id="conversation-end-confirmation-description">
+              {copy.endConversationConfirmationBody}
+            </p>
+            <div className="conversation-end-confirmation-actions">
+              <PrimaryButton onClick={() => setIsEndConfirmationOpen(false)}>
+                {copy.continueConversation}
+              </PrimaryButton>
+              <button
+                className="secondary-action"
+                type="button"
+                onClick={onEnd}
+              >
+                {copy.endSession}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {idleTimeout.showWarning && idleTimeout.remainingSeconds !== null ? (
         <div
           className="liveavatar-idle-warning"
@@ -329,6 +420,11 @@ export function ConversationScreen({
           </div>
         </div>
       ) : null}
+      <ProductManualDialog
+        isOpen={isManualDialogOpen}
+        language={language}
+        onClose={() => setIsManualDialogOpen(false)}
+      />
 
       <div className="conversation-workspace">
         <aside className="conversation-specialist">
@@ -381,7 +477,7 @@ export function ConversationScreen({
           <button
             className="specialist-end-action"
             type="button"
-            onClick={onEnd}
+            onClick={() => setIsEndConfirmationOpen(true)}
           >
             {copy.endSession}
           </button>
@@ -414,13 +510,36 @@ export function ConversationScreen({
                 </div>
               ) : (
                 <ol className="conversation-history">
-                  {conversationTurns.map((turn) => (
-                    <li className="conversation-entry" key={turn.visitor.id}>
+                  {conversationTurns.map((turn, index) => (
+                    <li
+                      className="conversation-entry"
+                      key={turn.visitor.id}
+                      ref={
+                        index === conversationTurns.length - 1
+                          ? latestTurnRef
+                          : undefined
+                      }
+                    >
                       <div className="visitor-question">
                         <span>{copy.youAsked}</span>
                         <p>{turn.visitor.content}</p>
                       </div>
-                      {turn.guide ? (
+                      {turn.guide?.isRecovery ? (
+                        <div className="guide-response guide-response--recovery" role="status">
+                          <span>{copy.answerUnavailable}</span>
+                          <div className="recovery-content">
+                            <p>{turn.guide.content}</p>
+                            <button
+                              className="recovery-retry"
+                              type="button"
+                              disabled={isLoading}
+                              onClick={() => void retryLastQuestion()}
+                            >
+                              {isLoading ? copy.sending : copy.tryAgain}
+                            </button>
+                          </div>
+                        </div>
+                      ) : turn.guide ? (
                         <div className="guide-response">
                           <span>{guideDisplayName}</span>
                           <p>
@@ -451,12 +570,14 @@ export function ConversationScreen({
                         <div className="guide-response is-preparing">
                           <span>{guideDisplayName}</span>
                           <p>
+                            <span className="preparing-copy">
+                              {copy.preparingAnswer(guide.name)}
+                            </span>
                             <span className="thinking-dots" aria-hidden="true">
                               <i />
                               <i />
                               <i />
                             </span>
-                            <span className="sr-only">{copy.preparingResponse}</span>
                           </p>
                         </div>
                       )}
@@ -498,6 +619,13 @@ export function ConversationScreen({
           </section>
 
           <div className="conversation-product-actions">
+            <button
+              className="conversation-manuals-action"
+              type="button"
+              onClick={openManuals}
+            >
+              {copy.productManuals}
+            </button>
             {contextualProductIds.map((productId) => (
               <button
                 type="button"
@@ -557,7 +685,7 @@ export function ConversationScreen({
 
 type ProductExplorerScreenProps = {
   language: SupportedLanguage;
-  onOpenProduct: (product: ProductId) => void;
+  onOpenProduct: (product: ExhibitionProductId) => void;
   onCompare: () => void;
   onBack: () => void;
 };
@@ -571,7 +699,7 @@ export function ProductExplorerScreen({
   const copy = getUiCopy(language);
   const categories: readonly ProductCategoryId[] = [
     "functional-water",
-    "clean-air",
+    "indoor-environment",
   ];
   return (
     <section
@@ -636,7 +764,7 @@ export function ProductExplorerScreen({
 
 type ProductDetailScreenProps = {
   language: SupportedLanguage;
-  productId: ProductId;
+  productId: ExhibitionProductId;
   guideName: string;
   onBack: () => void;
   onCompare: () => void;
@@ -652,9 +780,9 @@ export function ProductDetailScreen({
   onAskGuide,
 }: ProductDetailScreenProps) {
   const product = exhibitionProducts[productId];
+  const catalog = getExhibitionProductCatalog(productId);
   const copy = getUiCopy(language);
   const displayName = product.displayNames[language];
-  const isLegacyBottle = productId === "everyday" || productId === "advanced";
   const hasComparison = product.comparableWith.some(
     (related) => related === "everyday" || related === "advanced",
   );
@@ -669,7 +797,7 @@ export function ProductDetailScreen({
       </button>
 
       <div className="detail-grid">
-        <ProductVisual productId={productId} language={language} />
+        <ProductGallery productId={productId} language={language} />
         <div className="detail-copy">
           <p className="detail-category">
             {productCategoryNames[product.category][language]}
@@ -677,26 +805,24 @@ export function ProductDetailScreen({
           <h1 id="product-detail-heading">{displayName}</h1>
           <p className="detail-question-prompt">{copy.productQuestionPrompt}</p>
 
-          {isLegacyBottle && product.knowledgeStatus === "approved" ? (
           <div className="detail-lists">
             <div>
-              <h2>{copy.keyFeatures}</h2>
+              <h2>{copy.atAGlance}</h2>
               <ul>
-                {copy.productFeatures[productId].map((feature) => (
+                {catalog.atAGlance[language].map((feature) => (
                   <li key={feature}>{feature}</li>
                 ))}
               </ul>
             </div>
             <div>
-              <h2>{copy.useCases}</h2>
-              <ul>
-                {copy.productUseCases[productId].map((useCase) => (
-                  <li key={useCase}>{useCase}</li>
-                ))}
-              </ul>
+              <h2>{copy.howItWorks}</h2>
+              <p>{catalog.howItWorks[language]}</p>
+            </div>
+            <div>
+              <h2>{copy.care}</h2>
+              <p>{catalog.care[language]}</p>
             </div>
           </div>
-          ) : null}
         </div>
       </div>
 
@@ -719,32 +845,68 @@ function ProductVisual({
   language,
   compact = false,
 }: {
-  productId: ProductId;
+  productId: ExhibitionProductId;
   language: SupportedLanguage;
   compact?: boolean;
 }) {
   const product = exhibitionProducts[productId];
-  const copy = getUiCopy(language);
-  const asset = product.presentationAssetId
-    ? getPresentationAsset(product.presentationAssetId as "go-bottle" | "pro-bottle")
-    : null;
+  const catalog = getExhibitionProductCatalog(productId);
   const className = compact ? "product-card-visual" : "detail-product-visual";
 
-  return asset ? (
-    <span className={className}>
+  return (
+    <span className={`${className} product-visual-photo`}>
       <Image
-        src={asset.media.src}
+        src={catalog.images[0].src}
         alt={product.displayNames[language]}
         width={640}
         height={640}
-        sizes={compact ? "(max-width: 768px) 9rem, 22rem" : "(max-width: 768px) 100vw, 38rem"}
+        sizes={compact ? "(max-width: 768px) 9rem, (max-width: 1200px) 24vw, 30rem" : "(max-width: 768px) 100vw, 42rem"}
       />
     </span>
-  ) : (
-    <span className={`${className} product-visual-neutral`} aria-label={copy.productVisualUnavailable}>
-      <span aria-hidden="true" />
-      <small>{copy.productVisualUnavailable}</small>
-    </span>
+  );
+}
+
+function ProductGallery({
+  productId,
+  language,
+}: {
+  productId: ExhibitionProductId;
+  language: SupportedLanguage;
+}) {
+  const [selectedImage, setSelectedImage] = useState(0);
+  const catalog = getExhibitionProductCatalog(productId);
+  const copy = getUiCopy(language);
+  const image = catalog.images[selectedImage] ?? catalog.images[0];
+
+  return (
+    <div className="product-gallery">
+      <span className="detail-product-visual product-visual-photo">
+        <Image
+          src={image.src}
+          alt={image.alt[language]}
+          width={900}
+          height={900}
+          sizes="(max-width: 768px) 100vw, 42rem"
+          priority
+        />
+      </span>
+      {catalog.images.length > 1 ? (
+        <div className="product-gallery-thumbnails" role="group" aria-label={copy.productExplorer}>
+          {catalog.images.map((galleryImage, index) => (
+            <button
+              className={`product-gallery-thumbnail${selectedImage === index ? " is-selected" : ""}`}
+              type="button"
+              key={galleryImage.src}
+              onClick={() => setSelectedImage(index)}
+              aria-label={copy.galleryImage(index + 1, catalog.images.length)}
+              aria-pressed={selectedImage === index}
+            >
+              <Image src={galleryImage.src} alt="" width={120} height={120} />
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 

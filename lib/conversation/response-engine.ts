@@ -28,6 +28,7 @@ export type ResponseRequest = {
   sessionId?: string;
   demoFallback?: "suggested-question";
   signal?: AbortSignal;
+  turnId?: string;
 };
 
 export type ResponseResult = {
@@ -188,6 +189,7 @@ async function requestOpenAIResponse({
   relatedProduct,
   sessionId,
   signal,
+  turnId,
 }: ResponseRequest): Promise<ConversationApiSuccessResponse> {
   let response: Response;
 
@@ -202,6 +204,7 @@ async function requestOpenAIResponse({
         language,
         sessionId,
         activeProduct: relatedProduct,
+        turnId,
       }),
       signal: signal
         ? AbortSignal.any([signal, AbortSignal.timeout(25_000)])

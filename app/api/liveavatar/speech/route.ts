@@ -8,6 +8,11 @@ import { validateSpeechRequest } from "@/lib/voice/speech-request";
 import type { ElevenLabsSpeechTiming } from "@/lib/voice/elevenlabs-speech-service";
 import { generateOpenAISpeech } from "@/lib/voice/openai-speech-service";
 import { selectSpeechProvider } from "@/lib/voice/speech-provider-routing";
+import {
+  latencyDuration,
+  latencyNow,
+  logTurnLatency,
+} from "@/lib/observability/turn-latency";
 
 export const runtime = "nodejs";
 
@@ -29,6 +34,7 @@ function requestKey(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const startedAt = latencyNow();
   if (!rateLimiter.allow(requestKey(request))) {
     return jsonError("RATE_LIMITED", "Voice generation is busy.", 429);
   }
@@ -47,6 +53,8 @@ export async function POST(request: Request) {
     return jsonError("INVALID_REQUEST", "The voice request is invalid.", 400);
   }
 
+  logTurnLatency(speechRequest.latencyTurnId, "liveavatar-speech-api.start");
+
   try {
     const provider = selectSpeechProvider(speechRequest);
     if (
@@ -56,6 +64,11 @@ export async function POST(request: Request) {
       const speech = await streamElevenLabsSpeech(speechRequest, {
         output: "liveavatar",
         signal: request.signal,
+      });
+      logTurnLatency(speechRequest.latencyTurnId, "liveavatar-speech-api.end", {
+        durationMs: latencyDuration(startedAt),
+        outcome: "success",
+        mode: "streaming",
       });
       return new Response(speech.body, {
         status: 200,
@@ -72,10 +85,15 @@ export async function POST(request: Request) {
     }
 
     let timing: ElevenLabsSpeechTiming = { firstByteMs: 0, completeMs: 0 };
-    const startedAt = performance.now();
+    const openAISpeechStartedAt = performance.now();
     if (provider === "elevenlabs") {
       const aligned = await generateElevenLabsSpeechWithTimestamps(speechRequest, {
         output: "liveavatar",
+      });
+      logTurnLatency(speechRequest.latencyTurnId, "liveavatar-speech-api.end", {
+        durationMs: latencyDuration(startedAt),
+        outcome: "success",
+        mode: "buffered",
       });
       return Response.json(
         {
@@ -96,9 +114,15 @@ export async function POST(request: Request) {
             output: "liveavatar",
           });
     if (provider === "openai") {
-      const elapsed = Math.round(performance.now() - startedAt);
+      const elapsed = Math.round(performance.now() - openAISpeechStartedAt);
       timing = { firstByteMs: elapsed, completeMs: elapsed };
     }
+
+    logTurnLatency(speechRequest.latencyTurnId, "liveavatar-speech-api.end", {
+      durationMs: latencyDuration(startedAt),
+      outcome: "success",
+      mode: "buffered",
+    });
 
     return new Response(audio, {
       status: 200,
@@ -118,6 +142,10 @@ export async function POST(request: Request) {
     console.error("[liveavatar] Guide PCM generation failed.", {
       name: error instanceof Error ? error.name : "UnknownError",
       guideId: speechRequest?.guideId,
+    });
+    logTurnLatency(speechRequest?.latencyTurnId, "liveavatar-speech-api.end", {
+      durationMs: latencyDuration(startedAt),
+      outcome: "error",
     });
     return jsonError(
       "SERVICE_UNAVAILABLE",

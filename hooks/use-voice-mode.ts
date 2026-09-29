@@ -94,12 +94,10 @@ export function useVoiceMode({
     activeIndex: number;
   } | null>(null);
   const highlightTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pendingTimingRef = useRef<SpeechTiming | null>(null);
 
   const clearSpokenHighlight = useCallback(() => {
     if (highlightTimerRef.current) clearInterval(highlightTimerRef.current);
     highlightTimerRef.current = null;
-    pendingTimingRef.current = null;
     setSpokenHighlight(null);
   }, []);
 
@@ -335,45 +333,57 @@ export function useVoiceMode({
       speechTriggerCalled: true,
       audioSessionActivated: isAudioSessionActivated,
     });
+    let timing: SpeechTiming | null = null;
+    let playbackClock: SpeechPlaybackClock | null = null;
+
+    const startSpokenHighlight = () => {
+      if (!timing || !playbackClock) return;
+
+      const segments = segmentSpokenText(
+        pendingGuideMessage.content,
+        language,
+      );
+      const alignedStarts = timing.alignment
+        ? getAlignedSegmentStartTimes(
+            pendingGuideMessage.content,
+            segments,
+            timing.alignment,
+          )
+        : [];
+      const starts = alignedStarts.length
+        ? alignedStarts
+        : getSpokenSegmentStartTimes(segments, timing.durationMs);
+      if (!segments.length || starts.length !== segments.length) return;
+
+      if (highlightTimerRef.current) clearInterval(highlightTimerRef.current);
+      const updateHighlight = () => {
+        const activeIndex = findActiveSpokenSegment(
+          starts,
+          playbackClock!.currentTimeMs(),
+        );
+        if (activeIndex < 0) return;
+        setSpokenHighlight((current) =>
+          current?.messageId === pendingGuideMessage.id &&
+          current.activeIndex === activeIndex
+            ? current
+            : { messageId: pendingGuideMessage.id, segments, activeIndex },
+        );
+      };
+
+      updateHighlight();
+      highlightTimerRef.current = setInterval(updateHighlight, 150);
+    };
+
     synthesis.speak(normalizeSpeechText(pendingGuideMessage.content), guideId, {
-      onTiming: (timing) => {
+      latency: pendingGuideMessage.latency,
+      onTiming: (nextTiming) => {
         clearSpokenHighlight();
-        pendingTimingRef.current = timing;
+        timing = nextTiming;
+        startSpokenHighlight();
       },
       onPlaybackClock: (clock: SpeechPlaybackClock) => {
-        const timing = pendingTimingRef.current;
-        if (!timing) return;
-        const segments = segmentSpokenText(
-          pendingGuideMessage.content,
-          language,
-        );
-        const alignedStarts = timing.alignment
-          ? getAlignedSegmentStartTimes(
-              pendingGuideMessage.content,
-              segments,
-              timing.alignment,
-            )
-          : [];
-        const starts = alignedStarts.length
-          ? alignedStarts
-          : getSpokenSegmentStartTimes(segments, timing.durationMs);
-        if (!segments.length || starts.length !== segments.length) return;
-
-        const updateHighlight = () => {
-          const activeIndex = findActiveSpokenSegment(
-            starts,
-            clock.currentTimeMs(),
-          );
-          if (activeIndex < 0) return;
-          setSpokenHighlight((current) =>
-            current?.messageId === pendingGuideMessage.id &&
-            current.activeIndex === activeIndex
-              ? current
-              : { messageId: pendingGuideMessage.id, segments, activeIndex },
-          );
-        };
-        updateHighlight();
-        highlightTimerRef.current = setInterval(updateHighlight, 150);
+        playbackClock = clock;
+        startSpokenHighlight();
       },
       onProvider: (provider) => {
         logVoiceDiagnostic("provider-selected", { provider });
@@ -400,6 +410,7 @@ export function useVoiceMode({
         setOutputState("speaking");
       },
       onEnd: () => {
+        synthesis.setReady?.();
         setOutputState("idle");
         clearSpokenHighlight();
       },

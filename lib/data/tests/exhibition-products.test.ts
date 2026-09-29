@@ -8,10 +8,14 @@ import {
   resolveKnowledgeProductId,
 } from "@/lib/data/exhibition-products";
 import { products } from "@/lib/data/products";
-import { PRODUCT_CATEGORY_IDS, PRODUCT_IDS } from "@/types/product";
+import {
+  EXHIBITION_PRODUCT_IDS,
+  PRODUCT_CATEGORY_IDS,
+  PRODUCT_IDS,
+} from "@/types/product";
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n/languages";
 
-test("the registry contains the six Hong Kong exhibition products", () => {
+test("the registry keeps the internal mineralizer while exposing six Hong Kong exhibition products", () => {
   assert.deepEqual(PRODUCT_IDS, [
     "everyday",
     "advanced",
@@ -19,18 +23,28 @@ test("the registry contains the six Hong Kong exhibition products", () => {
     "face-body-generator",
     "water-mineralizer",
     "air-purifier",
+    "air-humidifier",
   ]);
-  assert.deepEqual(exhibitionProductList.map(({ id }) => id), PRODUCT_IDS);
+  assert.deepEqual(EXHIBITION_PRODUCT_IDS, [
+    "air-purifier",
+    "water-ionizer",
+    "advanced",
+    "everyday",
+    "air-humidifier",
+    "face-body-generator",
+  ]);
+  assert.deepEqual(exhibitionProductList.map(({ id }) => id), EXHIBITION_PRODUCT_IDS);
   for (const id of PRODUCT_IDS) assert.equal(isProductId(id), true);
   assert.equal(isProductId("unknown-product"), false);
 });
 
-test("portfolio categories match the physical exhibition", () => {
-  assert.deepEqual(PRODUCT_CATEGORY_IDS, ["functional-water", "clean-air"]);
-  for (const id of PRODUCT_IDS.filter((id) => id !== "air-purifier")) {
+test("portfolio categories distinguish functional water from indoor environment products", () => {
+  assert.deepEqual(PRODUCT_CATEGORY_IDS, ["functional-water", "indoor-environment"]);
+  for (const id of ["everyday", "advanced", "water-ionizer", "face-body-generator", "water-mineralizer"] as const) {
     assert.equal(exhibitionProducts[id].category, "functional-water", id);
   }
-  assert.equal(exhibitionProducts["air-purifier"].category, "clean-air");
+  assert.equal(exhibitionProducts["air-purifier"].category, "indoor-environment");
+  assert.equal(exhibitionProducts["air-humidifier"].category, "indoor-environment");
 });
 
 test("GO and PRO retain compatible internal identities and their pair relationship", () => {
@@ -47,6 +61,7 @@ test("knowledge availability is explicit and does not become factual content", (
   assert.equal(exhibitionProducts.everyday.knowledgeStatus, "approved");
   assert.equal(exhibitionProducts.advanced.knowledgeStatus, "approved");
   assert.equal(exhibitionProducts["water-ionizer"].knowledgeStatus, "approved");
+  assert.equal(exhibitionProducts["air-humidifier"].knowledgeStatus, "approved");
   for (const id of PRODUCT_IDS) assert.equal(exhibitionProducts[id].knowledgeStatus, "approved", id);
   assert.deepEqual(exhibitionProducts["water-mineralizer"].capabilities, []);
   assert.ok(exhibitionProducts.advanced.capabilities.includes("mineralisation-feature"));
@@ -69,6 +84,7 @@ test("approved metadata names resolve structurally without speculative aliases",
   assert.equal(resolveKnowledgeProductId("Advanced Bottle"), "advanced");
   assert.equal(resolveKnowledgeProductId("Everyday Bottle"), "everyday");
   assert.equal(resolveKnowledgeProductId("Water Mineralizer"), "water-mineralizer");
+  assert.equal(resolveKnowledgeProductId("Air Humidifier"), "air-humidifier");
   assert.equal(resolveKnowledgeProductId("mineralisation"), null);
   assert.equal(resolveKnowledgeProductId("hydrogen generator"), null);
 });

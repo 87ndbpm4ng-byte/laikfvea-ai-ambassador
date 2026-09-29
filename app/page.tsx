@@ -14,6 +14,7 @@ import { useConversation } from "@/hooks/use-conversation";
 import { guides } from "@/lib/data/guides";
 import { createAskAboutProductQuestion } from "@/lib/data/product-navigation";
 import { getSuggestedQuestion } from "@/lib/data/suggested-questions";
+import { isExhibitionProductId } from "@/lib/data/exhibition-product-catalog";
 import {
   getLanguageConfiguration,
   SUPPORTED_LANGUAGES,
@@ -25,7 +26,7 @@ import { LiveAvatarSpeechSynthesisProvider } from "@/lib/voice/liveavatar-speech
 import { OpenAISpeechSynthesisProvider } from "@/lib/voice/openai-speech-synthesis";
 import type { JourneyScreen } from "@/types/conversation";
 import type { GuideId } from "@/types/guide";
-import type { ProductId } from "@/types/product";
+import type { ExhibitionProductId, ProductId } from "@/types/product";
 import type { SupportedLanguage } from "@/types/language";
 
 export default function Home() {
@@ -33,7 +34,7 @@ export default function Home() {
   const [selectedLanguage, setSelectedLanguage] =
     useState<SupportedLanguage | null>(null);
   const [selectedGuideId, setSelectedGuideId] = useState<GuideId | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<ProductId>("everyday");
+  const [selectedProduct, setSelectedProduct] = useState<ExhibitionProductId>("everyday");
   const [voiceActivation, setVoiceActivation] =
     useState<Promise<boolean> | null>(null);
   const resetInProgressRef = useRef(false);
@@ -87,6 +88,7 @@ export default function Home() {
   }, [liveAvatarServices, selectedGuideId]);
 
   function openProduct(product: ProductId) {
+    if (!isExhibitionProductId(product)) return;
     conversation.cancelPending();
     conversation.selectProduct(product);
     setSelectedProduct(product);
@@ -233,6 +235,7 @@ export default function Home() {
             isLoading={conversation.isLoading}
             conversationNotice={conversation.conversationNotice}
             onSubmitQuestion={conversation.submitQuestion}
+            onRetryLastQuestion={conversation.retryLastQuestion}
             onProducts={() => {
               conversation.cancelPending();
               setScreen("products");

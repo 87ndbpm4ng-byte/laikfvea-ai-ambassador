@@ -17,6 +17,7 @@ import type { ProductId } from "@/types/product";
 
 export type OrchestratorMetadata = {
   requestId: string;
+  turnId?: string;
   receivedAt: string;
   providerId: string;
   guide: Guide;
@@ -29,6 +30,7 @@ export type PromptContextFragment = {
 };
 
 export type OrchestratorPrompt = {
+  turnId?: string;
   systemInstructions: string;
   responseDirectives: readonly string[];
   sessionContext: {
@@ -61,6 +63,7 @@ export type OrchestrateMessageInput = {
   language?: SupportedLanguage | null;
   supplementalContext?: readonly PromptContextFragment[];
   activeProduct?: ProductId;
+  turnId?: string;
 };
 
 export type OrchestratorResult = {
@@ -77,6 +80,7 @@ export interface OrchestratorAIProvider {
   generate(
     prompt: OrchestratorPrompt,
     guide: Guide,
+    attempt?: number,
   ): Promise<string>;
 }
 

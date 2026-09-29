@@ -50,6 +50,16 @@ class BoundaryProvider implements OrchestratorAIProvider {
   }
 }
 
+class FrenchWaterIonizerProvider implements OrchestratorAIProvider {
+  readonly id = "french-water-ionizer";
+  calls: OrchestratorPrompt[] = [];
+
+  async generate(prompt: OrchestratorPrompt) {
+    this.calls.push(prompt);
+    return "L’ioniseur utilise l’électrolyse de l’eau potable et permet de sélectionner le niveau d’ionisation selon le type d’eau souhaité.";
+  }
+}
+
 async function createOrchestrator(provider: OrchestratorAIProvider) {
   const [{ AIOrchestrator }, { OrchestratorPipeline }, { RetrievalEngine }, { ApprovedKnowledgeLoader }, { SessionManager }, { InMemorySessionStore }] =
     await Promise.all([
@@ -123,5 +133,27 @@ test("an explicit unsupported electrode-mechanism request retains the approved b
   assert.match(
     provider.calls[1].responseDirectives.join("\n"),
     /explicitly requests a specific fact, scientific mechanism, or technical detail/i,
+  );
+});
+
+test("a French Water Ionizer Quick Question with active context uses approved evidence instead of the insufficient-information boundary", async () => {
+  const provider = new FrenchWaterIonizerProvider();
+  const orchestrator = await createOrchestrator(provider);
+  const result = await orchestrator.handleMessage({
+    message: "Comment fonctionne l’ioniseur d’eau ?",
+    guide: guides.daniel,
+    language: "fr",
+    activeProduct: "water-ionizer",
+  });
+
+  assert.equal(result.retrieval.insufficientKnowledge, false);
+  assert.equal(result.session.activeProduct, "water-ionizer");
+  assert.notEqual(result.response, boundaries.fr);
+  assert.equal(provider.calls.length, 1);
+  assert.ok(provider.calls[0].approvedKnowledgeContext?.passages.length);
+  assert.ok(
+    provider.calls[0].approvedKnowledgeContext?.passages.every(
+      (passage) => passage.product === "water-ionizer",
+    ),
   );
 });

@@ -27,6 +27,10 @@ export type VoiceError = {
 };
 
 export type SpeechSynthesisCallbacks = {
+  latency?: {
+    turnId: string;
+    questionSubmittedAtMs: number;
+  };
   onProvider?: (provider: SpeechPlaybackProvider) => void;
   onActivationRequired?: () => void;
   onPlaybackBlocked?: () => void;

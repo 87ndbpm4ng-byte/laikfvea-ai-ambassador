@@ -22,6 +22,11 @@ import {
   markRepeatAudioInvoked,
 } from "@/lib/voice/lip-sync-diagnostics";
 import type { GuideId } from "@/types/guide";
+import {
+  latencyDuration,
+  latencyNow,
+  logTurnLatency,
+} from "@/lib/observability/turn-latency";
 
 type SessionApiResponse =
   | {
@@ -111,9 +116,14 @@ export class LiveAvatarService implements LiveAvatarOutput {
   private readonly guideId: GuideId;
   private pendingSpeech:
     | {
+        eventId: string;
+        turnId?: string;
         resolve: () => void;
         reject: (error: Error) => void;
         diagnosticId?: string;
+        latencyTurnId?: string;
+        questionSubmittedAtMs?: number;
+        repeatAudioInvokedAtMs?: number;
         onPlaybackStarted?: () => void;
       }
     | null = null;
@@ -234,31 +244,31 @@ export class LiveAvatarService implements LiveAvatarOutput {
 
   startListening() {
     this.resumeVideoPlayback();
-    this.runSessionAction("start-listening", (session) => {
-      session.startListening();
-      this.update("listening");
-    });
+    this.runSessionAction("start-listening", (session) => session.startListening());
+    this.update("listening");
   }
 
   stopListening() {
-    this.runSessionAction("stop-listening", (session) => {
-      session.stopListening();
-      this.update("thinking");
-    });
+    this.runSessionAction("stop-listening", (session) => session.stopListening());
+    this.update("thinking");
   }
 
   setReady() {
-    if (this.isConnected) this.update("connected");
+    if (this.isConnected) {
+      this.update("connected");
+    } else {
+      this.update("disconnected", null, this.snapshot.error, "elevenlabs-fallback");
+    }
   }
 
   setThinking() {
     this.resumeVideoPlayback();
-    if (this.isConnected) this.update("thinking");
+    this.update("thinking");
   }
 
   markFallback() {
     this.update(
-      this.snapshot.state,
+      "speaking",
       this.snapshot.sessionId,
       this.snapshot.error,
       "elevenlabs-fallback",
@@ -273,21 +283,28 @@ export class LiveAvatarService implements LiveAvatarOutput {
 
     this.interruptPendingSpeech();
     return new Promise<void>((resolve, reject) => {
-      this.pendingSpeech = {
-        resolve,
-        reject,
-        diagnosticId: metadata?.diagnosticId,
-        onPlaybackStarted: metadata?.onPlaybackStarted,
-      };
-
       try {
         if (metadata?.diagnosticId) {
           markRepeatAudioInvoked(metadata.diagnosticId);
         }
-        session.repeatAudio(audioBase64);
+        const repeatAudioInvokedAtMs = latencyNow();
+        logTurnLatency(metadata?.latencyTurnId, "liveavatar.repeat-audio.invoked");
+        const eventId = session.repeatAudio(audioBase64);
+        this.pendingSpeech = {
+          eventId,
+          turnId: metadata?.turnId,
+          resolve,
+          reject,
+          diagnosticId: metadata?.diagnosticId,
+          latencyTurnId: metadata?.latencyTurnId,
+          questionSubmittedAtMs: metadata?.questionSubmittedAtMs,
+          repeatAudioInvokedAtMs,
+          onPlaybackStarted: metadata?.onPlaybackStarted,
+        };
         if (metadata?.diagnosticId) {
           markRepeatAudioAccepted(metadata.diagnosticId);
         }
+        logTurnLatency(metadata?.latencyTurnId, "liveavatar.repeat-audio.accepted");
       } catch (error) {
         this.pendingSpeech = null;
         void this.handleProviderFailure(error);
@@ -335,9 +352,13 @@ export class LiveAvatarService implements LiveAvatarOutput {
 
     return new Promise<void>((resolve, reject) => {
       this.pendingSpeech = {
+        eventId,
+        turnId: metadata?.turnId,
         resolve,
         reject,
         diagnosticId: metadata?.diagnosticId,
+        latencyTurnId: metadata?.latencyTurnId,
+        questionSubmittedAtMs: metadata?.questionSubmittedAtMs,
         onPlaybackStarted: metadata?.onPlaybackStarted,
       };
     });
@@ -398,7 +419,7 @@ export class LiveAvatarService implements LiveAvatarOutput {
       }, this.sessionCreationTimeoutMs);
     });
     this.clearReconnectTimer();
-    this.update("connecting", null, null);
+    this.updateConnectingFromProvider();
 
     try {
       const response = await Promise.race([this.fetcher("/api/liveavatar/session", {
@@ -443,7 +464,7 @@ export class LiveAvatarService implements LiveAvatarOutput {
         return false;
       }
 
-      this.update("connected", payload.sessionId, null, "liveavatar");
+      this.updateConnectedFromProvider(payload.sessionId);
       this.snapshot = {
         ...this.snapshot,
         environment: payload.environment,
@@ -476,11 +497,8 @@ export class LiveAvatarService implements LiveAvatarOutput {
         error instanceof LiveAvatarSessionRequestError
           ? error.retryable
           : classification.retryable;
-      this.update(
-        "disconnected",
-        null,
+      this.updateFallbackForCurrentInteraction(
         retryable ? SAFE_CONNECTION_ERROR : SAFE_CONFIGURATION_ERROR,
-        "elevenlabs-fallback",
       );
       if (retryable) this.scheduleReconnect();
       return false;
@@ -496,9 +514,11 @@ export class LiveAvatarService implements LiveAvatarOutput {
     session.on(SessionEvent.SESSION_STATE_CHANGED, (state) => {
       if (this.session !== session) return;
       if (state === SessionState.CONNECTING) {
-        this.update("connecting", sessionId);
+        if (this.snapshot.state === "connecting") {
+          this.update("connecting", sessionId);
+        }
       } else if (state === SessionState.CONNECTED) {
-        this.update("connected", sessionId, null);
+        this.updateConnectedFromProvider(sessionId);
       }
     });
     session.on(SessionEvent.SESSION_STREAM_READY, () => {
@@ -520,26 +540,88 @@ export class LiveAvatarService implements LiveAvatarOutput {
       this.stopKeepAlive();
       this.clearVideo();
       this.interruptPendingSpeech();
-      this.update("disconnected", null, SAFE_CONNECTION_ERROR);
+      this.updateFallbackForCurrentInteraction(SAFE_CONNECTION_ERROR);
       this.scheduleReconnect();
     });
-    session.on(AgentEventsEnum.AVATAR_SPEAK_STARTED, () => {
-      if (this.session !== session) return;
-      if (this.pendingSpeech?.diagnosticId) {
-        markAvatarSpeakingStarted(this.pendingSpeech.diagnosticId);
+    session.on(AgentEventsEnum.AVATAR_SPEAK_STARTED, (event) => {
+      const pendingSpeech = this.getPendingSpeechForEvent(session, event);
+      if (!pendingSpeech) return;
+      if (pendingSpeech.diagnosticId) {
+        markAvatarSpeakingStarted(pendingSpeech.diagnosticId);
       }
-      this.pendingSpeech?.onPlaybackStarted?.();
+      logTurnLatency(pendingSpeech.latencyTurnId, "liveavatar.avatar-speak-started", {
+        questionToAvatarSpeakMs:
+          pendingSpeech.questionSubmittedAtMs === undefined
+            ? undefined
+            : latencyDuration(pendingSpeech.questionSubmittedAtMs),
+      });
+      pendingSpeech.onPlaybackStarted?.();
       this.update("speaking");
     });
-    session.on(AgentEventsEnum.AVATAR_SPEAK_ENDED, () => {
-      if (this.session !== session) return;
-      if (this.pendingSpeech?.diagnosticId) {
-        markAvatarSpeakingEnded(this.pendingSpeech.diagnosticId);
+    session.on(AgentEventsEnum.AVATAR_SPEAK_ENDED, (event) => {
+      const pendingSpeech = this.getPendingSpeechForEvent(session, event);
+      if (!pendingSpeech) return;
+      if (pendingSpeech.diagnosticId) {
+        markAvatarSpeakingEnded(pendingSpeech.diagnosticId);
       }
-      this.pendingSpeech?.resolve();
+      logTurnLatency(pendingSpeech.latencyTurnId, "liveavatar.repeat-audio.resolved", {
+        durationMs:
+          pendingSpeech.repeatAudioInvokedAtMs === undefined
+            ? undefined
+            : latencyDuration(pendingSpeech.repeatAudioInvokedAtMs),
+      });
+      pendingSpeech.resolve();
       this.pendingSpeech = null;
-      this.update("listening");
+      this.update("connected", sessionId, null, "liveavatar");
     });
+  }
+
+  private getPendingSpeechForEvent(session: AvatarSession, event: unknown) {
+    if (this.session !== session || !this.pendingSpeech) return null;
+    const eventId =
+      event &&
+      typeof event === "object" &&
+      "event_id" in event &&
+      typeof event.event_id === "string"
+        ? event.event_id
+        : null;
+    return eventId === this.pendingSpeech.eventId ? this.pendingSpeech : null;
+  }
+
+  private updateConnectedFromProvider(sessionId = this.snapshot.sessionId) {
+    if (
+      this.snapshot.state === "connecting" ||
+      this.snapshot.state === "connected" ||
+      this.snapshot.state === "disconnected"
+    ) {
+      this.update("connected", sessionId, null, "liveavatar");
+    } else {
+      this.update(this.snapshot.state, sessionId, null, "liveavatar");
+    }
+  }
+
+  private updateConnectingFromProvider() {
+    if (
+      this.snapshot.state === "connecting" ||
+      this.snapshot.state === "connected" ||
+      this.snapshot.state === "disconnected"
+    ) {
+      this.update("connecting", null, null, "elevenlabs-fallback");
+    }
+  }
+
+  private updateFallbackForCurrentInteraction(error: string) {
+    const interactionState = this.snapshot.state;
+    this.update(
+      interactionState === "listening" ||
+        interactionState === "thinking" ||
+        interactionState === "speaking"
+        ? interactionState
+        : "disconnected",
+      null,
+      error,
+      "elevenlabs-fallback",
+    );
   }
 
   private attachStream(session: AvatarSession) {
@@ -608,12 +690,7 @@ export class LiveAvatarService implements LiveAvatarOutput {
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       this.reconnectAttemptCount += 1;
-      this.update(
-        "connecting",
-        null,
-        null,
-        "elevenlabs-fallback",
-      );
+      this.updateConnectingFromProvider();
       void this.connect();
     }, this.reconnectDelayMs);
   }
@@ -703,11 +780,8 @@ export class LiveAvatarService implements LiveAvatarOutput {
   private async handleProviderFailure(error: unknown) {
     const classification = classifyLiveAvatarError(error);
     await this.releaseSession();
-    this.update(
-      "disconnected",
-      null,
+    this.updateFallbackForCurrentInteraction(
       classification.retryable ? SAFE_CONNECTION_ERROR : SAFE_CONFIGURATION_ERROR,
-      "elevenlabs-fallback",
     );
     if (classification.retryable) this.scheduleReconnect();
   }

@@ -1,6 +1,7 @@
 import type {
   ExhibitionProduct,
   ProductCategoryId,
+  ExhibitionProductId,
   ProductId,
 } from "@/types/product";
 
@@ -12,12 +13,12 @@ export const productCategoryNames = {
     yue: "功能水",
     fr: "Eau fonctionnelle",
   },
-  "clean-air": {
-    en: "Clean Air",
-    ru: "Чистый воздух",
-    zh: "洁净空气",
-    yue: "潔淨空氣",
-    fr: "Air pur",
+  "indoor-environment": {
+    en: "Indoor Environment",
+    ru: "Микроклимат в помещении",
+    zh: "室内环境",
+    yue: "室內環境",
+    fr: "Environnement intérieur",
   },
 } as const satisfies Readonly<
   Record<ProductCategoryId, Readonly<Record<"en" | "ru" | "zh" | "yue" | "fr", string>>>
@@ -107,10 +108,10 @@ export const exhibitionProducts = {
   },
   "face-body-generator": {
     id: "face-body-generator",
-    exhibitionName: "Hydrogen Water Generator for Face & Body",
+    exhibitionName: "H₂ Generator Face & Body",
     category: "functional-water",
     displayNames: {
-      en: "Hydrogen Water Generator for Face & Body",
+      en: "H₂ Generator Face & Body",
       ru: "Генератор водородной воды для лица и тела",
       zh: "面部及身体用氢水生成器",
       yue: "面部及身體用氫水生成器",
@@ -158,10 +159,10 @@ export const exhibitionProducts = {
   },
   "air-purifier": {
     id: "air-purifier",
-    exhibitionName: "Air Purifier",
-    category: "clean-air",
+    exhibitionName: "Air Purifier M Size",
+    category: "indoor-environment",
     displayNames: {
-      en: "Air Purifier",
+      en: "Air Purifier M Size",
       ru: "Очиститель воздуха",
       zh: "空气净化器",
       yue: "空氣淨化器",
@@ -169,6 +170,7 @@ export const exhibitionProducts = {
     },
     aliases: [
       "Air Purifier",
+      "Air Purifier M Size",
       "Capsula M Size",
       "air purifer",
       "air purifyer",
@@ -176,14 +178,37 @@ export const exhibitionProducts = {
     ],
     knowledgeStatus: "approved",
     knowledgeProductNames: ["air-purifier", "Air Purifier", "Capsula M Size"],
-    presentationAssetId: null,
+    presentationAssetId: "air-purifier-m-size",
+    comparableWith: [],
+    capabilities: [],
+  },
+  "air-humidifier": {
+    id: "air-humidifier",
+    exhibitionName: "Air Humidifier",
+    category: "indoor-environment",
+    displayNames: {
+      en: "Air Humidifier",
+      ru: "Увлажнитель воздуха",
+      zh: "空气加湿器",
+      yue: "空氣加濕器",
+      fr: "Humidificateur d’air",
+    },
+    aliases: ["Air Humidifier", "humidifier"],
+    knowledgeStatus: "approved",
+    knowledgeProductNames: ["air-humidifier", "Air Humidifier"],
+    presentationAssetId: "air-humidifier",
     comparableWith: [],
     capabilities: [],
   },
 } as const satisfies Readonly<Record<ProductId, ExhibitionProduct>>;
 
-export const exhibitionProductList: readonly ExhibitionProduct[] =
-  Object.values(exhibitionProducts);
+export const allProductList: readonly ExhibitionProduct[] = Object.values(exhibitionProducts);
+
+export const exhibitionProductList: readonly (ExhibitionProduct & {
+  id: ExhibitionProductId;
+})[] = (
+  ["air-purifier", "water-ionizer", "advanced", "everyday", "air-humidifier", "face-body-generator"] as const satisfies readonly ExhibitionProductId[]
+).map((id) => exhibitionProducts[id] as ExhibitionProduct & { id: ExhibitionProductId });
 
 export function isProductId(value: unknown): value is ProductId {
   return typeof value === "string" && value in exhibitionProducts;
@@ -215,7 +240,7 @@ function containsIdentity(text: string, identity: string) {
 export function resolveProductFromText(value: unknown): ProductId | null {
   if (typeof value !== "string" || !value.trim()) return null;
 
-  const matches = exhibitionProductList.filter((product) =>
+  const matches = allProductList.filter((product) =>
     [
       product.exhibitionName,
       ...Object.values(product.displayNames),
@@ -230,7 +255,7 @@ export function resolveKnowledgeProductId(value: unknown): ProductId | null {
   if (typeof value !== "string") return null;
   const normalized = value.trim().toLocaleLowerCase("en");
   return (
-    exhibitionProductList.find((product) =>
+    allProductList.find((product) =>
       product.knowledgeProductNames.some(
         (name) => name.toLocaleLowerCase("en") === normalized,
       ),

@@ -11,6 +11,7 @@ import {
   SpecialistSelectionScreen,
 } from "@/components/screens/journey-screens";
 import { VoiceControls } from "@/components/ui/voice-controls";
+import { ProductManualDialog } from "@/components/ui/product-manual-dialog";
 import { LiveAvatarPresentation } from "@/components/liveavatar/liveavatar-renderer";
 import type {
   LiveAvatarOutput,
@@ -19,7 +20,10 @@ import type {
 import type { SpeechSynthesisProvider } from "@/lib/voice/voice-types";
 import type { SupportedLanguage } from "@/types/language";
 import type { ConversationMessage } from "@/types/conversation";
-import { PRODUCT_IDS, type ProductId } from "@/types/product";
+import {
+  EXHIBITION_PRODUCT_IDS,
+  type ProductId,
+} from "@/types/product";
 import {
   exhibitionProducts,
   productCategoryNames,
@@ -97,6 +101,7 @@ function renderConversation(
       messages={messages}
       isLoading={false}
       onSubmitQuestion={async () => true}
+      onRetryLastQuestion={async () => true}
       onProducts={() => undefined}
       onOpenProduct={() => undefined}
       onEnd={() => undefined}
@@ -139,6 +144,29 @@ test("the kiosk attract screen localizes its neutral invitation in all five lang
   }
 });
 
+test("product manuals are a local in-app utility and do not require an avatar session", () => {
+  const closed = renderToStaticMarkup(
+    <ProductManualDialog isOpen={false} language="en" onClose={() => undefined} />,
+  );
+  const chooser = renderToStaticMarkup(
+    <ProductManualDialog isOpen language="en" onClose={() => undefined} />,
+  );
+
+  assert.equal(closed, "");
+  assert.match(chooser, /role="dialog"/);
+  assert.match(chooser, /Product manuals/);
+  assert.match(chooser, /GO User Manual/);
+  assert.match(chooser, /PRO User Manual/);
+  assert.doesNotMatch(chooser, /liveavatar|session|ElevenLabs|OpenAI/i);
+});
+
+test("the conversation presents product manuals as a secondary utility action", () => {
+  const markup = renderConversation("daniel");
+  assert.match(markup, /Product manuals/);
+  assert.match(markup, /conversation-manuals-action/);
+  assert.match(markup, /Ask Daniel a question/);
+});
+
 test("the visual specialist panel distinguishes idle, connecting, and genuine failure", () => {
   const idleDaniel = renderAvatarState("disconnected");
   const idleEmily = renderAvatarState("disconnected", "en", "emily");
@@ -159,6 +187,27 @@ test("the visual specialist panel distinguishes idle, connecting, and genuine fa
   assert.match(failed, /You can still continue the conversation/);
   assert.match(connected, /data-visual-phase="connected"/);
   assert.doesNotMatch(connected, /liveavatar-ambassador-placeholder/);
+});
+
+test("visual fallback keeps a browser-spoken answer in Speaking rather than Listening", () => {
+  const fallbackSpeaking: LiveAvatarSnapshot = {
+    ...avatarSnapshot("speaking"),
+    error: "safe failure",
+    outputPath: "elevenlabs-fallback",
+  };
+  const markup = renderToStaticMarkup(
+    <LiveAvatarPresentation
+      service={inertAvatarService}
+      guideId="daniel"
+      language="en"
+      snapshot={fallbackSpeaking}
+    />,
+  );
+
+  assert.match(markup, /data-visual-phase="fallback"/);
+  assert.match(markup, /Speaking…/);
+  assert.match(markup, /Daniel is answering now/);
+  assert.doesNotMatch(markup, /Listening/);
 });
 
 test("the intentional avatar idle state renders safely in all five languages", () => {
@@ -190,6 +239,11 @@ test("specialist selection presents Daniel and Emily as equal direct choices", (
   assert.match(markup, /Choose who you would like to speak with/);
   assert.match(markup, /Speak with Daniel/);
   assert.match(markup, /Speak with Emily/);
+  assert.match(markup, /%2Fspecialists%2Femily-preview\.png/);
+  assert.match(markup, /Emily — Wellness Specialist/);
+  assert.match(markup, /%2Fspecialists%2Fdaniel-preview\.png/);
+  assert.match(markup, /Daniel — Technology Specialist/);
+  assert.doesNotMatch(markup, /VISUAL PREVIEW/);
   assert.equal((markup.match(/idle-specialist-card/g) ?? []).length, 2);
   assert.doesNotMatch(markup, /Meet Daniel/);
 });
@@ -695,7 +749,7 @@ test("responsive kiosk layout defines two areas without horizontal overflow", as
   );
 });
 
-test("ordinary answers grow before Quick Questions without an internal scrollbar", async () => {
+test("wide kiosk allocates the remaining viewport height to internal conversation history", async () => {
   const css = await readFile(
     new URL("../../../app/globals.css", import.meta.url),
     "utf8",
@@ -703,7 +757,7 @@ test("ordinary answers grow before Quick Questions without an internal scrollbar
 
   assert.match(
     css,
-    /\.response-area\s*\{[^}]*max-height:\s*none;[^}]*overflow:\s*visible;/s,
+    /\.response-area\s*\{[^}]*max-height:\s*min\(22rem, 36dvh\);[^}]*overflow-y:\s*auto;/s,
   );
   assert.match(
     css,
@@ -715,19 +769,15 @@ test("ordinary answers grow before Quick Questions without an internal scrollbar
   );
   assert.match(
     css,
-    /\.conversation-content\s*\{[^}]*max-height:\s*none;[^}]*grid-template-rows:\s*auto auto;/s,
+    /\/\* Landscape kiosk: allocate the remaining viewport height to the transcript, not page scrolling\. \*\/[\s\S]*?\.conversation-content\s*\{[^}]*height:\s*calc\([\s\S]*?100dvh[^}]*overflow:\s*hidden;[^}]*grid-template-rows:\s*minmax\(0, 1fr\);/s,
   );
   assert.match(
     css,
-    /\.conversation-workspace\s*\{[^}]*min-height:\s*auto;[^}]*align-items:\s*start;/s,
+    /\.conversation-response-presentation:not\(:has\(\.presentation-panel\)\)\s*\{[^}]*flex:\s*1 1 auto;[^}]*flex-direction:\s*column;/s,
   );
   assert.match(
     css,
-    /\.conversation-dialogue\s*\{[^}]*min-height:\s*auto;/s,
-  );
-  assert.doesNotMatch(
-    css.slice(css.lastIndexOf("/* Final cascade: focused two-area kiosk composition */")),
-    /\.conversation-content\s*\{[^}]*max-height:\s*calc/s,
+    /\.conversation-response-presentation:not\(:has\(\.presentation-panel\)\) \.response-area\s*\{[^}]*max-height:\s*none;[^}]*flex:\s*1 1 auto;/s,
   );
 });
 
@@ -738,6 +788,10 @@ test("exhibition answers stay prominent and spoken highlighting does not alter f
   );
   const screenSource = await readFile(
     new URL("../../../components/screens/journey-screens.tsx", import.meta.url),
+    "utf8",
+  );
+  const voiceSource = await readFile(
+    new URL("../../../hooks/use-voice-mode.ts", import.meta.url),
     "utf8",
   );
 
@@ -762,10 +816,54 @@ test("exhibition answers stay prominent and spoken highlighting does not alter f
   assert.match(screenSource, /spoken-answer-segment is-complete/);
   assert.match(
     css,
-    /\.spoken-answer-segment\.is-complete\s*{[^}]*opacity:\s*0\.72;/s,
+    /\.spoken-answer-segment\.is-complete\s*{[^}]*opacity:\s*1;/s,
   );
   assert.match(screenSource, /: turn\.guide\.content/);
   assert.doesNotMatch(screenSource, /aria-hidden=.*spoken-answer-segment/);
+  assert.match(voiceSource, /let timing: SpeechTiming \| null = null;/);
+  assert.match(voiceSource, /let playbackClock: SpeechPlaybackClock \| null = null;/);
+  assert.match(voiceSource, /onTiming: \(nextTiming\)[\s\S]*?startSpokenHighlight\(\);/);
+  assert.match(voiceSource, /onPlaybackClock: \(clock: SpeechPlaybackClock\)[\s\S]*?startSpokenHighlight\(\);/);
+});
+
+test("the full-bleed kiosk invitation is pinned to the visual center", async () => {
+  const css = await readFile(
+    new URL("../../../app/globals.css", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(
+    css,
+    /\.attract-content-video \.attract-action\s*\{[^}]*position:\s*absolute;[^}]*top:\s*50%;[^}]*left:\s*50%;[^}]*grid-area:\s*auto;[^}]*transform:\s*translate\(-50%, -50%\);/s,
+  );
+  assert.match(
+    css,
+    /\.attract-content-video \.attract-action:hover\s*\{[^}]*transform:\s*translate\(-50%, calc\(-50% - 1px\)\);/s,
+  );
+});
+
+test("the landscape composer is a single large touch control without changing narrow layouts", async () => {
+  const css = await readFile(
+    new URL("../../../app/globals.css", import.meta.url),
+    "utf8",
+  );
+
+  const kioskRules = css.slice(
+    css.indexOf("/* Landscape kiosk: allocate the remaining viewport height"),
+  );
+  assert.match(
+    kioskRules,
+    /\.composer\s*\{[^}]*height:\s*5\.75rem;[^}]*min-height:\s*5\.75rem;[^}]*padding-top:\s*0;[^}]*align-items:\s*stretch;/s,
+  );
+  assert.match(
+    kioskRules,
+    /\.composer input\s*\{[^}]*height:\s*100%;[^}]*padding-right:\s*var\(--space-6\);[^}]*padding-left:\s*var\(--space-6\);/s,
+  );
+  assert.match(
+    kioskRules,
+    /\.composer-send\s*\{[^}]*width:\s*8\.5rem;[^}]*min-width:\s*8\.5rem;[^}]*height:\s*100%;[^}]*align-items:\s*center;[^}]*justify-content:\s*center;/s,
+  );
+  assert.match(css, /@media \(max-width: 47\.999rem\)[\s\S]*?\.composer input,[\s\S]*?\.composer-send\s*\{[^}]*min-height:\s*4\.375rem;/s);
 });
 
 test("conversation heading belongs to the dialogue column", () => {
@@ -779,7 +877,7 @@ test("conversation heading belongs to the dialogue column", () => {
   assert.ok(headingStart > dialogueStart);
 });
 
-test("the portfolio is registry-driven and groups all six exhibition products", () => {
+test("the portfolio is registry-driven and presents the six final exhibition products with photography", () => {
   const opened: string[] = [];
   const markup = renderToStaticMarkup(
     <ProductExplorerScreen
@@ -790,8 +888,8 @@ test("the portfolio is registry-driven and groups all six exhibition products", 
   );
 
   assert.match(markup, /Functional Water/);
-  assert.match(markup, /Clean Air/);
-  for (const productId of PRODUCT_IDS) {
+  assert.match(markup, /Indoor Environment/);
+  for (const productId of EXHIBITION_PRODUCT_IDS) {
     assert.ok(
       markup.includes(
         exhibitionProducts[productId].displayNames.en.replaceAll("&", "&amp;"),
@@ -800,14 +898,15 @@ test("the portfolio is registry-driven and groups all six exhibition products", 
     );
   }
   assert.equal(markup.match(/class="product-card"/g)?.length, 6);
-  assert.match(markup, /everyday-bottle\.png/);
-  assert.match(markup, /advanced-bottle\.png/);
-  assert.equal(markup.match(/<small>Product visual coming soon<\/small>/g)?.length, 4);
+  assert.match(markup, /products%2Fhydrogen-bottle-go%2Fhero\.png/);
+  assert.match(markup, /products%2Fair-humidifier%2Fhero\.png/);
+  assert.doesNotMatch(markup, /Product visual coming soon/);
+  assert.doesNotMatch(markup, /Water Mineralizer/);
   assert.deepEqual(opened, []);
 });
 
-test("product details stay structural for pending products and compare only GO with PRO", () => {
-  for (const productId of PRODUCT_IDS) {
+test("product details provide local galleries and concise catalogue context", () => {
+  for (const productId of EXHIBITION_PRODUCT_IDS) {
     const markup = renderToStaticMarkup(
       <ProductDetailScreen
         language="en"
@@ -831,11 +930,14 @@ test("product details stay structural for pending products and compare only GO w
       markup,
       /Ask about how it works, specifications, use or maintenance/,
     );
+    assert.match(markup, /At a glance/);
+    assert.match(markup, /How it works/);
+    assert.match(markup, /Care/);
+    assert.match(markup, /product-gallery-thumbnail/);
     if (productId === "everyday" || productId === "advanced") {
       assert.match(markup, /Compare GO and PRO/);
     } else {
       assert.doesNotMatch(markup, /Compare GO and PRO/);
-      assert.doesNotMatch(markup, /Key features|Best for/);
     }
   }
 });
@@ -850,8 +952,9 @@ test("portfolio identities and navigation remain localized in all five languages
       />,
     );
     assert.match(portfolio, new RegExp(productCategoryNames["functional-water"][language]));
-    assert.match(portfolio, new RegExp(productCategoryNames["clean-air"][language]));
+    assert.match(portfolio, new RegExp(productCategoryNames["indoor-environment"][language]));
     assert.match(portfolio, new RegExp(exhibitionProducts["air-purifier"].displayNames[language]));
+    assert.match(portfolio, new RegExp(exhibitionProducts["air-humidifier"].displayNames[language]));
 
     const detail = renderToStaticMarkup(
       <ProductDetailScreen
@@ -869,7 +972,19 @@ test("portfolio identities and navigation remain localized in all five languages
 
 test("portfolio CSS provides intentional landscape, portrait and mobile grids", async () => {
   const css = await readFile(new URL("../../../app/globals.css", import.meta.url), "utf8");
-  assert.match(css, /\.product-grid\s*\{[^}]*repeat\(3, minmax\(0, 1fr\)\)/s);
+  assert.match(css, /\.product-grid\s*\{[^}]*repeat\(4, minmax\(0, 1fr\)\)/s);
+  assert.match(
+    css,
+    /\.portfolio-group-indoor-environment \.product-card-visual\s*\{[^}]*height:\s*clamp\(11\.5rem, 13vw, 13rem\);[^}]*padding:\s*var\(--space-1\);/s,
+  );
+  assert.match(
+    css,
+    /\.product-card-visual\s*\{[^}]*height:\s*clamp\(14rem, 18vw, 16\.5rem\);[^}]*padding:\s*var\(--space-2\);/s,
+  );
+  assert.match(
+    css,
+    /\.detail-product-visual\s*\{[^}]*min-height:\s*29rem;[^}]*padding:\s*var\(--space-5\);/s,
+  );
   assert.match(css, /@media \(orientation: portrait\)[\s\S]*?\.product-grid\s*\{[^}]*repeat\(2, minmax\(0, 1fr\)\)/s);
   assert.match(css, /@media \(max-width: 47\.999rem\)[\s\S]*?\.product-grid,[\s\S]*?grid-template-columns: minmax\(0, 1fr\)/s);
   assert.match(css, /\.quick-topic-card\s*\{[^}]*min-height:\s*4\.75rem/s);

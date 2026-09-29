@@ -24,6 +24,12 @@ import type { GuideId } from "@/types/guide";
 import { isSupportedLanguage } from "@/lib/i18n/languages";
 import { isProductId } from "@/lib/data/exhibition-products";
 import { MAX_CONVERSATION_MESSAGE_LENGTH } from "@/lib/conversation/conversation-limits";
+import {
+  isLatencyTurnId,
+  latencyDuration,
+  latencyNow,
+  logTurnLatency,
+} from "@/lib/observability/turn-latency";
 
 export const runtime = "nodejs";
 
@@ -96,6 +102,7 @@ function validateRequest(value: unknown): ConversationApiRequest | null {
         request.sessionId.length === 0 ||
         request.sessionId.length > MAX_SESSION_ID_LENGTH)) ||
     (request.activeProduct !== undefined && !isProductId(request.activeProduct)) ||
+    (request.turnId !== undefined && !isLatencyTurnId(request.turnId)) ||
     !Array.isArray(request.history) ||
     request.history.length > MAX_RECEIVED_HISTORY_MESSAGES ||
     !request.history.every(isHistoryItem)
@@ -117,6 +124,7 @@ function validateRequest(value: unknown): ConversationApiRequest | null {
     activeProduct: isProductId(request.activeProduct)
       ? request.activeProduct
       : undefined,
+    turnId: isLatencyTurnId(request.turnId) ? request.turnId : undefined,
   };
 }
 
@@ -181,6 +189,7 @@ function getPublicErrorCode(error: unknown): ConversationApiErrorCode {
 
 export async function POST(request: Request) {
   const requestId = crypto.randomUUID();
+  const startedAt = latencyNow();
   let body: unknown;
 
   try {
@@ -205,6 +214,8 @@ export async function POST(request: Request) {
     });
   }
 
+  logTurnLatency(conversationRequest.turnId, "conversation-api.start");
+
   try {
     sessionManager.deleteExpiredSessions(undefined, inFlightSessionIds);
     const usableSessionId =
@@ -220,10 +231,15 @@ export async function POST(request: Request) {
         sessionId: usableSessionId,
         language: conversationRequest.language,
         activeProduct: conversationRequest.activeProduct,
+        turnId: conversationRequest.turnId,
       }).finally(() => {
         if (usableSessionId) inFlightSessionIds.delete(usableSessionId);
       });
 
+    logTurnLatency(conversationRequest.turnId, "conversation-api.end", {
+      durationMs: latencyDuration(startedAt),
+      outcome: "success",
+    });
     return NextResponse.json<ConversationApiResponse>({
       success: true,
       response: result.response,
@@ -244,6 +260,11 @@ export async function POST(request: Request) {
       publicCode: code,
       orchestratorCode:
         error instanceof AIOrchestratorError ? error.code : undefined,
+    });
+    logTurnLatency(conversationRequest.turnId, "conversation-api.end", {
+      durationMs: latencyDuration(startedAt),
+      outcome: "error",
+      publicCode: code,
     });
 
     return errorResponse({

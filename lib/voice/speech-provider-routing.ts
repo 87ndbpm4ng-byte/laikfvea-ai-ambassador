@@ -13,9 +13,17 @@ export function selectSpeechProvider(
   request: SpeechApiRequest,
   environment: Record<string, string | undefined> = process.env,
 ): SpeechProviderName {
+  const language = resolveSupportedLanguage(request.language);
+
+  // ElevenLabs does not have a safe Cantonese language-code mapping in this
+  // project; keep the established OpenAI route rather than risk Mandarin.
+  if (request.guideId === "emily") {
+    return language === "yue" ? "openai" : "elevenlabs";
+  }
+
   if (
     request.guideId === "daniel" &&
-    (resolveSupportedLanguage(request.language) !== "yue" ||
+    (language !== "yue" ||
       !isDanielCantoneseSpeechEnabled(environment))
   ) {
     return "elevenlabs";

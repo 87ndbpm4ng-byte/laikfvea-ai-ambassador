@@ -79,6 +79,29 @@ test("avatar idle, connecting, and fallback copy exists in every supported langu
   );
 });
 
+test("product-manual visitor copy exists in every supported language", () => {
+  for (const language of ["en", "ru", "zh", "yue", "fr"] as const) {
+    const copy = getUiCopy(language);
+    const text = [
+      copy.productManuals,
+      copy.productManualsSupport,
+      copy.goUserManual,
+      copy.proUserManual,
+      copy.closeManuals,
+      copy.backToManuals,
+      copy.viewingManual(copy.goUserManual),
+    ].join(" ");
+
+    assert.ok(copy.productManuals.length > 3, language);
+    assert.ok(copy.productManualsSupport.length > 10, language);
+    assert.doesNotMatch(text, /LiveAvatar|provider|token|API|HTTP/i);
+  }
+
+  const cantonese = getUiCopy("yue");
+  assert.match(`${cantonese.productManuals} ${cantonese.productManualsSupport}`, /產品|螢幕/);
+  assert.doesNotMatch(`${cantonese.productManuals} ${cantonese.productManualsSupport}`, /产品|屏幕/);
+});
+
 test("the client input boundary has concise static copy in every language", () => {
   for (const language of ["en", "ru", "zh", "yue", "fr"] as const) {
     const message = getUiCopy(language).questionLimitReached(1_000);

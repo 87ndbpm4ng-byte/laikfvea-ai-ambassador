@@ -99,6 +99,23 @@ function expandedTerms(text: string, session?: VisitorSession) {
     if (/\bhow do i clean it\b/i.test(text)) terms.push("cleaning maintenance", "blockages");
     if (/\b(?:room|coverage|cover|large|big)\b/i.test(text)) terms.push("room coverage", "218 sq. ft.", "20.25 m²");
   }
+  if (/\b(?:what does|how does).*?air humidifier/i.test(text)) {
+    terms.push("ultrasonic humidifier", "mist modes", "water tank");
+  }
+  if (/\b(?:how do i|how often|how long).*?air humidifier/i.test(text)) {
+    terms.push("preparing for use", "cleaning maintenance", "timer");
+  }
+  if (session?.activeProduct === "air-humidifier") {
+    // Product-bound Quick Questions can be localized. Keeping these neutral
+    // manual terms on the query preserves the active product without making
+    // the visitor's visible question English-only.
+    terms.push("ultrasonic humidifier", "water tank");
+    if (/\bhow does it work\b/i.test(text)) terms.push("ultrasonic humidifier", "mist modes");
+    if (/\bhow do i (?:use|set up) it\b/i.test(text)) terms.push("preparing for use", "filling the tank", "controls");
+    if (/\bhow do i clean it\b/i.test(text)) terms.push("maintenance care", "piezoelectric element", "air filter");
+    if (/\b(?:tank|capacity|volume)\b/i.test(text)) terms.push("water tank capacity", "2.4 L");
+    if (/\b(?:cycle|mode|mist|timer)\b/i.test(text)) terms.push("mist modes", "timer", "automatic shutoff");
+  }
   if (/\b(?:what is|what does|how does).*?(?:water mineralizer|severyanka mineral additive)/i.test(text)) {
     terms.push("product identity", "documented purpose", "preparation and use");
   }
@@ -123,6 +140,15 @@ function expandedTerms(text: string, session?: VisitorSession) {
   if (session?.activeProduct === "water-ionizer") {
     if (/\bhow does it work\b/i.test(text)) terms.push("product purpose", "operating principle");
     if (/\bhow do i use it\b/i.test(text)) terms.push("preparing alkaline and acidic water", "controls");
+    if (/\b(?:what (?:types?|kinds?) of water|water types)\b/i.test(text)) {
+      terms.push("water types and production volumes", "alkaline water", "acidic water");
+    }
+    if (/\b(?:ph|ionization level|water level)\b/i.test(text)) {
+      terms.push("selectable ionization level", "pH", "Up", "Down");
+    }
+    if (/\b(?:clean|wash|maintenance)\b/i.test(text)) {
+      terms.push("cleaning and maintenance", "unplug before cleaning");
+    }
   }
   if (
     /\b(?:compare|comparison|difference)\b/i.test(text) &&
@@ -170,6 +196,7 @@ function inferProduct(text: string): RetrievalProduct | null {
 }
 
 function productFromSession(session: VisitorSession): RetrievalProduct | null {
+  if (isProductId(session.activeProduct)) return session.activeProduct;
   const viewed = session.viewedProducts.at(-1);
   if (isProductId(viewed)) return viewed;
   const recentProductText = [...session.conversationHistory]
@@ -210,7 +237,7 @@ function sectionTypesFor(text: string): string[] {
 export function shouldRunRetrieval(
   message: string,
   language: VisitorSession["language"] = "en",
-  session?: Pick<VisitorSession, "activeTopic" | "lastDiscussedFeature" | "conversationHistory">,
+  session?: Pick<VisitorSession, "activeProduct" | "activeTopic" | "lastDiscussedFeature" | "conversationHistory">,
 ): boolean {
   const knowledgeText = createKnowledgeQueryText(message, language);
   const terms = tokenizeRetrievalText(knowledgeText);
@@ -220,6 +247,10 @@ export function shouldRunRetrieval(
     return Boolean(session?.activeTopic && session.conversationHistory.length > 0);
   }
   if (detectRetrievalTopicGroups(knowledgeText).length > 0) return true;
+  // A server-resolved product context makes a non-conversational follow-up
+  // product-bound. This is essential for localized Quick Questions whose
+  // display text does not repeat the English product name.
+  if (session?.activeProduct && knowledgeText.trim().length > 0) return true;
   return false;
 }
 
@@ -232,8 +263,9 @@ export function createRetrievalQuery(input: {
     input.session.language,
   );
   const recognizedProduct = inferProduct(knowledgeText);
-  const retrievalText = recognizedProduct
-    ? `${knowledgeText} ${exhibitionProducts[recognizedProduct].exhibitionName}`
+  const activeProduct = recognizedProduct ?? productFromSession(input.session);
+  const retrievalText = activeProduct
+    ? `${knowledgeText} ${exhibitionProducts[activeProduct].exhibitionName}`
     : knowledgeText;
   const recentEntries: SessionConversationEntry[] = [
     ...input.session.conversationHistory,
@@ -250,8 +282,7 @@ export function createRetrievalQuery(input: {
         ...expandedTerms(retrievalText, input.session),
       ]),
     ],
-    activeProduct:
-      recognizedProduct ?? productFromSession(input.session),
+    activeProduct,
     visitorIntent: input.session.currentIntent,
     conversationStage: input.session.currentConversationStage,
     recentContext,

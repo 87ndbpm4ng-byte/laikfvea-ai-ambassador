@@ -20,6 +20,9 @@ export type LiveAvatarStateListener = (snapshot: LiveAvatarSnapshot) => void;
 
 export type LiveAvatarSpeechMetadata = {
   diagnosticId?: string;
+  turnId?: string;
+  latencyTurnId?: string;
+  questionSubmittedAtMs?: number;
   onPlaybackStarted?: () => void;
 };
 

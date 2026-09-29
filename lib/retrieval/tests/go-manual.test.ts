@@ -86,6 +86,20 @@ test("PRO cycle, concentration, and inhalation remain isolated from GO", async (
   }
 });
 
+test("PRO alkaline-water instructions stay in the approved PRO manual", async () => {
+  const { query, result } = await search(
+    "How do I prepare alkaline ionized water with PRO?",
+  );
+
+  assert.equal(query.activeProduct, "advanced");
+  assert.equal(result.insufficientKnowledge, false);
+  assert.equal(result.matchedChunks[0]?.chunk.sourceId, "ADVANCED-BOTTLE-MANUAL-001");
+  assert.ok(result.matchedChunks.every(({ chunk }) => chunk.product !== "everyday"));
+  assert.ok(
+    result.matchedChunks.some(({ chunk }) => /alkaline|mineral/i.test(chunk.text)),
+  );
+});
+
 test("GO does not inherit PRO inhalation or mineralisation evidence", async () => {
   for (const question of [
     "Does GO support hydrogen inhalation?",

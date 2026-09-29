@@ -14,6 +14,11 @@ import type { ProductId } from "@/types/product";
 import { MAX_CONVERSATION_MESSAGE_LENGTH, MAX_VISIBLE_CONVERSATION_MESSAGES } from "@/lib/conversation/conversation-limits";
 import { reconcileActiveProduct } from "@/lib/conversation/active-product-context";
 import { classifyInputSignal, getInputSignalMessage, isAccidentalDuplicateSubmission, type RecentSubmission } from "@/lib/conversation/input-signal";
+import {
+  createLatencyTurnId,
+  latencyNow,
+  logTurnLatency,
+} from "@/lib/observability/turn-latency";
 
 let fallbackMessageSequence = 0;
 
@@ -38,6 +43,7 @@ export function useConversation(
   const activeProductRef = useRef<ProductId | undefined>(undefined);
   const lifecycleRef = useRef(new VisitorSessionLifecycle());
   const lastSubmissionRef = useRef<RecentSubmission>(null);
+  const lastFailedSubmissionRef = useRef<QuestionSubmission | null>(null);
 
   const submitQuestion = useCallback(
     async ({
@@ -74,11 +80,21 @@ export function useConversation(
       }
 
       lastSubmissionRef.current = { key: submissionKey, at: now };
+      const latency =
+        process.env.NODE_ENV === "development"
+          ? {
+              turnId: createLatencyTurnId(),
+              questionSubmittedAtMs: latencyNow(),
+            }
+          : undefined;
       setConversationNotice(null);
       loadingRef.current = true;
       setIsLoading(true);
       logVoiceDiagnostic("question-submitted", {
         questionSource: source,
+      });
+      logTurnLatency(latency?.turnId, "question-submitted", {
+        source,
       });
 
       const visitorMessage: ConversationMessage = {
@@ -119,6 +135,7 @@ export function useConversation(
           language: language ?? undefined,
           questionId,
           relatedProduct: productContext,
+          turnId: latency?.turnId,
           sessionId: sessionIdRef.current,
           signal: request.controller.signal,
         });
@@ -143,7 +160,13 @@ export function useConversation(
           questionId,
           source,
           speakable: response.speakable,
+          isRecovery: response.speakable === false,
+          latency,
         };
+
+        lastFailedSubmissionRef.current = response.speakable === false
+          ? { content: normalizedContent, source, questionId, relatedProduct }
+          : null;
 
         logVoiceDiagnostic("assistant-response", {
           questionSource: source,
@@ -166,6 +189,16 @@ export function useConversation(
     [guide, language, messages],
   );
 
+  const retryLastQuestion = useCallback(async () => {
+    const previousSubmission = lastFailedSubmissionRef.current;
+
+    if (!previousSubmission || loadingRef.current) {
+      return false;
+    }
+
+    return submitQuestion(previousSubmission);
+  }, [submitQuestion]);
+
   const clearHistory = useCallback(() => {
     const sessionId = sessionIdRef.current;
     lifecycleRef.current.reset();
@@ -174,6 +207,7 @@ export function useConversation(
     setMessages([]);
     setConversationNotice(null);
     lastSubmissionRef.current = null;
+    lastFailedSubmissionRef.current = null;
     sessionIdRef.current = undefined;
     activeProductRef.current = undefined;
     if (sessionId) void deleteConversationSession(sessionId);
@@ -203,6 +237,7 @@ export function useConversation(
     isLoading,
     conversationNotice,
     submitQuestion,
+    retryLastQuestion,
     clearHistory,
     selectProduct,
     cancelPending,

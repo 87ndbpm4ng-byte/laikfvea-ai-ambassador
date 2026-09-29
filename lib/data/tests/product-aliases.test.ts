@@ -45,6 +45,7 @@ test("curated high-confidence English aliases resolve to stable product IDs", ()
     ["How does the air purifer work?", "air-purifier"],
     ["Tell me about the air purifyer.", "air-purifier"],
     ["Show me the air cleaner.", "air-purifier"],
+    ["How does the Air Humidifier work?", "air-humidifier"],
     ["Tell me about the face and body generator.", "face-body-generator"],
     ["How does the face body generator work?", "face-body-generator"],
     ["Show me the hydrogen face generator.", "face-body-generator"],
@@ -109,6 +110,7 @@ test("typo retrieval remains isolated to the resolved product source", async () 
   const cases: readonly [string, ProductId, string][] = [
     ["How does the water ioniser work?", "water-ionizer", "WATER-IONIZER-MANUAL-001"],
     ["How does the air purifer work?", "air-purifier", "AIR-PURIFIER-MANUAL-001"],
+    ["How does the Air Humidifier work?", "air-humidifier", "AIR-HUMIDIFIER-MANUAL-001"],
     ["How do I use the mineraliser?", "water-mineralizer", "WATER-MINERALIZER-MANUAL-001"],
     ["How does the face body generator work?", "face-body-generator", "FACE-BODY-GENERATOR-MANUAL-001"],
     ["How does the GO bottle work?", "everyday", "GO-BOTTLE-MANUAL-001"],

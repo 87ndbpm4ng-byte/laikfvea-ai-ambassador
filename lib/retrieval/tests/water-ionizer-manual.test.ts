@@ -3,7 +3,10 @@ import path from "node:path";
 import { test } from "node:test";
 import { ApprovedKnowledgeLoader } from "@/lib/retrieval/retrieval-loader";
 import { RetrievalEngine } from "@/lib/retrieval/retrieval-engine";
-import { createRetrievalQuery } from "@/lib/retrieval/retrieval-query";
+import {
+  createRetrievalQuery,
+  shouldRunRetrieval,
+} from "@/lib/retrieval/retrieval-query";
 import type { VisitorSession } from "@/lib/session/session-types";
 
 const loader = new ApprovedKnowledgeLoader(path.join(process.cwd(), "knowledge"));
@@ -113,6 +116,66 @@ test("five languages route Water Ionizer pH questions to one approved source", a
     const { query, result } = await search(question, { language });
     assert.equal(query.activeProduct, "water-ionizer", `${language}: ${query.text}`);
     assert.equal(result.matchedChunks[0]?.chunk.sourceId, "WATER-IONIZER-MANUAL-001", language);
+  }
+});
+
+test("French Water Ionizer Quick Questions retrieve the active product manual", async () => {
+  const cases: Array<[string, RegExp]> = [
+    ["Comment fonctionne l’ioniseur d’eau ?", /product purpose and operating principle/i],
+    [
+      "Quels types d’eau l’ioniseur d’eau peut-il produire ?",
+      /water types and production volumes/i,
+    ],
+    ["Comment sélectionner un niveau de pH ?", /preparing alkaline and acidic water/i],
+    ["Comment le nettoyer ?", /cleaning and maintenance/i],
+  ];
+
+  for (const [question, heading] of cases) {
+    const context = session({
+      language: "fr",
+      activeProduct: "water-ionizer",
+      viewedProducts: ["water-ionizer"],
+    });
+    assert.equal(shouldRunRetrieval(question, "fr", context), true, question);
+
+    const query = createRetrievalQuery({ message: question, session: context });
+    const result = await engine.search(query);
+    assert.equal(query.activeProduct, "water-ionizer", question);
+    assert.equal(result.insufficientKnowledge, false, question);
+    assert.ok(
+      result.matchedChunks.every(({ chunk }) => chunk.product === "water-ionizer"),
+      question,
+    );
+    assert.ok(result.matchedChunks.some(({ chunk }) => heading.test(chunk.heading)), question);
+  }
+});
+
+test("context-bound Water Ionizer Quick Questions remain retrievable across non-English languages", async () => {
+  const cases: Array<[VisitorSession["language"], string]> = [
+    ["ru", "Как выбрать уровень pH?"],
+    ["ru", "Как его чистить?"],
+    ["zh", "如何选择 pH 档位？"],
+    ["zh", "如何清洁？"],
+    ["yue", "點樣選擇 pH 級別？"],
+    ["yue", "點樣清潔？"],
+  ];
+
+  for (const [language, question] of cases) {
+    const context = session({
+      language,
+      activeProduct: "water-ionizer",
+      viewedProducts: ["water-ionizer"],
+    });
+    assert.equal(shouldRunRetrieval(question, language, context), true, `${language}: ${question}`);
+
+    const query = createRetrievalQuery({ message: question, session: context });
+    const result = await engine.search(query);
+    assert.equal(query.activeProduct, "water-ionizer", `${language}: ${question}`);
+    assert.equal(result.insufficientKnowledge, false, `${language}: ${question}`);
+    assert.ok(
+      result.matchedChunks.every(({ chunk }) => chunk.product === "water-ionizer"),
+      `${language}: ${question}`,
+    );
   }
 });
 

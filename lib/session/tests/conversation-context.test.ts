@@ -85,7 +85,7 @@ test("Face & Body Generator identity survives multi-turn references", () => {
     content: "How do I use it?",
   });
   assert.equal(followUp.activeProduct, "face-body-generator");
-  assert.match(followUp.resolvedQuestion ?? "", /active product: Hydrogen Water Generator for Face & Body/);
+  assert.match(followUp.resolvedQuestion ?? "", /active product: H₂ Generator Face & Body/);
 });
 
 test("Air Purifier identity survives multi-turn references", () => {
@@ -101,8 +101,25 @@ test("Air Purifier identity survives multi-turn references", () => {
   for (const content of ["How does it work?", "How do I clean it?"]) {
     const followUp = manager.recordVisitorMessage(session.sessionId, { content });
     assert.equal(followUp.activeProduct, "air-purifier");
-    assert.match(followUp.resolvedQuestion ?? "", /active product: Air Purifier/);
+    assert.match(followUp.resolvedQuestion ?? "", /active product: Air Purifier M Size/);
   }
+});
+
+test("Air Humidifier identity survives multi-turn references", () => {
+  const manager = createManager();
+  const session = manager.createSession();
+  const first = manager.recordVisitorMessage(session.sessionId, {
+    content: "Tell me about the Air Humidifier.",
+  });
+  assert.equal(first.activeProduct, "air-humidifier");
+  manager.recordAssistantMessage(session.sessionId, {
+    content: "The Air Humidifier uses ultrasonic technology to create fine mist.",
+  });
+  const followUp = manager.recordVisitorMessage(session.sessionId, {
+    content: "How do I clean it?",
+  });
+  assert.equal(followUp.activeProduct, "air-humidifier");
+  assert.match(followUp.resolvedQuestion ?? "", /active product: Air Humidifier/);
 });
 
 test("standalone Water Mineralizer identity survives multi-turn references", () => {

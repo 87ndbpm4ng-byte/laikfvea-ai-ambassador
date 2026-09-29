@@ -73,6 +73,7 @@ export class PromptBuilder {
     }
 
     return {
+      turnId: context.metadata.turnId,
       systemInstructions: createSystemPrompt(
         context.metadata.guide,
         resolveSupportedLanguage(context.session.language),

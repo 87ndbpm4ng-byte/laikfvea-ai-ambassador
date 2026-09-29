@@ -19,6 +19,11 @@ export type ConversationMessage = {
   questionId?: string;
   source?: QuestionSubmissionSource;
   speakable?: boolean;
+  isRecovery?: boolean;
+  latency?: {
+    turnId: string;
+    questionSubmittedAtMs: number;
+  };
 };
 
 export type ConversationHistoryItem = {
@@ -46,6 +51,7 @@ export type ConversationApiRequest = {
   language?: SupportedLanguage;
   sessionId?: string;
   activeProduct?: ProductId;
+  turnId?: string;
 };
 
 export type ConversationApiErrorCode =

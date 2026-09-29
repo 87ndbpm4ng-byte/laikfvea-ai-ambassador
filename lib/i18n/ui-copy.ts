@@ -41,6 +41,18 @@ type UiCopy = {
   sending: string;
   send: string;
   endSession: string;
+  productManuals: string;
+  productManualsSupport: string;
+  goUserManual: string;
+  proUserManual: string;
+  closeManuals: string;
+  backToManuals: string;
+  viewingManual: (name: string) => string;
+  endConversationConfirmationTitle: string;
+  endConversationConfirmationBody: string;
+  continueConversation: string;
+  answerUnavailable: string;
+  tryAgain: string;
   stillExploring: string;
   restartCountdown: (seconds: number) => string;
   continueSession: string;
@@ -98,6 +110,10 @@ type UiCopy = {
   backToConversation: string;
   keyFeatures: string;
   useCases: string;
+  atAGlance: string;
+  howItWorks: string;
+  care: string;
+  galleryImage: (index: number, count: number) => string;
   compare: string;
   askGuide: string;
   compareBottles: string;
@@ -173,6 +189,18 @@ const en: UiCopy = {
   sending: "Sending",
   send: "Send",
   endSession: "End conversation",
+  productManuals: "Product manuals",
+  productManualsSupport: "Choose a manual to read on screen.",
+  goUserManual: "GO User Manual",
+  proUserManual: "PRO User Manual",
+  closeManuals: "Close manuals",
+  backToManuals: "Back to manuals",
+  viewingManual: (name) => `Viewing: ${name}`,
+  endConversationConfirmationTitle: "End this conversation?",
+  endConversationConfirmationBody: "Your questions and answers will be cleared from this kiosk.",
+  continueConversation: "Continue conversation",
+  answerUnavailable: "Couldn’t get an answer",
+  tryAgain: "Try again",
   stillExploring: "Still exploring?",
   restartCountdown: (seconds) => `This session will restart in ${seconds} seconds.`,
   continueSession: "Continue session",
@@ -230,6 +258,10 @@ const en: UiCopy = {
   backToConversation: "Back to Conversation",
   keyFeatures: "Key features",
   useCases: "Use cases",
+  atAGlance: "At a glance",
+  howItWorks: "How it works",
+  care: "Care",
+  galleryImage: (index, count) => `View image ${index} of ${count}`,
   compare: "Compare",
   askGuide: "Ask the guide",
   compareBottles: "Compare the bottles",
@@ -312,6 +344,18 @@ const ru: UiCopy = {
   sending: "Отправка",
   send: "Отправить",
   endSession: "Завершить разговор",
+  productManuals: "Руководства по продуктам",
+  productManualsSupport: "Выберите руководство для просмотра на экране.",
+  goUserManual: "Руководство пользователя GO",
+  proUserManual: "Руководство пользователя PRO",
+  closeManuals: "Закрыть руководства",
+  backToManuals: "К выбору руководств",
+  viewingManual: (name) => `Просмотр: ${name}`,
+  endConversationConfirmationTitle: "Завершить разговор?",
+  endConversationConfirmationBody: "Ваши вопросы и ответы будут удалены с этого киоска.",
+  continueConversation: "Продолжить разговор",
+  answerUnavailable: "Не удалось получить ответ",
+  tryAgain: "Попробовать снова",
   stillExploring: "Продолжаете знакомство?",
   restartCountdown: (seconds) => `Сеанс перезапустится через ${seconds} сек.`,
   continueSession: "Продолжить сеанс",
@@ -369,6 +413,10 @@ const ru: UiCopy = {
   backToConversation: "Вернуться к разговору",
   keyFeatures: "Основные функции",
   useCases: "Варианты использования",
+  atAGlance: "Кратко",
+  howItWorks: "Как это работает",
+  care: "Уход",
+  galleryImage: (index, count) => `Открыть изображение ${index} из ${count}`,
   compare: "Сравнить",
   askGuide: "Спросить специалиста",
   compareBottles: "Сравнение бутылок",
@@ -451,6 +499,18 @@ const zh: UiCopy = {
   sending: "正在发送",
   send: "发送",
   endSession: "结束对话",
+  productManuals: "产品说明书",
+  productManualsSupport: "选择要在屏幕上查看的说明书。",
+  goUserManual: "GO 用户手册",
+  proUserManual: "PRO 用户手册",
+  closeManuals: "关闭说明书",
+  backToManuals: "返回说明书列表",
+  viewingManual: (name) => `正在查看：${name}`,
+  endConversationConfirmationTitle: "结束这次对话？",
+  endConversationConfirmationBody: "您的问题和回答将从这台展台设备中清除。",
+  continueConversation: "继续对话",
+  answerUnavailable: "暂时无法获取回答",
+  tryAgain: "重试",
   stillExploring: "还在了解吗？",
   restartCountdown: (seconds) => `本次对话将在 ${seconds} 秒后重置。`,
   continueSession: "继续对话",
@@ -508,6 +568,10 @@ const zh: UiCopy = {
   backToConversation: "返回对话",
   keyFeatures: "主要功能",
   useCases: "使用场景",
+  atAGlance: "产品概览",
+  howItWorks: "工作原理",
+  care: "维护保养",
+  galleryImage: (index, count) => `查看第 ${index} 张，共 ${count} 张图片`,
   compare: "比较",
   askGuide: "询问专家",
   compareBottles: "比较两款水瓶",
@@ -590,6 +654,18 @@ const yue: UiCopy = {
   sending: "傳送中",
   send: "傳送",
   endSession: "結束對話",
+  productManuals: "產品說明書",
+  productManualsSupport: "請揀一份說明書喺螢幕上閱覽。",
+  goUserManual: "GO 使用說明書",
+  proUserManual: "PRO 使用說明書",
+  closeManuals: "關閉說明書",
+  backToManuals: "返回說明書列表",
+  viewingManual: (name) => `正在睇：${name}`,
+  endConversationConfirmationTitle: "結束今次對話？",
+  endConversationConfirmationBody: "你嘅問題同答案會喺呢部展覽裝置清除。",
+  continueConversation: "繼續對話",
+  answerUnavailable: "暫時未能提供答案",
+  tryAgain: "再試一次",
   stillExploring: "仲想繼續了解？",
   restartCountdown: (seconds) => `今次對話會喺 ${seconds} 秒後重新開始。`,
   continueSession: "繼續對話",
@@ -647,6 +723,10 @@ const yue: UiCopy = {
   backToConversation: "返回對話",
   keyFeatures: "主要功能",
   useCases: "使用情況",
+  atAGlance: "產品概覽",
+  howItWorks: "點樣運作",
+  care: "保養",
+  galleryImage: (index, count) => `查看第 ${index} 張，共 ${count} 張圖片`,
   compare: "比較",
   askGuide: "問專家",
   compareBottles: "比較兩款水樽",
@@ -729,6 +809,18 @@ const fr: UiCopy = {
   sending: "Envoi en cours",
   send: "Envoyer",
   endSession: "Terminer la conversation",
+  productManuals: "Manuels produits",
+  productManualsSupport: "Choisissez un manuel à consulter à l’écran.",
+  goUserManual: "Manuel d’utilisation GO",
+  proUserManual: "Manuel d’utilisation PRO",
+  closeManuals: "Fermer les manuels",
+  backToManuals: "Retour aux manuels",
+  viewingManual: (name) => `Consultation : ${name}`,
+  endConversationConfirmationTitle: "Terminer cette conversation ?",
+  endConversationConfirmationBody: "Vos questions et réponses seront effacées de cette borne.",
+  continueConversation: "Continuer la conversation",
+  answerUnavailable: "Impossible d’obtenir une réponse",
+  tryAgain: "Réessayer",
   stillExploring: "Vous souhaitez continuer ?",
   restartCountdown: (seconds) => `Cette conversation redémarrera dans ${seconds} secondes.`,
   continueSession: "Continuer la conversation",
@@ -786,6 +878,10 @@ const fr: UiCopy = {
   backToConversation: "Retour à la conversation",
   keyFeatures: "Fonctions principales",
   useCases: "Usages",
+  atAGlance: "En bref",
+  howItWorks: "Comment cela fonctionne",
+  care: "Entretien",
+  galleryImage: (index, count) => `Voir l’image ${index} sur ${count}`,
   compare: "Comparer",
   askGuide: "Demander au spécialiste",
   compareBottles: "Comparer les deux bouteilles",

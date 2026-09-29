@@ -4,6 +4,7 @@ import { POST } from "@/app/api/speech/route";
 import {
   generateElevenLabsSpeech,
   generateElevenLabsSpeechWithTimestamps,
+  getElevenLabsVoiceId,
   ElevenLabsSpeechError,
   MissingElevenLabsConfigError,
 } from "@/lib/voice/elevenlabs-speech-service";
@@ -195,7 +196,7 @@ test("Emily and Daniel use the configured OpenAI voices", () => {
   assert.equal(OPENAI_VOICE_PROFILES.daniel.voice, "cedar");
 });
 
-test("guide speech routing keeps Emily on OpenAI and Daniel on ElevenLabs", async () => {
+test("guide speech routing uses ElevenLabs for Emily and Daniel", async () => {
   const calls: string[] = [];
   const audio = Uint8Array.from([1]).buffer;
   const dependencies = {
@@ -218,8 +219,45 @@ test("guide speech routing keeps Emily on OpenAI and Daniel on ElevenLabs", asyn
     dependencies,
   );
 
-  assert.equal(emily.provider, "openai");
+  assert.equal(emily.provider, "elevenlabs");
   assert.equal(daniel.provider, "elevenlabs");
+  assert.deepEqual(calls, ["elevenlabs", "elevenlabs"]);
+});
+
+test("Emily resolves her own ElevenLabs voice ID", () => {
+  const environment = {
+    ELEVENLABS_DANIEL_VOICE_ID: "daniel-test-voice",
+    ELEVENLABS_EMILY_VOICE_ID: "emily-test-voice",
+  };
+
+  assert.equal(getElevenLabsVoiceId("daniel", environment), "daniel-test-voice");
+  assert.equal(getElevenLabsVoiceId("emily", environment), "emily-test-voice");
+});
+
+test("Emily keeps OpenAI for Cantonese while using ElevenLabs elsewhere", async () => {
+  const calls: string[] = [];
+  const dependencies = {
+    openai: async () => {
+      calls.push("openai");
+      return Uint8Array.from([1]).buffer;
+    },
+    elevenlabs: async () => {
+      calls.push("elevenlabs");
+      return Uint8Array.from([1]).buffer;
+    },
+  };
+
+  const cantonese = await generateGuideSpeech(
+    { text: "用廣東話講解。", guideId: "emily", language: "zh-HK" },
+    dependencies,
+  );
+  const french = await generateGuideSpeech(
+    { text: "Expliquez-le clairement.", guideId: "emily", language: "fr-FR" },
+    dependencies,
+  );
+
+  assert.equal(cantonese.provider, "openai");
+  assert.equal(french.provider, "elevenlabs");
   assert.deepEqual(calls, ["openai", "elevenlabs"]);
 });
 

@@ -10,6 +10,11 @@ import {
   getLanguageConfiguration,
   resolveSupportedLanguage,
 } from "@/lib/i18n/languages";
+import type { GuideId } from "@/types/guide";
+import {
+  latencyDuration,
+  logTurnLatency,
+} from "@/lib/observability/turn-latency";
 
 export class MissingElevenLabsConfigError extends Error {
   constructor() {
@@ -55,6 +60,15 @@ export type ElevenLabsAlignedSpeech = {
   alignment: NonNullable<ElevenLabsAlignmentResponse["alignment"]> | null;
 };
 
+export function getElevenLabsVoiceId(
+  guideId: GuideId,
+  environment: Record<string, string | undefined> = process.env,
+) {
+  return guideId === "emily"
+    ? environment.ELEVENLABS_EMILY_VOICE_ID
+    : environment.ELEVENLABS_DANIEL_VOICE_ID;
+}
+
 function base64ToArrayBuffer(value: string) {
   return Uint8Array.from(Buffer.from(value, "base64")).buffer;
 }
@@ -63,20 +77,29 @@ export async function generateElevenLabsSpeechWithTimestamps(
   request: SpeechApiRequest,
   options: ElevenLabsSpeechOptions = {},
 ): Promise<ElevenLabsAlignedSpeech> {
-  const { response, voiceId } = await requestElevenLabsSpeech(request, options, true);
+  const { response, voiceId, requestStartedAt } = await requestElevenLabsSpeech(
+    request,
+    options,
+    true,
+  );
   const payload = (await response.json()) as ElevenLabsAlignmentResponse;
   if (!payload.audio_base64) throw new ElevenLabsSpeechError(response.status);
   // Raw alignment corresponds to the submitted/visible answer. Normalized
   // alignment may expand numbers or symbols and is only a fallback.
   const alignment = payload.alignment ?? payload.normalized_alignment ?? null;
+  const audio = base64ToArrayBuffer(payload.audio_base64);
+  logTurnLatency(request.latencyTurnId, "elevenlabs.fully-buffered", {
+    durationMs: latencyDuration(requestStartedAt),
+  });
 
-  console.info("[speech-api] Daniel aligned ElevenLabs audio buffered.", {
+  console.info("[speech-api] ElevenLabs aligned audio buffered.", {
+    guideId: request.guideId,
     provider: "elevenlabs",
     voiceIdSuffix: voiceId.slice(-4),
     status: response.status,
     alignedCharacters: alignment?.characters.length ?? 0,
   });
-  return { audio: base64ToArrayBuffer(payload.audio_base64), alignment };
+  return { audio, alignment };
 }
 
 export type ElevenLabsProgressiveSpeech = {
@@ -103,7 +126,8 @@ export async function generateElevenLabsSpeech(
     completeMs: completedAt - requestStartedAt,
   });
 
-  console.info("[speech-api] Daniel ElevenLabs audio buffered.", {
+  console.info("[speech-api] ElevenLabs audio buffered.", {
+    guideId: request.guideId,
     provider: "elevenlabs",
     voiceIdSuffix: voiceId.slice(-4),
     status: response.status,
@@ -139,8 +163,7 @@ async function requestElevenLabsSpeech(
     throw new ElevenLabsSpeechError(422);
   }
   const apiKey = options.apiKey ?? process.env.ELEVENLABS_API_KEY;
-  const voiceId =
-    options.voiceId ?? process.env.ELEVENLABS_DANIEL_VOICE_ID;
+  const voiceId = options.voiceId ?? getElevenLabsVoiceId(request.guideId);
   const outputFormat =
     options.output === "liveavatar"
       ? ELEVENLABS_LIVEAVATAR_OUTPUT_FORMAT
@@ -148,13 +171,15 @@ async function requestElevenLabsSpeech(
   const accept =
     options.output === "liveavatar" ? "application/octet-stream" : "audio/mpeg";
 
-  console.info("[speech-api] Daniel speech provider selected.", {
+  console.info("[speech-api] ElevenLabs speech provider selected.", {
+    guideId: request.guideId,
     provider: "elevenlabs",
     voiceIdSuffix: voiceId ? voiceId.slice(-4) : "missing",
   });
 
   if (!apiKey || !voiceId) {
-    console.error("[speech-api] Daniel ElevenLabs configuration missing.", {
+    console.error("[speech-api] ElevenLabs configuration missing.", {
+      guideId: request.guideId,
       provider: "elevenlabs",
       voiceIdSuffix: voiceId ? voiceId.slice(-4) : "missing",
       apiKeyConfigured: Boolean(apiKey),
@@ -164,6 +189,7 @@ async function requestElevenLabsSpeech(
 
   const fetcher = options.fetcher ?? fetch;
   const requestStartedAt = performance.now();
+  logTurnLatency(request.latencyTurnId, "elevenlabs.request-start");
   const response = await fetcher(
     `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(
       voiceId,
@@ -190,8 +216,12 @@ async function requestElevenLabsSpeech(
     },
   );
   const firstByteAt = performance.now();
+  logTurnLatency(request.latencyTurnId, "elevenlabs.response-received", {
+    durationMs: Math.round(firstByteAt - requestStartedAt),
+  });
 
-  console.info("[speech-api] Daniel ElevenLabs response received.", {
+  console.info("[speech-api] ElevenLabs response received.", {
+    guideId: request.guideId,
     provider: "elevenlabs",
     voiceIdSuffix: voiceId.slice(-4),
     status: response.status,

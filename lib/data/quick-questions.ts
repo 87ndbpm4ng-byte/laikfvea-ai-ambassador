@@ -247,6 +247,36 @@ const productQuestions: Readonly<
       fr: "Quand faut-il remplacer le préfiltre du purificateur d’air ?",
     }, "air-purifier"),
   ],
+  "air-humidifier": [
+    question("humidifier-operation", {
+      en: "How does the Air Humidifier work?",
+      ru: "Как работает увлажнитель воздуха?",
+      zh: "空气加湿器如何工作？",
+      yue: "空氣加濕器點樣運作？",
+      fr: "Comment fonctionne l’humidificateur d’air ?",
+    }, "air-humidifier"),
+    question("humidifier-modes", {
+      en: "What mist modes does it have?",
+      ru: "Какие режимы распыления у него есть?",
+      zh: "它有哪些雾化模式？",
+      yue: "佢有咩霧化模式？",
+      fr: "Quels modes de brume propose-t-il ?",
+    }, "air-humidifier"),
+    question("humidifier-setup", {
+      en: "How do I set up the Air Humidifier?",
+      ru: "Как установить увлажнитель воздуха?",
+      zh: "如何设置空气加湿器？",
+      yue: "點樣設定空氣加濕器？",
+      fr: "Comment installer l’humidificateur d’air ?",
+    }, "air-humidifier"),
+    question("humidifier-cleaning", {
+      en: "How do I clean it?",
+      ru: "Как его чистить?",
+      zh: "如何清洁？",
+      yue: "點樣清潔？",
+      fr: "Comment le nettoyer ?",
+    }, "air-humidifier"),
+  ],
 };
 
 export function getGeneralQuickQuestions(language: SupportedLanguage) {

@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   AgentEventsEnum,
   SessionEvent,
+  SessionState,
 } from "@heygen/liveavatar-web-sdk";
 import { LiveAvatarService } from "@/lib/liveavatar/liveavatar-service";
 import type { LiveAvatarSnapshot } from "@/lib/liveavatar/liveavatar-types";
@@ -17,6 +18,7 @@ class FakeSession {
   failRepeat: Error | null = null;
   failInterrupt: Error | null = null;
   stopGate: Promise<void> | null = null;
+  private repeatSequence = 0;
 
   async start() {
     this.startCount += 1;
@@ -29,7 +31,8 @@ class FakeSession {
   attach() {}
   repeatAudio() {
     if (this.failRepeat) throw this.failRepeat;
-    return "audio-event";
+    this.repeatSequence += 1;
+    return `audio-event-${this.repeatSequence}`;
   }
   startListening() {
     return "listen-start";
@@ -399,14 +402,102 @@ test("a fresh visitor can create a new session after cleanup", async () => {
 
 test("speech completion events remain available after production safeguards", async () => {
   const session = new FakeSession();
+  let latestSnapshot: LiveAvatarSnapshot | null = null;
   const service = new LiveAvatarService({
     fetcher: async () => sessionResponse(),
     createSession: () => session as never,
   });
+  service.subscribe((snapshot) => {
+    latestSnapshot = snapshot;
+  });
 
   await service.connect();
   const speech = service.speakAudio("AQID");
-  session.emit(AgentEventsEnum.AVATAR_SPEAK_ENDED, {});
+  session.emit(AgentEventsEnum.AVATAR_SPEAK_STARTED, { event_id: "audio-event-1" });
+  assert.equal((latestSnapshot as LiveAvatarSnapshot).state, "speaking");
+  session.emit(AgentEventsEnum.AVATAR_SPEAK_ENDED, { event_id: "audio-event-1" });
+  await speech;
+  assert.equal((latestSnapshot as LiveAvatarSnapshot).state, "connected");
+  await service.disconnect();
+});
+
+test("actual browser listening is the only path that presents Listening", async () => {
+  const session = new FakeSession();
+  let latestSnapshot: LiveAvatarSnapshot | null = null;
+  const service = new LiveAvatarService({
+    fetcher: async () => sessionResponse(),
+    createSession: () => session as never,
+  });
+  service.subscribe((snapshot) => {
+    latestSnapshot = snapshot;
+  });
+
+  await service.connect();
+  service.startListening();
+
+  assert.equal((latestSnapshot as LiveAvatarSnapshot).state, "listening");
+  await service.disconnect();
+});
+
+test("a delayed completion from an interrupted turn cannot complete the current turn", async () => {
+  const session = new FakeSession();
+  let latestSnapshot: LiveAvatarSnapshot | null = null;
+  const service = new LiveAvatarService({
+    fetcher: async () => sessionResponse(),
+    createSession: () => session as never,
+  });
+  service.subscribe((snapshot) => {
+    latestSnapshot = snapshot;
+  });
+
+  await service.connect();
+  const first = service.speakAudio("AQID", { turnId: "answer-1" });
+  void first.catch(() => undefined);
+  service.interrupt();
+  const second = service.speakAudio("BAUG", { turnId: "answer-2" });
+  let secondCompleted = false;
+  void second.then(() => {
+    secondCompleted = true;
+  });
+
+  session.emit(AgentEventsEnum.AVATAR_SPEAK_STARTED, { event_id: "audio-event-2" });
+  assert.equal((latestSnapshot as LiveAvatarSnapshot).state, "speaking");
+  session.emit(AgentEventsEnum.AVATAR_SPEAK_ENDED, { event_id: "audio-event-1" });
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(secondCompleted, false);
+  assert.equal((latestSnapshot as LiveAvatarSnapshot).state, "speaking");
+  session.emit(AgentEventsEnum.AVATAR_SPEAK_ENDED, { event_id: "audio-event-2" });
+  await second;
+  assert.equal((latestSnapshot as LiveAvatarSnapshot).state, "connected");
+  await service.disconnect();
+});
+
+test("late connection events do not overwrite active interaction states", async () => {
+  const session = new FakeSession();
+  let latestSnapshot: LiveAvatarSnapshot | null = null;
+  const service = new LiveAvatarService({
+    fetcher: async () => sessionResponse(),
+    createSession: () => session as never,
+  });
+  service.subscribe((snapshot) => {
+    latestSnapshot = snapshot;
+  });
+
+  await service.connect();
+  service.setThinking();
+  session.emit(SessionEvent.SESSION_STATE_CHANGED, SessionState.CONNECTED);
+  assert.equal((latestSnapshot as LiveAvatarSnapshot).state, "thinking");
+
+  service.startListening();
+  session.emit(SessionEvent.SESSION_STATE_CHANGED, SessionState.CONNECTED);
+  assert.equal((latestSnapshot as LiveAvatarSnapshot).state, "listening");
+
+  const speech = service.speakAudio("AQID", { turnId: "answer-3" });
+  session.emit(AgentEventsEnum.AVATAR_SPEAK_STARTED, { event_id: "audio-event-1" });
+  session.emit(SessionEvent.SESSION_STATE_CHANGED, SessionState.CONNECTED);
+  assert.equal((latestSnapshot as LiveAvatarSnapshot).state, "speaking");
+  session.emit(AgentEventsEnum.AVATAR_SPEAK_ENDED, { event_id: "audio-event-1" });
   await speech;
   await service.disconnect();
 });
