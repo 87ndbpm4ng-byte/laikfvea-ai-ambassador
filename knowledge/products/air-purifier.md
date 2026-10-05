@@ -5,26 +5,26 @@ sourceType: official-user-manual
 sourceLanguage: en
 product: "air-purifier"
 status: approved
-lastReviewed: "2026-08-13"
+lastReviewed: "2026-10-05"
 reviewOwner: "Project owner"
 tags: [product, air-purifier, capsula-m-size, operation, pre-filter, uv, app, cleaning, safety, specifications]
 ---
 
 # Air Purifier User Manual
 
-This approved source applies only to the stable product identity `air-purifier`. The manual identifies the model as **Capsula M Size**; the exhibition-facing identity remains **Air Purifier**.
+This approved source applies only to the stable product identity `air-purifier`. The manual identifies the product as the **Grandwork Air Purifier**; the exhibition-facing identity remains **Air Purifier M Size**.
 
 ## Product identity and air path
 
 The manual depicts room air entering through ventilation openings near the base and clean air leaving through the top diffuser. It documents a replaceable pre-filter, a lifelong photocatalytic glass-filter, and 365 nm ozone-free UV. It does not identify a HEPA or activated-carbon filter, document CADR, or state tested pollutant-removal percentages.
 
-Source: [AIR-PURIFIER-MANUAL-001-P5-P7-AIR-PATH-01] AIR-PURIFIER-MANUAL-001; pages 5 and 7; "Specification" and device diagram
+Source: [AIR-PURIFIER-MANUAL-001-P5-P7-AIR-PATH-01] AIR-PURIFIER-MANUAL-001; pages 5 and 7; "Specifications" and device diagram
 
 ## Package contents
 
-The package contains one Capsula M Size air purifier and one user manual. An adapter is listed as optional.
+The package contains one Grandwork Air Purifier and one user manual. An adapter is listed as optional.
 
-Source: [AIR-PURIFIER-MANUAL-001-P2-PACKAGE-02] AIR-PURIFIER-MANUAL-001; page 2; "Package contents"
+Source: [AIR-PURIFIER-MANUAL-001-P3-PACKAGE-02] AIR-PURIFIER-MANUAL-001; page 3; "What's in the box"
 
 ## Placement and first use
 
@@ -34,7 +34,7 @@ After transport or storage below freezing, leave the unit at positive room tempe
 
 The manual warns that absorbed substances can accumulate on the photocatalytic glass-filter while the unit is off. Oxidation after startup, including first startup, may cause a slight distinctive odor for the first few hours; the manual calls this normal rather than a fault.
 
-Source: [AIR-PURIFIER-MANUAL-001-P3-P6-SETUP-03] AIR-PURIFIER-MANUAL-001; pages 3 and 6; "Safety" and "Getting started"
+Source: [AIR-PURIFIER-MANUAL-001-P4-P7-SETUP-03] AIR-PURIFIER-MANUAL-001; pages 4 and 7; "Safety instructions" and "Getting started"
 
 ## Controls and operating modes
 
@@ -48,7 +48,7 @@ Touch controls select Night, Day, Standby, Boost, and Schedule/automatic shutoff
 
 Operating modes and faults use light and sound indication.
 
-Source: [AIR-PURIFIER-MANUAL-001-P7-P9-MODES-04] AIR-PURIFIER-MANUAL-001; pages 7-9; control panel and modes
+Source: [AIR-PURIFIER-MANUAL-001-P8-P9-MODES-04] AIR-PURIFIER-MANUAL-001; pages 8-9; control panel and modes
 
 ## Pre-filter replacement and reset
 
@@ -56,21 +56,21 @@ The glass-filter is described as lifelong. The manual recommends replacing the p
 
 Disconnect AC power before replacement. Open and remove the top cover, unlock and remove the old pre-filter, install and fasten the new one, then replace and close the cover. Reset its installation timestamp either through the app's guided replacement flow or, after reconnecting power, by holding Standby and pressing Schedule; successful reset produces light and sound indication.
 
-Source: [AIR-PURIFIER-MANUAL-001-P9-P12-PREFILTER-05] AIR-PURIFIER-MANUAL-001; pages 9-12; pre-filter replacement and reset
+Source: [AIR-PURIFIER-MANUAL-001-P10-P12-PREFILTER-05] AIR-PURIFIER-MANUAL-001; pages 10-12; pre-filter replacement and reset
 
-## Capsula app and connectivity
+## Mobile app and connectivity
 
 The iOS and Android app connects using Bluetooth; Bluetooth access is required. The manual gives a typical Bluetooth range of 3-10 m and uses a PIN printed on the unit's underside. The control screen is available only while the powered unit is within Bluetooth range.
 
 The app supports mode control, schedules, device name/date/time settings, nine RGB-ring colors, five brightness levels, cleaning-time totals, remaining pre-filter resource, and guided filter replacement. The unit does not automatically change between daylight-saving and standard time. Wi-Fi is 2.4 GHz and is documented for firmware updates only.
 
-Source: [AIR-PURIFIER-MANUAL-001-P12-P22-APP-06] AIR-PURIFIER-MANUAL-001; pages 12-22; app connection and controls
+Source: [AIR-PURIFIER-MANUAL-001-P13-P19-APP-06] AIR-PURIFIER-MANUAL-001; pages 13-19; app connection and controls
 
 ## Cleaning and maintenance
 
 Regularly clean the unit and check the inlet holes and top outlet diffuser for blockages. Wipe dust with a damp lint-free cloth and remove dust or debris from openings with a soft brush. Do not use detergents or polishes. Disconnect power before maintenance or pre-filter replacement.
 
-Source: [AIR-PURIFIER-MANUAL-001-P23-CLEANING-07] AIR-PURIFIER-MANUAL-001; page 23; "Looking after your Capsula M Size"
+Source: [AIR-PURIFIER-MANUAL-001-P21-CLEANING-07] AIR-PURIFIER-MANUAL-001; page 21; "Care and cleaning"
 
 ## Troubleshooting and self-diagnostics
 
@@ -83,7 +83,7 @@ If LEDs blink unexpectedly, switch the unit off and on; if blinking continues, c
 | Blue Standby LED, once per second | Replace the pre-filter |
 | Buzzer once per second | Radiator overheating; purification is disabled during cooling and resumes when temperature normalizes; if repeated, provide the required operating temperature |
 
-Source: [AIR-PURIFIER-MANUAL-001-P5-P24-TROUBLESHOOTING-08] AIR-PURIFIER-MANUAL-001; pages 5 and 24; self-diagnostics and troubleshooting
+Source: [AIR-PURIFIER-MANUAL-001-P5-P21-TROUBLESHOOTING-08] AIR-PURIFIER-MANUAL-001; pages 5 and 21; self-diagnostics and troubleshooting
 
 ## Safety restrictions
 
@@ -98,7 +98,7 @@ Source: [AIR-PURIFIER-MANUAL-001-P5-P24-TROUBLESHOOTING-08] AIR-PURIFIER-MANUAL-
 - Do not insert objects into case openings.
 - Disconnect immediately after a fall/case damage, cord/plug damage, absent LEDs despite powered outlet, or liquid contacting/entering the case.
 
-Source: [AIR-PURIFIER-MANUAL-001-P3-P4-SAFETY-09] AIR-PURIFIER-MANUAL-001; pages 3-4; "Safety"
+Source: [AIR-PURIFIER-MANUAL-001-P4-SAFETY-09] AIR-PURIFIER-MANUAL-001; page 4; "Safety instructions"
 
 ## Technical specifications
 
@@ -131,7 +131,7 @@ Source: [AIR-PURIFIER-MANUAL-001-P3-P4-SAFETY-09] AIR-PURIFIER-MANUAL-001; pages
 
 No CADR, airflow rate, conventional filter efficiency, tested pollutant-removal percentage, or overall product service life is documented.
 
-Source: [AIR-PURIFIER-MANUAL-001-P5-SPECIFICATIONS-10] AIR-PURIFIER-MANUAL-001; page 5; "Specification"
+Source: [AIR-PURIFIER-MANUAL-001-P5-SPECIFICATIONS-10] AIR-PURIFIER-MANUAL-001; page 5; "Specifications"
 
 ## Withheld claims
 
