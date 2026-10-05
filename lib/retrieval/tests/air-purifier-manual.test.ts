@@ -40,6 +40,7 @@ test("approved Air Purifier manual is indexed under air-purifier", async () => {
   assert.ok(document);
   assert.equal(document.product, "air-purifier");
   assert.equal(document.approvalStatus, "approved");
+  assert.equal(document.sourcePriority, 500);
   assert.equal(exhibitionProducts["air-purifier"].knowledgeStatus, "approved");
   assert.equal(exhibitionProducts["water-mineralizer"].knowledgeStatus, "approved");
 });
@@ -85,7 +86,7 @@ test("Air Purifier follow-ups and product-explorer context retain identity", asy
       viewedProducts: ["air-purifier"],
       conversationHistory: [
         { role: "user", content: "Tell me about the Air Purifier." },
-        { role: "assistant", content: "It is the Capsula M Size model." },
+        { role: "assistant", content: "It is the Air Purifier M Size model." },
       ],
     });
     assert.equal(query.activeProduct, "air-purifier");

@@ -39,7 +39,7 @@ test("the final exhibition catalogue excludes the standalone Water Mineralizer",
 test("Indoor Environment cards use the approved local hero assets", () => {
   const expectedHeroes = {
     "air-purifier": "/products/air-purifier-m-size/hero-white-isolated.png",
-    "air-humidifier": "/products/air-humidifier/hero-dining-table.png",
+    "air-humidifier": "/products/air-humidifier/hero-white-isolated.png",
   } as const;
 
   for (const [productId, hero] of Object.entries(expectedHeroes)) {
@@ -56,6 +56,12 @@ test("Indoor Environment cards use the approved local hero assets", () => {
       .slice(1)
       .some(({ src }) => src === "/products/air-purifier-m-size/hero.png"),
     "silver purifier remains a secondary gallery image",
+  );
+  assert.ok(
+    getExhibitionProductCatalog("air-humidifier").images
+      .slice(1)
+      .some(({ src }) => src === "/products/air-humidifier/hero-dining-table.png"),
+    "dining-table humidifier remains a secondary gallery image",
   );
   assert.ok(
     getExhibitionProductCatalog("air-humidifier").images

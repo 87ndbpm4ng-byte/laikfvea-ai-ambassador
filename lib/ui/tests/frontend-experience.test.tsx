@@ -176,10 +176,11 @@ test("product manuals are a local in-app utility and do not require an avatar se
   assert.match(chooser, /role="dialog"/);
   assert.match(chooser, /Product manuals/);
   assert.match(chooser, /Water Ionizer User Manual/);
+  assert.match(chooser, /Air Purifier M Size User Manual/);
   assert.match(chooser, /GO User Manual/);
   assert.match(chooser, /PRO User Manual/);
   assert.equal((chooser.match(/product-manual-options/g) ?? []).length, 1);
-  assert.doesNotMatch(chooser, /Air Humidifier|Air Purifier|Face &amp; Body Generator/);
+  assert.doesNotMatch(chooser, /Air Humidifier|Face &amp; Body Generator/);
   assert.doesNotMatch(chooser, /liveavatar|session|ElevenLabs|OpenAI/i);
 });
 
@@ -242,6 +243,14 @@ test("approved product details open their own local manual and preserve the deta
       onClose={() => undefined}
     />,
   );
+  const purifierManual = renderToStaticMarkup(
+    <ProductManualDialog
+      isOpen
+      language="en"
+      manual={{ id: "air-purifier", href: "/manuals/air-purifier-user-manual.pdf" }}
+      onClose={() => undefined}
+    />,
+  );
   const directManual = renderToStaticMarkup(
     <ProductManualDialog
       isOpen
@@ -253,13 +262,16 @@ test("approved product details open their own local manual and preserve the deta
 
   assert.match(goDetail, /User Manual/);
   assert.match(ionizerDetail, /User Manual/);
+  assert.match(purifierDetail, /User Manual/);
   assert.doesNotMatch(humidifierDetail, /User Manual/);
-  assert.doesNotMatch(purifierDetail, /User Manual/);
   assert.doesNotMatch(faceBodyDetail, /User Manual/);
   assert.match(directManual, /Viewing: GO User Manual/);
   assert.match(directManual, /go-user-manual\.pdf/);
   assert.match(proManual, /Viewing: PRO User Manual/);
   assert.match(proManual, /pro-user-manual\.pdf/);
+  assert.match(purifierManual, /Viewing: Air Purifier M Size User Manual/);
+  assert.match(purifierManual, /air-purifier-user-manual\.pdf/);
+  assert.doesNotMatch(purifierManual, /liveavatar|session|ElevenLabs|OpenAI|retrieval/i);
   assert.doesNotMatch(directManual, /Back to manuals/);
   assert.doesNotMatch(directManual, /liveavatar|session|ElevenLabs|OpenAI/i);
 });

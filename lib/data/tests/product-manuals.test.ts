@@ -4,11 +4,12 @@ import path from "node:path";
 import test from "node:test";
 import { getProductManual, productManuals } from "@/lib/data/product-manuals";
 
-test("the visitor manual registry contains only the three approved exhibition manuals", () => {
+test("the visitor manual registry contains only the four approved exhibition manuals", () => {
   assert.deepEqual(
     productManuals,
     [
       { id: "water-ionizer", href: "/manuals/water-ionizer-user-manual.pdf" },
+      { id: "air-purifier", href: "/manuals/air-purifier-user-manual.pdf" },
       { id: "advanced", href: "/manuals/pro-user-manual.pdf" },
       { id: "everyday", href: "/manuals/go-user-manual.pdf" },
     ],
@@ -28,10 +29,14 @@ test("only approved visitor manuals resolve from product detail", () => {
     getProductManual("water-ionizer")?.href,
     "/manuals/water-ionizer-user-manual.pdf",
   );
+  assert.equal(
+    getProductManual("air-purifier")?.href,
+    "/manuals/air-purifier-user-manual.pdf",
+  );
   assert.equal(getProductManual("everyday")?.href, "/manuals/go-user-manual.pdf");
   assert.equal(getProductManual("advanced")?.href, "/manuals/pro-user-manual.pdf");
 
-  for (const productId of ["air-humidifier", "air-purifier", "face-body-generator"]) {
+  for (const productId of ["air-humidifier", "face-body-generator"]) {
     assert.equal(getProductManual(productId), null, productId);
   }
 });

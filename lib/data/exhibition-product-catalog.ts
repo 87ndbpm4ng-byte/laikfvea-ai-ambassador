@@ -214,6 +214,7 @@ export const exhibitionProductCatalog: Readonly<
       "Utilisez de l’eau fraîche, videz et séchez l’appareil avant le rangement, et nettoyez-le au moins une fois par mois hors tension.",
     ),
     images: [
+      { src: "/products/air-humidifier/hero-white-isolated.png", alt: text("White Air Humidifier", "Белый увлажнитель воздуха", "白色空气加湿器", "白色空氣加濕器", "Humidificateur d’air blanc") },
       { src: "/products/air-humidifier/hero-dining-table.png", alt: text("Air Humidifier on a dining table", "Увлажнитель воздуха на обеденном столе", "餐桌上的空气加湿器", "餐枱上嘅空氣加濕器", "Humidificateur d’air sur une table à manger") },
       { src: "/products/air-humidifier/hero.png", alt: text("Air Humidifier", "Увлажнитель воздуха", "空气加湿器", "空氣加濕器", "Humidificateur d’air") },
       { src: "/products/air-humidifier/room-use.png", alt: text("Air Humidifier in a room", "Увлажнитель воздуха в комнате", "房间中的空气加湿器", "房間中嘅空氣加濕器", "Humidificateur d’air dans une pièce") },

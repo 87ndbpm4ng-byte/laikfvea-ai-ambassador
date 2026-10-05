@@ -87,6 +87,7 @@ test("product-manual visitor copy exists in every supported language", () => {
       copy.productManualsSupport,
       copy.userManual,
       copy.waterIonizerUserManual,
+      copy.airPurifierUserManual,
       copy.goUserManual,
       copy.proUserManual,
       copy.closeManuals,
