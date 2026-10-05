@@ -15,6 +15,12 @@ export function rankChunks(
   const contextTerms = new Set(tokenizeRetrievalText(query.recentContext));
   return chunks
     .filter(isSafeKnowledgeChunk)
+    .filter((chunk) =>
+      !query.activeProduct ||
+      !chunk.product ||
+      chunk.product === query.activeProduct ||
+      query.sectionTypes.includes("comparison"),
+    )
     .map((chunk) => {
       let score = 0;
       let lexicalEvidenceScore = 0;
@@ -76,6 +82,14 @@ export function rankChunks(
           score += RETRIEVAL_CONFIG.weights.recentContextTerm;
           signals.push(`context:${term}`);
         }
+      }
+      // Preserve manual authority when equally relevant product documentation
+      // overlaps with exhibition training material. The signal is deliberately
+      // small enough that a specific lower-priority passage still wins when a
+      // manual does not address the visitor's question.
+      if (chunk.sourcePriority >= 400) {
+        score += chunk.sourcePriority * RETRIEVAL_CONFIG.weights.sourcePriority;
+        signals.push("source-priority");
       }
       return {
         chunk,

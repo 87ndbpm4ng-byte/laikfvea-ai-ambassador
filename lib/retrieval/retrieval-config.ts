@@ -20,6 +20,7 @@ export const RETRIEVAL_CONFIG = {
     sectionTypeMatch: 4,
     recentContextTerm: 1,
     safetyMatch: 5,
+    sourcePriority: 0.25,
   },
 } as const;
 

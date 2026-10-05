@@ -26,6 +26,7 @@ function sectionType(heading: string): string {
     "inhalation",
     "comparison",
     "technical specifications",
+    "package contents",
     "operation",
     "setup",
   ];

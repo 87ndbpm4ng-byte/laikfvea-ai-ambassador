@@ -218,8 +218,24 @@ function sectionTypesFor(text: string): string[] {
     types.push("troubleshooting");
   }
   if (terms.some((term) => term.startsWith("maint"))) types.push("maintenance");
-  if (terms.some((term) => term.startsWith("spec") || term === "dimensions")) {
+  if (
+    terms.some(
+      (term) =>
+        term.startsWith("spec") ||
+        term === "dimensions" ||
+        term === "capacity" ||
+        term === "volume" ||
+        term === "reservoir",
+    )
+  ) {
     types.push("technical-specifications");
+  }
+  if (
+    terms.some(
+      (term) => term === "package" || term === "contents" || term === "box",
+    )
+  ) {
+    types.push("package-contents");
   }
   if (terms.some((term) => term === "warning" || term === "safety")) {
     types.push("safety", "warnings");

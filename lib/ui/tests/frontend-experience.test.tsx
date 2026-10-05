@@ -28,6 +28,7 @@ import {
 import {
   exhibitionProducts,
 } from "@/lib/data/exhibition-products";
+import { exhibitionProductCatalog } from "@/lib/data/exhibition-product-catalog";
 
 const silentSpeechProvider: SpeechSynthesisProvider = {
   isSupported: true,
@@ -1139,6 +1140,28 @@ test("Indoor Environment detail galleries start with their catalogue hero images
     );
     assert.match(markup, new RegExp(hero.replaceAll("/", "%2F").replace(".", "\\.")));
   }
+});
+
+test("Air Purifier detail renders each registered gallery image with scrollable thumbnails", async () => {
+  const markup = renderToStaticMarkup(
+    <ProductDetailScreen
+      language="en"
+      productId="air-purifier"
+      guideName="Daniel"
+      onBack={() => undefined}
+      onCompare={() => undefined}
+      onAskGuide={() => undefined}
+    />,
+  );
+  const gallery = exhibitionProductCatalog["air-purifier"].images;
+  const css = await readFile(new URL("../../../app/globals.css", import.meta.url), "utf8");
+
+  assert.equal((markup.match(/class="product-gallery-thumbnail(?:\s|\")/g) ?? []).length, gallery.length);
+  for (const { src } of gallery) {
+    assert.match(markup, new RegExp(src.replaceAll("/", "%2F").replace(".", "\\.")));
+  }
+  assert.match(css, /\.product-gallery-thumbnails\s*\{[^}]*overflow-x:\s*auto;/s);
+  assert.match(css, /\.product-gallery-thumbnail\s*\{[^}]*flex:\s*0 0 auto;/s);
 });
 
 test("portfolio identities and navigation remain localized in all five languages", () => {

@@ -108,7 +108,7 @@ test("one query retrieves complementary sections from multiple approved document
   );
 });
 
-test("source authority metadata does not alter relevance scores", async () => {
+test("source authority modestly favors the manual when relevance is otherwise equal", async () => {
   const { loader } = await setup();
   const documents = await loader.load();
   const { RetrievalIndex } = await import(
@@ -131,6 +131,6 @@ test("source authority metadata does not alter relevance scores", async () => {
 
   assert.ok(manual);
   assert.ok(faq);
-  assert.equal(manual.score, faq.score);
+  assert.ok(manual.score > faq.score);
   assert.notEqual(manual.chunk.sourcePriority, faq.chunk.sourcePriority);
 });
