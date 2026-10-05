@@ -84,4 +84,7 @@ test("the manual excludes medical and unsupported room-treatment claims", async 
   for (const unsupported of ["treats disease", "prevents infection", "improves sleep", "sterilizes the room"]) {
     assert.doesNotMatch(manual.content, new RegExp(unsupported, "i"));
   }
+  for (const placeholder of ["YOUR LOGO", "YOUR WEBSITE", "YOUR PHONE", "YOUR EMAIL", "YOUR QR CODE"]) {
+    assert.doesNotMatch(manual.content, new RegExp(placeholder, "i"));
+  }
 });

@@ -372,7 +372,9 @@ export default function Home() {
           <ProductExplorerScreen
             language={activeLanguage}
             onOpenProduct={openProduct}
-            onCompare={() => setScreen("comparison")}
+            backLabel={
+              explorerOrigin === "choice" ? copy.back : copy.backToConversation
+            }
             onBack={() => {
               if (explorerOrigin === "choice") {
                 deferredAiIntentRef.current = null;

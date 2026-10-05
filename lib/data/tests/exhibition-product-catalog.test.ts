@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
+import path from "node:path";
 import test from "node:test";
 import {
   exhibitionProductCatalog,
@@ -14,6 +16,11 @@ test("each visible exhibition product has a localized, image-led catalogue entry
     const entry = getExhibitionProductCatalog(product.id);
     assert.ok(entry.images.length >= 3, product.id);
     assert.match(entry.images[0].src, new RegExp(`/products/`));
+    assert.equal(
+      existsSync(path.join(process.cwd(), "public", entry.images[0].src)),
+      true,
+      `${product.id} primary image exists`,
+    );
 
     for (const { code } of SUPPORTED_LANGUAGES) {
       assert.ok(entry.description[code].trim(), `${product.id}:${code}:description`);
@@ -27,4 +34,33 @@ test("each visible exhibition product has a localized, image-led catalogue entry
 test("the final exhibition catalogue excludes the standalone Water Mineralizer", () => {
   assert.equal("water-mineralizer" in exhibitionProductCatalog, false);
   assert.equal("air-humidifier" in exhibitionProductCatalog, true);
+});
+
+test("Indoor Environment cards use the approved local hero assets", () => {
+  const expectedHeroes = {
+    "air-purifier": "/products/air-purifier-m-size/hero-white-isolated.png",
+    "air-humidifier": "/products/air-humidifier/hero-dining-table.png",
+  } as const;
+
+  for (const [productId, hero] of Object.entries(expectedHeroes)) {
+    assert.equal(getExhibitionProductCatalog(productId as keyof typeof expectedHeroes).images[0].src, hero);
+    assert.equal(
+      existsSync(path.join(process.cwd(), "public", hero)),
+      true,
+      `${productId} hero exists`,
+    );
+  }
+
+  assert.ok(
+    getExhibitionProductCatalog("air-purifier").images
+      .slice(1)
+      .some(({ src }) => src === "/products/air-purifier-m-size/hero.png"),
+    "silver purifier remains a secondary gallery image",
+  );
+  assert.ok(
+    getExhibitionProductCatalog("air-humidifier").images
+      .slice(1)
+      .some(({ src }) => src === "/products/air-humidifier/hero.png"),
+    "isolated humidifier remains a secondary gallery image",
+  );
 });

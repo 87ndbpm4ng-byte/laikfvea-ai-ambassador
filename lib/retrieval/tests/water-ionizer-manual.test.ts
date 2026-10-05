@@ -44,6 +44,7 @@ test("approved Water Ionizer manual is indexed under water-ionizer", async () =>
   assert.ok(document);
   assert.equal(document.product, "water-ionizer");
   assert.equal(document.approvalStatus, "approved");
+  assert.equal(document.sourcePriority, 500);
   assert.match(document.content, /3\.5 L \/ 0\.5 L/);
 });
 

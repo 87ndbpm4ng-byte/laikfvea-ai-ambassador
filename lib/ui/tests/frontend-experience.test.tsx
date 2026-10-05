@@ -987,8 +987,16 @@ test("the portfolio is registry-driven and presents the six final exhibition pro
     );
   }
   assert.equal(markup.match(/class="product-card"/g)?.length, 6);
+  assert.match(markup, /products%2Fair-purifier-m-size%2Fhero-white-isolated\.png/);
   assert.match(markup, /products%2Fhydrogen-bottle-go%2Fhero\.png/);
-  assert.match(markup, /products%2Fair-humidifier%2Fhero\.png/);
+  assert.match(markup, /products%2Fair-humidifier%2Fhero-dining-table\.png/);
+  const airPurifierImage = markup.match(/<img[^>]*air-purifier-m-size%2Fhero-white-isolated[^>]*>/)?.[0] ?? "";
+  const airHumidifierImage = markup.match(/<img[^>]*air-humidifier%2Fhero-dining-table[^>]*>/)?.[0] ?? "";
+  assert.match(airPurifierImage, /products%2Fair-purifier-m-size%2Fhero-white-isolated\.png/);
+  assert.match(airHumidifierImage, /products%2Fair-humidifier%2Fhero-dining-table\.png/);
+  assert.match(airPurifierImage, /data-nimg="fill"/);
+  assert.match(airHumidifierImage, /data-nimg="fill"/);
+  assert.doesNotMatch(markup, /Compare GO and PRO/);
   assert.doesNotMatch(markup, /Product visual coming soon/);
   assert.doesNotMatch(markup, /Water Mineralizer/);
   assert.deepEqual(opened, []);
@@ -1031,6 +1039,25 @@ test("product details provide local galleries and concise catalogue context", ()
   }
 });
 
+test("Indoor Environment detail galleries start with their catalogue hero images", () => {
+  for (const [productId, hero] of [
+    ["air-purifier", "/products/air-purifier-m-size/hero-white-isolated.png"],
+    ["air-humidifier", "/products/air-humidifier/hero-dining-table.png"],
+  ] as const) {
+    const markup = renderToStaticMarkup(
+      <ProductDetailScreen
+        language="en"
+        productId={productId}
+        guideName="Daniel"
+        onBack={() => undefined}
+        onCompare={() => undefined}
+        onAskGuide={() => undefined}
+      />,
+    );
+    assert.match(markup, new RegExp(hero.replaceAll("/", "%2F").replace(".", "\\.")));
+  }
+});
+
 test("portfolio identities and navigation remain localized in all five languages", () => {
   for (const language of ["en", "ru", "zh", "yue", "fr"] as const) {
     const portfolio = renderToStaticMarkup(
@@ -1065,6 +1092,14 @@ test("portfolio CSS provides intentional landscape, portrait and mobile grids", 
   assert.match(
     css,
     /\.portfolio-group-indoor-environment \.product-card-visual\s*\{[^}]*height:\s*clamp\(11\.5rem, 13vw, 13rem\);[^}]*padding:\s*var\(--space-1\);/s,
+  );
+  assert.doesNotMatch(
+    css,
+    /\.portfolio-group-indoor-environment \.product-visual-photo img\s*\{[^}]*transform:/s,
+  );
+  assert.match(
+    css,
+    /\.product-card-image-frame\s*\{[^}]*position:\s*relative;[^}]*width:\s*100%;[^}]*height:\s*100%;/s,
   );
   assert.match(
     css,

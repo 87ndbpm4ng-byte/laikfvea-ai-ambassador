@@ -67,8 +67,9 @@ export const exhibitionProductCatalog: Readonly<
       "Gardez les ouvertures d’air dégagées. Le préfiltre est l’élément à remplacer périodiquement; l’élément en verre est conçu pour durer.",
     ),
     images: [
-      { src: "/products/air-purifier-m-size/hero.png", alt: text("Air Purifier M Size in white", "Белый очиститель воздуха M Size", "白色 M Size 空气净化器", "白色 M Size 空氣淨化器", "Purificateur d’air M Size blanc") },
+      { src: "/products/air-purifier-m-size/hero-white-isolated.png", alt: text("White Air Purifier M Size", "Белый очиститель воздуха M Size", "白色 M Size 空气净化器", "白色 M Size 空氣淨化器", "Purificateur d’air M Size blanc") },
       { src: "/products/air-purifier-m-size/desk-use.png", alt: text("Air Purifier M Size on a desk", "Очиститель воздуха M Size на столе", "桌面上的 M Size 空气净化器", "枱面上嘅 M Size 空氣淨化器", "Purificateur d’air M Size sur un bureau") },
+      { src: "/products/air-purifier-m-size/hero.png", alt: text("Air Purifier M Size", "Очиститель воздуха M Size", "M Size 空气净化器", "M Size 空氣淨化器", "Purificateur d’air M Size") },
       { src: "/products/air-purifier-m-size/bedroom-use.png", alt: text("Air Purifier M Size in a bedroom", "Очиститель воздуха M Size в спальне", "卧室中的 M Size 空气净化器", "睡房中嘅 M Size 空氣淨化器", "Purificateur d’air M Size dans une chambre") },
       { src: "/products/air-purifier-m-size/controls.png", alt: text("Air Purifier M Size controls", "Панель управления очистителя воздуха M Size", "M Size 空气净化器控制面板", "M Size 空氣淨化器控制面板", "Commandes du Purificateur d’air M Size") },
     ],
@@ -213,6 +214,7 @@ export const exhibitionProductCatalog: Readonly<
       "Utilisez de l’eau fraîche, videz et séchez l’appareil avant le rangement, et nettoyez-le au moins une fois par mois hors tension.",
     ),
     images: [
+      { src: "/products/air-humidifier/hero-dining-table.png", alt: text("Air Humidifier on a dining table", "Увлажнитель воздуха на обеденном столе", "餐桌上的空气加湿器", "餐枱上嘅空氣加濕器", "Humidificateur d’air sur une table à manger") },
       { src: "/products/air-humidifier/hero.png", alt: text("Air Humidifier", "Увлажнитель воздуха", "空气加湿器", "空氣加濕器", "Humidificateur d’air") },
       { src: "/products/air-humidifier/room-use.png", alt: text("Air Humidifier in a room", "Увлажнитель воздуха в комнате", "房间中的空气加湿器", "房間中嘅空氣加濕器", "Humidificateur d’air dans une pièce") },
       { src: "/products/air-humidifier/controls.png", alt: text("Air Humidifier controls", "Панель управления увлажнителя воздуха", "空气加湿器控制面板", "空氣加濕器控制面板", "Commandes de l’humidificateur d’air") },

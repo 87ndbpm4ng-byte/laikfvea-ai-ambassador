@@ -737,15 +737,15 @@ export function ConversationScreen({
 type ProductExplorerScreenProps = {
   language: SupportedLanguage;
   onOpenProduct: (product: ExhibitionProductId) => void;
-  onCompare: () => void;
   onBack: () => void;
+  backLabel?: string;
 };
 
 export function ProductExplorerScreen({
   language,
   onOpenProduct,
-  onCompare,
   onBack,
+  backLabel,
 }: ProductExplorerScreenProps) {
   const copy = getUiCopy(language);
   const categories: readonly ProductCategoryId[] = [
@@ -804,9 +804,8 @@ export function ProductExplorerScreen({
       </div>
 
       <div className="screen-actions">
-        <PrimaryButton onClick={onCompare}>{copy.compareGoPro}</PrimaryButton>
         <button className="secondary-action" type="button" onClick={onBack}>
-          {copy.backToConversation}
+          {backLabel ?? copy.backToConversation}
         </button>
       </div>
     </section>
@@ -919,16 +918,30 @@ function ProductVisual({
 }) {
   const product = exhibitionProducts[productId];
   const catalog = getExhibitionProductCatalog(productId);
-  const className = compact ? "product-card-visual" : "detail-product-visual";
+
+  if (compact) {
+    return (
+      <span className="product-card-visual product-visual-photo">
+        <span className="product-card-image-frame">
+          <Image
+            fill
+            src={catalog.images[0].src}
+            alt={product.displayNames[language]}
+            sizes="(max-width: 768px) 9rem, (max-width: 1200px) 24vw, 30rem"
+          />
+        </span>
+      </span>
+    );
+  }
 
   return (
-    <span className={`${className} product-visual-photo`}>
+    <span className="detail-product-visual product-visual-photo">
       <Image
         src={catalog.images[0].src}
         alt={product.displayNames[language]}
         width={640}
         height={640}
-        sizes={compact ? "(max-width: 768px) 9rem, (max-width: 1200px) 24vw, 30rem" : "(max-width: 768px) 100vw, 42rem"}
+        sizes="(max-width: 768px) 100vw, 42rem"
       />
     </span>
   );
