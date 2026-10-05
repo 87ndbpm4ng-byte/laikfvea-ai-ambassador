@@ -151,6 +151,86 @@ test("French Water Ionizer Quick Questions retrieve the active product manual", 
   }
 });
 
+test("Russian Water Ionizer questions expand to grounded manual concepts", async () => {
+  const cases: Array<[string, RegExp, RegExp]> = [
+    [
+      "Как работает ионизатор воды?",
+      /product purpose.*operating principle/i,
+      /operating principle/i,
+    ],
+    [
+      "Какие виды воды производит ионизатор воды?",
+      /water types and production volumes/i,
+      /water types/i,
+    ],
+    [
+      "Как пользоваться ионизатором воды?",
+      /preparing alkaline and acidic water/i,
+      /preparing|controls/i,
+    ],
+    [
+      "Как выбрать уровень pH?",
+      /selectable ionization level/i,
+      /preparing|pH and ORP/i,
+    ],
+    [
+      "Как чистить ионизатор воды?",
+      /cleaning and maintenance/i,
+      /cleaning/i,
+    ],
+    [
+      "Какую воду можно использовать?",
+      /water supply requirements/i,
+      /source-water requirements/i,
+    ],
+    [
+      "Что такое Silver Ion?",
+      /silver.*(?:water|electrode)/i,
+      /silver/i,
+    ],
+    [
+      "Что такое водородная вода?",
+      /hydrogen.*water.*mode/i,
+      /hydrogen-water/i,
+    ],
+    [
+      "Как работает электролиз?",
+      /operating principle/i,
+      /operating principle/i,
+    ],
+    [
+      "Какой диапазон pH?",
+      /approved.*orp.*levels/i,
+      /pH and ORP/i,
+    ],
+    ["Что такое ORP?", /orp.*approved.*levels/i, /pH and ORP/i],
+    [
+      "Как обслуживать устройство?",
+      /cleaning and maintenance/i,
+      /cleaning/i,
+    ],
+  ];
+
+  for (const [question, canonicalTerm, heading] of cases) {
+    const context = session({
+      language: "ru",
+      activeProduct: "water-ionizer",
+      viewedProducts: ["water-ionizer"],
+    });
+    const query = createRetrievalQuery({ message: question, session: context });
+    const result = await engine.search(query);
+
+    assert.match(query.normalizedTerms.join(" "), canonicalTerm, question);
+    assert.equal(query.activeProduct, "water-ionizer", question);
+    assert.equal(result.insufficientKnowledge, false, question);
+    assert.ok(
+      result.matchedChunks.every(({ chunk }) => chunk.product === "water-ionizer"),
+      question,
+    );
+    assert.ok(result.matchedChunks.some(({ chunk }) => heading.test(chunk.heading)), question);
+  }
+});
+
 test("context-bound Water Ionizer Quick Questions remain retrievable across non-English languages", async () => {
   const cases: Array<[VisitorSession["language"], string]> = [
     ["ru", "Как выбрать уровень pH?"],

@@ -1064,6 +1064,30 @@ test("portrait conversation keeps End Conversation before the shared Talk and qu
   );
 });
 
+test("portrait quick questions and conversation copy accommodate long Russian labels", async () => {
+  const markup = renderConversation("daniel", "ru");
+  const css = await readFile(
+    new URL("../../../app/globals.css", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(markup, /Технологический специалист/);
+  assert.match(markup, /Разговор с Дэниелом/);
+  assert.match(markup, /Быстрые вопросы/);
+  assert.match(
+    css,
+    /@media \(orientation: portrait\)[\s\S]*?\.quick-topic-card\s*\{[^}]*height:\s*auto;[^}]*min-height:\s*5rem;[^}]*align-items:\s*start;/s,
+  );
+  assert.match(
+    css,
+    /@media \(orientation: portrait\)[\s\S]*?\.quick-topic-card > strong\s*\{[^}]*overflow-wrap:\s*anywhere;/s,
+  );
+  assert.match(
+    css,
+    /@media \(orientation: portrait\) and \(max-width: 47\.999rem\)[\s\S]*?\.quick-topic-list\s*\{[^}]*grid-auto-rows:\s*auto;[^}]*grid-template-columns:\s*minmax\(0, 1fr\);/s,
+  );
+});
+
 test("the portfolio presents two flagship products before four other products with shared image rendering", () => {
   const opened: string[] = [];
   const markup = renderToStaticMarkup(

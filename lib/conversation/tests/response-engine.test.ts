@@ -13,6 +13,7 @@ import { reconcileActiveProduct } from "@/lib/conversation/active-product-contex
 
 const originalFetch = globalThis.fetch;
 const originalConsoleError = console.error;
+const originalConsoleWarn = console.warn;
 
 const baseRequest = {
   content: "How do I charge the Advanced Bottle?",
@@ -23,6 +24,7 @@ const baseRequest = {
 afterEach(() => {
   globalThis.fetch = originalFetch;
   console.error = originalConsoleError;
+  console.warn = originalConsoleWarn;
 });
 
 test("service failures use the selected visitor language", () => {
@@ -279,7 +281,7 @@ test("invalid server content is not exposed to visitors", async () => {
 
 test("development diagnostics retain safe failure details", async () => {
   const logs: unknown[][] = [];
-  console.error = (...values: unknown[]) => {
+  console.warn = (...values: unknown[]) => {
     logs.push(values);
   };
   globalThis.fetch = async () =>
@@ -299,10 +301,31 @@ test("development diagnostics retain safe failure details", async () => {
   await generateConversationResponse(baseRequest);
 
   assert.equal(logs.length, 1);
-  assert.equal(logs[0][0], "[conversation-client] Request failed");
+  assert.equal(logs[0][0], "[conversation-client] Conversation request recovered");
   const diagnostics = logs[0][1] as Record<string, unknown>;
+  assert.equal(diagnostics.endpoint, "/api/conversation");
   assert.equal(diagnostics.kind, "http");
+  assert.equal(diagnostics.stage, "api");
   assert.equal(diagnostics.status, 503);
   assert.equal(diagnostics.apiErrorCode, "REQUEST_TIMEOUT");
   assert.equal(diagnostics.requestId, "request-diagnostic");
+});
+
+test("development transport diagnostics identify a safe fetch failure without leaking request content", async () => {
+  const logs: unknown[][] = [];
+  console.warn = (...values: unknown[]) => {
+    logs.push(values);
+  };
+  globalThis.fetch = async () => {
+    throw new TypeError("Failed to fetch https://example.invalid/secret");
+  };
+
+  await generateConversationResponse(baseRequest);
+
+  const diagnostics = logs[0][1] as Record<string, unknown>;
+  assert.equal(diagnostics.kind, "network");
+  assert.equal(diagnostics.stage, "fetch");
+  assert.equal(diagnostics.causeName, "TypeError");
+  assert.equal(diagnostics.causeMessage, "The browser could not complete the request.");
+  assert.doesNotMatch(JSON.stringify(diagnostics), /example\.invalid|secret/);
 });

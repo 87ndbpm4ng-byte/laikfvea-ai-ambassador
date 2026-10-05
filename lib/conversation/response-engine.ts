@@ -124,7 +124,9 @@ export class ConversationRequestError extends Error {
       status?: number;
       apiErrorCode?: ConversationApiErrorCode;
       requestId?: string;
-      responseBody?: string;
+      stage?: "fetch" | "response-read" | "response-parse" | "response-validate" | "api";
+      causeName?: string;
+      causeMessage?: string;
     } = {},
     options?: ErrorOptions,
   ) {
@@ -172,13 +174,36 @@ function logDevelopmentFailure(error: ConversationRequestError) {
     return;
   }
 
-  console.error("[conversation-client] Request failed", {
+  // This is an expected, visitor-safe recovery path. Next.js promotes
+  // console.error calls to its development overlay, which makes a handled
+  // request failure look like an application crash. Keep diagnostics useful
+  // for local debugging without logging request contents or raw server bodies.
+  console.warn("[conversation-client] Conversation request recovered", {
+    endpoint: "/api/conversation",
     kind: error.kind,
+    stage: error.diagnostics.stage,
     status: error.diagnostics.status,
     apiErrorCode: error.diagnostics.apiErrorCode,
     requestId: error.diagnostics.requestId,
-    responseBody: error.diagnostics.responseBody,
+    causeName: error.diagnostics.causeName,
+    causeMessage: error.diagnostics.causeMessage,
   });
+}
+
+function safeClientFailureCause(error: unknown) {
+  if (!(error instanceof Error)) {
+    return {};
+  }
+
+  const causeName = error.name || "Error";
+  const causeMessage =
+    causeName === "TimeoutError" || causeName === "AbortError"
+      ? "The request was aborted or timed out."
+      : causeName === "TypeError"
+        ? "The browser could not complete the request."
+        : undefined;
+
+  return { causeName, causeMessage };
 }
 
 async function requestOpenAIResponse({
@@ -213,12 +238,21 @@ async function requestOpenAIResponse({
   } catch (error) {
     throw new ConversationRequestError(
       isAbortTimeout(error) ? "timeout" : "network",
-      {},
+      { stage: "fetch", ...safeClientFailureCause(error) },
       { cause: error },
     );
   }
 
-  const responseBody = await response.text();
+  let responseBody: string;
+  try {
+    responseBody = await response.text();
+  } catch (error) {
+    throw new ConversationRequestError(
+      "network",
+      { stage: "response-read", ...safeClientFailureCause(error) },
+      { cause: error },
+    );
+  }
   let result: unknown;
 
   try {
@@ -228,7 +262,8 @@ async function requestOpenAIResponse({
       "invalid-json",
       {
         status: response.status,
-        responseBody: responseBody.slice(0, 1_000),
+        stage: "response-parse",
+        causeName: error instanceof Error ? error.name : undefined,
       },
       { cause: error },
     );
@@ -237,7 +272,7 @@ async function requestOpenAIResponse({
   if (!isConversationApiResponse(result)) {
     throw new ConversationRequestError("invalid-response", {
       status: response.status,
-      responseBody: responseBody.slice(0, 1_000),
+      stage: "response-validate",
     });
   }
 
@@ -246,7 +281,7 @@ async function requestOpenAIResponse({
       status: response.status,
       apiErrorCode: result.success ? undefined : result.error.code,
       requestId: result.success ? result.requestId : result.error.requestId,
-      responseBody: responseBody.slice(0, 1_000),
+      stage: "api",
     });
   }
 
@@ -254,7 +289,7 @@ async function requestOpenAIResponse({
     throw new ConversationRequestError("invalid-response", {
       status: response.status,
       requestId: result.requestId,
-      responseBody: responseBody.slice(0, 1_000),
+      stage: "response-validate",
     });
   }
 

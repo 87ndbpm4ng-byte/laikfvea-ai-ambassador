@@ -60,6 +60,16 @@ class FrenchWaterIonizerProvider implements OrchestratorAIProvider {
   }
 }
 
+class RussianAirPurifierProvider implements OrchestratorAIProvider {
+  readonly id = "russian-air-purifier";
+  calls: OrchestratorPrompt[] = [];
+
+  async generate(prompt: OrchestratorPrompt) {
+    this.calls.push(prompt);
+    return "В документации описаны режимы Day, Night, Boost, Standby и Schedule для разных условий использования.";
+  }
+}
+
 async function createOrchestrator(provider: OrchestratorAIProvider) {
   const [{ AIOrchestrator }, { OrchestratorPipeline }, { RetrievalEngine }, { ApprovedKnowledgeLoader }, { SessionManager }, { InMemorySessionStore }] =
     await Promise.all([
@@ -154,6 +164,28 @@ test("a French Water Ionizer Quick Question with active context uses approved ev
   assert.ok(
     provider.calls[0].approvedKnowledgeContext?.passages.every(
       (passage) => passage.product === "water-ionizer",
+    ),
+  );
+});
+
+test("a Russian Air Purifier Quick Question with active context uses approved evidence instead of the insufficient-information boundary", async () => {
+  const provider = new RussianAirPurifierProvider();
+  const orchestrator = await createOrchestrator(provider);
+  const result = await orchestrator.handleMessage({
+    message: "Какие режимы работы есть у очистителя воздуха?",
+    guide: guides.daniel,
+    language: "ru",
+    activeProduct: "air-purifier",
+  });
+
+  assert.equal(result.retrieval.insufficientKnowledge, false);
+  assert.equal(result.session.activeProduct, "air-purifier");
+  assert.notEqual(result.response, boundaries.ru);
+  assert.equal(provider.calls.length, 1);
+  assert.ok(provider.calls[0].approvedKnowledgeContext?.passages.length);
+  assert.ok(
+    provider.calls[0].approvedKnowledgeContext?.passages.every(
+      (passage) => passage.product === "air-purifier",
     ),
   );
 });

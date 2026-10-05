@@ -60,7 +60,12 @@ test("purpose, mechanism, coverage, filter, operation, maintenance, specificatio
     const { query, result } = await search(question);
     assert.equal(query.activeProduct, "air-purifier", question);
     assert.equal(result.insufficientKnowledge, false, question);
-    assert.equal(result.matchedChunks[0]?.chunk.sourceId, "AIR-PURIFIER-MANUAL-001", question);
+    assert.ok(
+      ["AIR-PURIFIER-MANUAL-001", "AIR-PURIFIER-RU-MANUAL-001"].includes(
+        result.matchedChunks[0]?.chunk.sourceId ?? "",
+      ),
+      question,
+    );
   }
 });
 
@@ -75,7 +80,10 @@ test("five languages resolve natural Air Purifier questions to the same source",
   for (const [language, question] of cases) {
     const { query, result } = await search(question, { language });
     assert.equal(query.activeProduct, "air-purifier", language);
-    assert.equal(result.matchedChunks[0]?.chunk.sourceId, "AIR-PURIFIER-MANUAL-001", language);
+    const expectedSources = language === "ru"
+      ? ["AIR-PURIFIER-MANUAL-001", "AIR-PURIFIER-RU-MANUAL-001"]
+      : ["AIR-PURIFIER-MANUAL-001"];
+    assert.ok(expectedSources.includes(result.matchedChunks[0]?.chunk.sourceId ?? ""), language);
   }
 });
 

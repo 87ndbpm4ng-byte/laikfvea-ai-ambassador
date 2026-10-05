@@ -98,6 +98,7 @@ function expandedTerms(text: string, session?: VisitorSession) {
     if (/\bhow does it work\b/i.test(text)) terms.push("air path", "glass-filter", "pre-filter");
     if (/\bhow do i clean it\b/i.test(text)) terms.push("cleaning maintenance", "blockages");
     if (/\b(?:room|coverage|cover|large|big)\b/i.test(text)) terms.push("room coverage", "218 sq. ft.", "20.25 m²");
+    if (/\b(?:schedule|app|capsula link)\b/i.test(text)) terms.push("Capsula Link", "set schedule", "automatic schedule");
   }
   if (/\b(?:what does|how does).*?air humidifier/i.test(text)) {
     terms.push("ultrasonic humidifier", "mist modes", "water tank");
@@ -278,11 +279,27 @@ export function createRetrievalQuery(input: {
     input.message,
     input.session.language,
   );
-  const recognizedProduct = inferProduct(knowledgeText);
-  const activeProduct = recognizedProduct ?? productFromSession(input.session);
+  // A translated operational term such as Russian “предварительный фильтр”
+  // can legitimately expand to generic English retrieval terms that mention
+  // another product (for example, mineralisation). Only a curated identity in
+  // the query may override the server/session product context; otherwise the
+  // active product remains authoritative.
+  const explicitProduct = resolveProductFromText(knowledgeText);
+  const sessionProduct = productFromSession(input.session);
+  const activeProduct =
+    explicitProduct ?? sessionProduct ?? inferProduct(knowledgeText);
   const retrievalText = activeProduct
     ? `${knowledgeText} ${exhibitionProducts[activeProduct].exhibitionName}`
     : knowledgeText;
+  const nativeAirPurifierTerms =
+    input.session.language === "ru" && activeProduct === "air-purifier"
+      ? [
+          ...tokenizeRetrievalText(input.message),
+          ...( /пользова\p{L}*/iu.test(input.message)
+            ? ["getting started", "setup", "подготовка"]
+            : []),
+        ]
+      : [];
   const recentEntries: SessionConversationEntry[] = [
     ...input.session.conversationHistory,
   ].slice(-RETRIEVAL_CONFIG.maxRecentMessages);
@@ -295,6 +312,7 @@ export function createRetrievalQuery(input: {
     normalizedTerms: [
       ...new Set([
         ...tokenizeRetrievalText(retrievalText),
+        ...nativeAirPurifierTerms,
         ...expandedTerms(retrievalText, input.session),
       ]),
     ],
