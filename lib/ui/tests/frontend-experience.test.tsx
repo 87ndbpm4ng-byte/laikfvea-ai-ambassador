@@ -886,7 +886,7 @@ test("responsive kiosk layout defines two areas without horizontal overflow", as
   );
   assert.match(
     css,
-    /\.conversation-specialist \.specialist-end-action\s*{[^}]*border:\s*1px solid var\(--color-border-strong\)/s,
+    /\.conversation-specialist \.specialist-end-action,\s*\.specialist-end-action\s*{[^}]*border:\s*1px solid var\(--color-border-strong\)/s,
   );
   assert.match(css, /\.conversation-active-product\s*{/);
   assert.match(
@@ -1033,6 +1033,35 @@ test("conversation heading belongs to the dialogue column", () => {
   assert.ok(specialistStart >= 0);
   assert.ok(dialogueStart > specialistStart);
   assert.ok(headingStart > dialogueStart);
+});
+
+test("portrait conversation keeps End Conversation before the shared Talk and question controls", async () => {
+  const markup = renderConversation("emily", "fr");
+  const endConversation = markup.indexOf('class="specialist-end-action"');
+  const interactionArea = markup.indexOf("conversation-interaction-area");
+  const voicePanel = markup.indexOf('class="voice-panel"', interactionArea);
+  const composer = markup.indexOf('class="composer"', interactionArea);
+  const css = await readFile(
+    new URL("../../../app/globals.css", import.meta.url),
+    "utf8",
+  );
+
+  assert.ok(endConversation >= 0);
+  assert.ok(interactionArea > endConversation);
+  assert.ok(voicePanel > interactionArea);
+  assert.ok(composer > voicePanel);
+  assert.match(
+    css,
+    /@media \(orientation: portrait\)[\s\S]*?\.conversation-workspace\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;/s,
+  );
+  assert.match(
+    css,
+    /@media \(orientation: portrait\)[\s\S]*?\.response-area\s*\{[^}]*max-height:\s*min\(34rem, 42dvh\);[^}]*overflow-y:\s*auto;/s,
+  );
+  assert.match(
+    css,
+    /@media \(orientation: landscape\) and \(min-width: 48rem\)[\s\S]*?\.conversation-interaction-area\s*\{[^}]*display:\s*contents;/s,
+  );
 });
 
 test("the portfolio presents two flagship products before four other products with shared image rendering", () => {

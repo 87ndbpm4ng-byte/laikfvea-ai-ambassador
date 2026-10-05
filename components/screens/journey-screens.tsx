@@ -505,32 +505,6 @@ export function ConversationScreen({
             </div>
           )}
 
-          <VoiceControls
-            inputState={voice.inputState}
-            outputState={voice.outputState}
-            playbackBlocked={voice.isPlaybackBlocked}
-            audioSessionActivated={voice.isAudioSessionActivated}
-            preparingVoice={voice.isPreparingVoice}
-            activationFailed={voice.activationFailed}
-            guideName={guide.name}
-            language={language}
-            transcript={voice.transcript}
-            error={voice.error}
-            recognitionSupported={voice.isRecognitionSupported}
-            synthesisSupported={voice.isSynthesisSupported}
-            disabled={isLoading}
-            onStartListening={voice.startListening}
-            onStopListening={voice.stopListening}
-            onRetryPlayback={voice.retryPlayback}
-          />
-
-          <button
-            className="specialist-end-action"
-            type="button"
-            onClick={() => setIsEndConfirmationOpen(true)}
-          >
-            {copy.endSession}
-          </button>
         </aside>
 
         <main className="conversation-dialogue">
@@ -692,6 +666,36 @@ export function ConversationScreen({
             ) : null}
           </div>
 
+        </main>
+
+        <button
+          className="specialist-end-action"
+          type="button"
+          onClick={() => setIsEndConfirmationOpen(true)}
+        >
+          {copy.endSession}
+        </button>
+
+        <div className="conversation-specialist conversation-interaction-area">
+          <VoiceControls
+            inputState={voice.inputState}
+            outputState={voice.outputState}
+            playbackBlocked={voice.isPlaybackBlocked}
+            audioSessionActivated={voice.isAudioSessionActivated}
+            preparingVoice={voice.isPreparingVoice}
+            activationFailed={voice.activationFailed}
+            guideName={guide.name}
+            language={language}
+            transcript={voice.transcript}
+            error={voice.error}
+            recognitionSupported={voice.isRecognitionSupported}
+            synthesisSupported={voice.isSynthesisSupported}
+            disabled={isLoading}
+            onStartListening={voice.startListening}
+            onStopListening={voice.stopListening}
+            onRetryPlayback={voice.retryPlayback}
+          />
+
           <form className="composer" onSubmit={submitTypedQuestion}>
             <label className="sr-only" htmlFor="visitor-question">
               {copy.askQuestion(guide.name)}
@@ -727,7 +731,7 @@ export function ConversationScreen({
               </span>
             ) : null}
           </form>
-        </main>
+        </div>
       </div>
     </section>
   );
