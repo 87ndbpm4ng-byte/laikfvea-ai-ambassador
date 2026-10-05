@@ -9,6 +9,7 @@ type ProductManualDialogProps = {
   isOpen: boolean;
   language: SupportedLanguage;
   onClose: () => void;
+  manual?: ProductManual | null;
 };
 
 function manualLabel(manual: ProductManual, language: SupportedLanguage) {
@@ -20,10 +21,12 @@ export function ProductManualDialog({
   isOpen,
   language,
   onClose,
+  manual = null,
 }: ProductManualDialogProps) {
   const copy = getUiCopy(language);
   const [selectedManual, setSelectedManual] = useState<ProductManual | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const displayedManual = manual ?? selectedManual;
 
   useEffect(() => {
     if (isOpen) closeButtonRef.current?.focus();
@@ -36,8 +39,8 @@ export function ProductManualDialog({
 
   if (!isOpen) return null;
 
-  const title = selectedManual
-    ? copy.viewingManual(manualLabel(selectedManual, language))
+  const title = displayedManual
+    ? copy.viewingManual(manualLabel(displayedManual, language))
     : copy.productManuals;
 
   return (
@@ -70,19 +73,21 @@ export function ProductManualDialog({
           </button>
         </header>
 
-        {selectedManual ? (
+        {displayedManual ? (
           <div className="product-manual-viewer">
-            <button
-              className="product-manual-back"
-              type="button"
-              onClick={() => setSelectedManual(null)}
-            >
-              {copy.backToManuals}
-            </button>
+            {!manual ? (
+              <button
+                className="product-manual-back"
+                type="button"
+                onClick={() => setSelectedManual(null)}
+              >
+                {copy.backToManuals}
+              </button>
+            ) : null}
             <iframe
               className="product-manual-frame"
-              src={selectedManual.href}
-              title={manualLabel(selectedManual, language)}
+              src={displayedManual.href}
+              title={manualLabel(displayedManual, language)}
             />
           </div>
         ) : (

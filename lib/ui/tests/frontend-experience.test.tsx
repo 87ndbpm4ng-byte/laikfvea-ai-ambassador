@@ -6,6 +6,7 @@ import Home from "@/app/page";
 import {
   AttractScreen,
   ConversationScreen,
+  JourneyChoiceScreen,
   ProductDetailScreen,
   ProductExplorerScreen,
   SpecialistSelectionScreen,
@@ -144,6 +145,25 @@ test("the kiosk attract screen localizes its neutral invitation in all five lang
   }
 });
 
+test("the choice screen keeps the AI journey and local product browsing separate", () => {
+  const markup = renderToStaticMarkup(
+    <JourneyChoiceScreen
+      language="en"
+      onSpeak={() => undefined}
+      onExplore={() => undefined}
+      onBack={() => undefined}
+    />,
+  );
+
+  assert.match(markup, /What would you like to do/);
+  assert.match(markup, /Speak to AI Ambassador/);
+  assert.match(markup, /Talk with Daniel or Emily and ask questions/);
+  assert.match(markup, /Explore Products/);
+  assert.match(markup, /Browse all six exhibition products, photos and manuals/);
+  assert.equal((markup.match(/class="journey-choice-card /g) ?? []).length, 2);
+  assert.doesNotMatch(markup, /liveavatar|ElevenLabs|OpenAI|conversation API/i);
+});
+
 test("product manuals are a local in-app utility and do not require an avatar session", () => {
   const closed = renderToStaticMarkup(
     <ProductManualDialog isOpen={false} language="en" onClose={() => undefined} />,
@@ -158,6 +178,44 @@ test("product manuals are a local in-app utility and do not require an avatar se
   assert.match(chooser, /GO User Manual/);
   assert.match(chooser, /PRO User Manual/);
   assert.doesNotMatch(chooser, /liveavatar|session|ElevenLabs|OpenAI/i);
+});
+
+test("a GO or PRO detail opens its approved manual directly and preserves the detail screen", () => {
+  const goDetail = renderToStaticMarkup(
+    <ProductDetailScreen
+      language="en"
+      productId="everyday"
+      guideName="Daniel"
+      onBack={() => undefined}
+      onCompare={() => undefined}
+      onAskGuide={() => undefined}
+    />,
+  );
+  const humidifierDetail = renderToStaticMarkup(
+    <ProductDetailScreen
+      language="en"
+      productId="air-humidifier"
+      guideName="Daniel"
+      onBack={() => undefined}
+      onCompare={() => undefined}
+      onAskGuide={() => undefined}
+    />,
+  );
+  const directManual = renderToStaticMarkup(
+    <ProductManualDialog
+      isOpen
+      language="en"
+      manual={{ id: "everyday", href: "/manuals/go-user-manual.pdf" }}
+      onClose={() => undefined}
+    />,
+  );
+
+  assert.match(goDetail, /User Manual/);
+  assert.doesNotMatch(humidifierDetail, /User Manual/);
+  assert.match(directManual, /Viewing: GO User Manual/);
+  assert.match(directManual, /go-user-manual\.pdf/);
+  assert.doesNotMatch(directManual, /Back to manuals/);
+  assert.doesNotMatch(directManual, /liveavatar|session|ElevenLabs|OpenAI/i);
 });
 
 test("the conversation presents product manuals as a secondary utility action", () => {
@@ -592,7 +650,7 @@ test("specialist selection stays passive until a question requires voice and ava
   assert.match(source, /setScreen\("conversation"\)/);
   const selection = source.slice(
     source.indexOf("function selectSpecialist"),
-    source.indexOf("function prepareSpecialistInteraction"),
+    source.indexOf("useEffect(() => {", source.indexOf("function selectSpecialist")),
   );
   assert.doesNotMatch(selection, /activateVoiceSession|\.connect\(/);
   assert.match(
@@ -702,10 +760,36 @@ test("conversation navigation cancels pending work and client input matches the 
     "utf8",
   );
 
-  assert.match(pageSource, /conversation\.cancelPending\(\);\s*setScreen\("products"\)/);
+  assert.match(pageSource, /function enterProductExplorer[\s\S]*?conversation\.cancelPending\(\)/);
   assert.match(pageSource, /function openProduct[\s\S]*?conversation\.cancelPending\(\)/);
   assert.match(screenSource, /maxLength={MAX_CONVERSATION_MESSAGE_LENGTH}/);
   assert.match(routeSource, /MAX_CONVERSATION_MESSAGE_LENGTH/);
+});
+
+test("choice-led product browsing is local and defers the existing AI setup until Ask", async () => {
+  const pageSource = await readFile(
+    new URL("../../../app/page.tsx", import.meta.url),
+    "utf8",
+  );
+  const screenSource = await readFile(
+    new URL("../../../components/screens/journey-screens.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(pageSource, /onBegin=\{\(\) => setScreen\("choice"\)\}/);
+  assert.match(pageSource, /<JourneyChoiceScreen/);
+  assert.match(pageSource, /enterProductExplorer\("choice"\)/);
+  assert.match(pageSource, /setExplorerOrigin\(origin\)/);
+  assert.match(pageSource, /deferredAiIntentRef\.current = \{[\s\S]*?kind: "product"/);
+  assert.match(pageSource, /deferredAiIntentRef\.current = null/);
+  assert.match(pageSource, /createAskAboutProductQuestion\(intent\.productId, selectedLanguage\)/);
+  assert.match(pageSource, /explorerOrigin === "choice"/);
+  assert.match(screenSource, /getProductManual\(productId\)/);
+  assert.match(screenSource, /manual=\{manual\}/);
+  assert.doesNotMatch(
+    screenSource.slice(0, screenSource.indexOf("type ConversationScreenProps")),
+    /LiveAvatarService|OpenAISpeechSynthesisProvider|activateVoiceSession/,
+  );
 });
 
 test("responsive kiosk layout defines two areas without horizontal overflow", async () => {
@@ -746,6 +830,11 @@ test("responsive kiosk layout defines two areas without horizontal overflow", as
   assert.match(
     css,
     /\.conversation-workspace\s*{[^}]*grid-template-columns: 1fr/s,
+  );
+  assert.match(css, /\.journey-choice-grid\s*{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/s);
+  assert.match(
+    css,
+    /@media \(max-width: 47\.999rem\)[\s\S]*?\.journey-choice-grid\s*{[^}]*grid-template-columns: minmax\(0, 1fr\)/s,
   );
 });
 

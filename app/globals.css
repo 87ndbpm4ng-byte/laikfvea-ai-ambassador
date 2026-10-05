@@ -623,6 +623,98 @@ h1 {
   animation: screen-enter 320ms var(--ease-enter) both;
 }
 
+.journey-choice-content {
+  position: relative;
+  display: grid;
+  width: min(100%, 66rem);
+  min-height: min(100dvh - 6rem, 38rem);
+  align-content: center;
+  gap: clamp(var(--space-6), 4vh, var(--space-10));
+  animation: screen-enter 320ms var(--ease-enter) both;
+}
+
+.journey-choice-header {
+  max-width: 38rem;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.journey-choice-header h1 {
+  margin: 0;
+  font-size: clamp(2.25rem, 4.6vw, 4rem);
+  letter-spacing: -0.045em;
+  line-height: 1.04;
+}
+
+.journey-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(var(--space-4), 2.5vw, var(--space-6));
+}
+
+.journey-choice-card {
+  display: grid;
+  min-height: clamp(15rem, 31dvh, 20rem);
+  padding: clamp(var(--space-6), 3.5vw, var(--space-10));
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-panel);
+  background: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+  align-content: space-between;
+  gap: var(--space-8);
+  touch-action: manipulation;
+}
+
+.journey-choice-card strong {
+  max-width: 17rem;
+  font-size: clamp(1.5rem, 2.6vw, 2.25rem);
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.journey-choice-card span {
+  max-width: 24rem;
+  color: var(--color-text-secondary);
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+.journey-choice-card--assistant {
+  border-color: #171717;
+  background: #171717;
+  color: #fff;
+}
+
+.journey-choice-card--assistant span {
+  color: rgb(255 255 255 / 76%);
+}
+
+.journey-choice-card:hover {
+  border-color: var(--color-text-primary);
+  transform: translateY(-2px);
+}
+
+.journey-choice-card--assistant:hover {
+  background: #262626;
+}
+
+.journey-choice-card:active {
+  transform: translateY(0) scale(0.995);
+}
+
+.journey-choice-card:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
 .guide-content {
   position: relative;
   width: min(100%, 58rem);
@@ -5031,6 +5123,19 @@ h1 {
 }
 
 @media (max-width: 47.999rem) {
+  .journey-choice-content {
+    min-height: 0;
+    padding-block: var(--space-8);
+  }
+
+  .journey-choice-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .journey-choice-card {
+    min-height: 12.5rem;
+  }
+
   .attract-content-video .attract-action {
     width: calc(100% - 1.5rem);
   }

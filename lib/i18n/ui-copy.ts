@@ -10,6 +10,11 @@ type UiCopy = {
   attractSupport: string;
   attractAction: string;
   attractHint: string;
+  journeyChoiceHeading: string;
+  speakToAiAmbassador: string;
+  speakToAiAmbassadorSupport: string;
+  exploreProductsChoice: string;
+  exploreProductsChoiceSupport: string;
   languageHeading: string;
   languagesAria: string;
   back: string;
@@ -43,6 +48,7 @@ type UiCopy = {
   endSession: string;
   productManuals: string;
   productManualsSupport: string;
+  userManual: string;
   goUserManual: string;
   proUserManual: string;
   closeManuals: string;
@@ -139,6 +145,11 @@ const en: UiCopy = {
   attractSupport: "Ask questions, compare products, and find the information you need.",
   attractAction: "Touch to begin",
   attractHint: "Choose a language to start",
+  journeyChoiceHeading: "What would you like to do?",
+  speakToAiAmbassador: "Speak to AI Ambassador",
+  speakToAiAmbassadorSupport: "Talk with Daniel or Emily and ask questions.",
+  exploreProductsChoice: "Explore Products",
+  exploreProductsChoiceSupport: "Browse all six exhibition products, photos and manuals.",
   languageHeading: "Choose your language",
   languagesAria: "Languages",
   back: "Back",
@@ -191,6 +202,7 @@ const en: UiCopy = {
   endSession: "End conversation",
   productManuals: "Product manuals",
   productManualsSupport: "Choose a manual to read on screen.",
+  userManual: "User Manual",
   goUserManual: "GO User Manual",
   proUserManual: "PRO User Manual",
   closeManuals: "Close manuals",
@@ -297,6 +309,11 @@ const ru: UiCopy = {
   attractSupport: "Задавайте вопросы, сравнивайте продукты и находите нужную информацию.",
   attractAction: "Коснитесь, чтобы начать",
   attractHint: "Сначала выберите язык",
+  journeyChoiceHeading: "Что вы хотите сделать?",
+  speakToAiAmbassador: "Поговорить с AI-амбассадором",
+  speakToAiAmbassadorSupport: "Поговорите с Дэниелом или Эмили и задайте вопросы.",
+  exploreProductsChoice: "Изучить продукты",
+  exploreProductsChoiceSupport: "Просмотрите шесть выставочных продуктов, фотографии и руководства.",
   languageHeading: "Выберите язык",
   languagesAria: "Языки",
   back: "Назад",
@@ -346,6 +363,7 @@ const ru: UiCopy = {
   endSession: "Завершить разговор",
   productManuals: "Руководства по продуктам",
   productManualsSupport: "Выберите руководство для просмотра на экране.",
+  userManual: "Руководство пользователя",
   goUserManual: "Руководство пользователя GO",
   proUserManual: "Руководство пользователя PRO",
   closeManuals: "Закрыть руководства",
@@ -452,6 +470,11 @@ const zh: UiCopy = {
   attractSupport: "提出问题、比较产品，并找到您需要的信息。",
   attractAction: "轻触开始",
   attractHint: "选择语言后开始",
+  journeyChoiceHeading: "您想做什么？",
+  speakToAiAmbassador: "与 AI 大使交谈",
+  speakToAiAmbassadorSupport: "与 Daniel 或 Emily 交谈并提问。",
+  exploreProductsChoice: "浏览产品",
+  exploreProductsChoiceSupport: "浏览全部六款展品、图片和说明书。",
   languageHeading: "请选择语言",
   languagesAria: "语言",
   back: "返回",
@@ -501,6 +524,7 @@ const zh: UiCopy = {
   endSession: "结束对话",
   productManuals: "产品说明书",
   productManualsSupport: "选择要在屏幕上查看的说明书。",
+  userManual: "用户手册",
   goUserManual: "GO 用户手册",
   proUserManual: "PRO 用户手册",
   closeManuals: "关闭说明书",
@@ -607,6 +631,11 @@ const yue: UiCopy = {
   attractSupport: "可以問問題、比較產品，搵到您需要嘅資料。",
   attractAction: "輕觸開始",
   attractHint: "揀語言後開始",
+  journeyChoiceHeading: "你想做咩？",
+  speakToAiAmbassador: "同 AI 大使傾偈",
+  speakToAiAmbassadorSupport: "同 Daniel 或 Emily 傾偈同問問題。",
+  exploreProductsChoice: "瀏覽產品",
+  exploreProductsChoiceSupport: "瀏覽全部六款展覽產品、相片同說明書。",
   languageHeading: "請選擇語言",
   languagesAria: "語言",
   back: "返回",
@@ -656,6 +685,7 @@ const yue: UiCopy = {
   endSession: "結束對話",
   productManuals: "產品說明書",
   productManualsSupport: "請揀一份說明書喺螢幕上閱覽。",
+  userManual: "使用說明書",
   goUserManual: "GO 使用說明書",
   proUserManual: "PRO 使用說明書",
   closeManuals: "關閉說明書",
@@ -762,6 +792,11 @@ const fr: UiCopy = {
   attractSupport: "Posez vos questions, comparez les produits et trouvez les informations dont vous avez besoin.",
   attractAction: "Touchez pour commencer",
   attractHint: "Choisissez une langue pour démarrer",
+  journeyChoiceHeading: "Que souhaitez-vous faire ?",
+  speakToAiAmbassador: "Parler à l’ambassadeur IA",
+  speakToAiAmbassadorSupport: "Échangez avec Daniel ou Emily et posez vos questions.",
+  exploreProductsChoice: "Découvrir les produits",
+  exploreProductsChoiceSupport: "Parcourez les six produits présentés, leurs photos et leurs manuels.",
   languageHeading: "Choisissez votre langue",
   languagesAria: "Langues",
   back: "Retour",
@@ -811,6 +846,7 @@ const fr: UiCopy = {
   endSession: "Terminer la conversation",
   productManuals: "Manuels produits",
   productManualsSupport: "Choisissez un manuel à consulter à l’écran.",
+  userManual: "Manuel d’utilisation",
   goUserManual: "Manuel d’utilisation GO",
   proUserManual: "Manuel d’utilisation PRO",
   closeManuals: "Fermer les manuels",

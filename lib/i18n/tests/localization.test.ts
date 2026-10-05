@@ -85,6 +85,7 @@ test("product-manual visitor copy exists in every supported language", () => {
     const text = [
       copy.productManuals,
       copy.productManualsSupport,
+      copy.userManual,
       copy.goUserManual,
       copy.proUserManual,
       copy.closeManuals,
@@ -100,6 +101,32 @@ test("product-manual visitor copy exists in every supported language", () => {
   const cantonese = getUiCopy("yue");
   assert.match(`${cantonese.productManuals} ${cantonese.productManualsSupport}`, /產品|螢幕/);
   assert.doesNotMatch(`${cantonese.productManuals} ${cantonese.productManualsSupport}`, /产品|屏幕/);
+});
+
+test("the choice-screen and product-manual actions are localized in every supported language", () => {
+  for (const language of ["en", "ru", "zh", "yue", "fr"] as const) {
+    const copy = getUiCopy(language);
+    const text = [
+      copy.journeyChoiceHeading,
+      copy.speakToAiAmbassador,
+      copy.speakToAiAmbassadorSupport,
+      copy.exploreProductsChoice,
+      copy.exploreProductsChoiceSupport,
+      copy.userManual,
+    ].join(" ");
+
+    assert.ok(copy.journeyChoiceHeading.length >= 5, language);
+    assert.ok(copy.speakToAiAmbassador.length > 5, language);
+    assert.ok(copy.exploreProductsChoice.length >= 4, language);
+    assert.doesNotMatch(text, /LiveAvatar|ElevenLabs|OpenAI|token|API/i);
+  }
+
+  assert.match(getUiCopy("yue").journeyChoiceHeading, /咩/);
+  assert.match(getUiCopy("yue").userManual, /說明書/);
+  assert.doesNotMatch(
+    `${getUiCopy("yue").journeyChoiceHeading} ${getUiCopy("yue").userManual}`,
+    /说明|产品/,
+  );
 });
 
 test("the client input boundary has concise static copy in every language", () => {

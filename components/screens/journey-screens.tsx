@@ -14,6 +14,7 @@ import { products } from "@/lib/data/products";
 import {
   getExhibitionProductCatalog,
 } from "@/lib/data/exhibition-product-catalog";
+import { getProductManual } from "@/lib/data/product-manuals";
 import {
   exhibitionProductList,
   exhibitionProducts,
@@ -90,6 +91,56 @@ export function AttractScreen({
       <button className="attract-action" type="button" onClick={onBegin}>
         <span>{copy.attractAction}</span>
       </button>
+    </section>
+  );
+}
+
+export function JourneyChoiceScreen({
+  language,
+  onSpeak,
+  onExplore,
+  onBack,
+}: {
+  language: SupportedLanguage;
+  onSpeak: () => void;
+  onExplore: () => void;
+  onBack: () => void;
+}) {
+  const copy = getUiCopy(language);
+
+  return (
+    <section
+      className="screen-content journey-choice-content"
+      aria-labelledby="journey-choice-heading"
+    >
+      <button className="back-action" type="button" onClick={onBack}>
+        {copy.back}
+      </button>
+      <header className="journey-choice-header">
+        <h1 id="journey-choice-heading">{copy.journeyChoiceHeading}</h1>
+      </header>
+      <div
+        className="journey-choice-grid"
+        role="group"
+        aria-label={copy.journeyChoiceHeading}
+      >
+        <button
+          className="journey-choice-card journey-choice-card--assistant"
+          type="button"
+          onClick={onSpeak}
+        >
+          <strong>{copy.speakToAiAmbassador}</strong>
+          <span>{copy.speakToAiAmbassadorSupport}</span>
+        </button>
+        <button
+          className="journey-choice-card journey-choice-card--products"
+          type="button"
+          onClick={onExplore}
+        >
+          <strong>{copy.exploreProductsChoice}</strong>
+          <span>{copy.exploreProductsChoiceSupport}</span>
+        </button>
+      </div>
     </section>
   );
 }
@@ -783,6 +834,8 @@ export function ProductDetailScreen({
   const catalog = getExhibitionProductCatalog(productId);
   const copy = getUiCopy(language);
   const displayName = product.displayNames[language];
+  const manual = getProductManual(productId);
+  const [isManualOpen, setIsManualOpen] = useState(false);
   const hasComparison = product.comparableWith.some(
     (related) => related === "everyday" || related === "advanced",
   );
@@ -830,12 +883,27 @@ export function ProductDetailScreen({
         <PrimaryButton onClick={onAskGuide}>
           {copy.askAboutProduct(guideName, displayName)}
         </PrimaryButton>
+        {manual ? (
+          <button
+            className="secondary-action"
+            type="button"
+            onClick={() => setIsManualOpen(true)}
+          >
+            {copy.userManual}
+          </button>
+        ) : null}
         {hasComparison ? (
           <button className="secondary-action" type="button" onClick={onCompare}>
             {copy.compareGoPro}
           </button>
         ) : null}
       </div>
+      <ProductManualDialog
+        isOpen={isManualOpen}
+        language={language}
+        manual={manual}
+        onClose={() => setIsManualOpen(false)}
+      />
     </section>
   );
 }
