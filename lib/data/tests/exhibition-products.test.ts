@@ -80,6 +80,15 @@ test("all products and categories have display identities in all five languages"
   }
 });
 
+test("Air Purifier uses the concise visitor-facing name while retaining its stable identity", () => {
+  const purifier = exhibitionProducts["air-purifier"];
+  assert.equal(purifier.id, "air-purifier");
+  assert.equal(purifier.exhibitionName, "Air Purifier");
+  assert.equal(purifier.displayNames.en, "Air Purifier");
+  assert.ok(purifier.aliases.includes("Air Purifier M Size"));
+  assert.equal(purifier.presentationAssetId, "air-purifier-m-size");
+});
+
 test("approved metadata names resolve structurally without speculative aliases", () => {
   assert.equal(resolveKnowledgeProductId("Advanced Bottle"), "advanced");
   assert.equal(resolveKnowledgeProductId("Everyday Bottle"), "everyday");

@@ -105,6 +105,14 @@ test("product-manual visitor copy exists in every supported language", () => {
   assert.doesNotMatch(`${cantonese.productManuals} ${cantonese.productManualsSupport}`, /产品|屏幕/);
 });
 
+test("product Explorer grouping labels exist in every supported language", () => {
+  for (const language of ["en", "ru", "zh", "yue", "fr"] as const) {
+    const copy = getUiCopy(language);
+    assert.ok(copy.flagshipProducts.trim(), language);
+    assert.ok(copy.otherProducts.trim(), language);
+  }
+});
+
 test("the choice-screen and product-manual actions are localized in every supported language", () => {
   for (const language of ["en", "ru", "zh", "yue", "fr"] as const) {
     const copy = getUiCopy(language);

@@ -96,12 +96,12 @@ test("Air Purifier identity survives multi-turn references", () => {
   });
   assert.equal(first.activeProduct, "air-purifier");
   manager.recordAssistantMessage(session.sessionId, {
-    content: "The Air Purifier is the Capsula M Size model.",
+    content: "The Air Purifier is ready to discuss.",
   });
   for (const content of ["How does it work?", "How do I clean it?"]) {
     const followUp = manager.recordVisitorMessage(session.sessionId, { content });
     assert.equal(followUp.activeProduct, "air-purifier");
-    assert.match(followUp.resolvedQuestion ?? "", /active product: Air Purifier M Size/);
+    assert.match(followUp.resolvedQuestion ?? "", /active product: Air Purifier/);
   }
 });
 

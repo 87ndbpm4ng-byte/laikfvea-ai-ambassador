@@ -86,7 +86,7 @@ test("Air Purifier follow-ups and product-explorer context retain identity", asy
       viewedProducts: ["air-purifier"],
       conversationHistory: [
         { role: "user", content: "Tell me about the Air Purifier." },
-        { role: "assistant", content: "It is the Air Purifier M Size model." },
+        { role: "assistant", content: "It is the Air Purifier model." },
       ],
     });
     assert.equal(query.activeProduct, "air-purifier");

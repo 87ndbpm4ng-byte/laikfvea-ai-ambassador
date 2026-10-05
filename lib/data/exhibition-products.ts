@@ -159,10 +159,10 @@ export const exhibitionProducts = {
   },
   "air-purifier": {
     id: "air-purifier",
-    exhibitionName: "Air Purifier M Size",
+    exhibitionName: "Air Purifier",
     category: "indoor-environment",
     displayNames: {
-      en: "Air Purifier M Size",
+      en: "Air Purifier",
       ru: "Очиститель воздуха",
       zh: "空气净化器",
       yue: "空氣淨化器",

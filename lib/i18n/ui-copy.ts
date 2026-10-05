@@ -108,6 +108,8 @@ type UiCopy = {
   connectionLost: string;
   productExplorer: string;
   productExplorerSupport: string;
+  flagshipProducts: string;
+  otherProducts: string;
   portfolioBack: string;
   productVisualUnavailable: string;
   askAboutProduct: (guide: string, name: string) => string;
@@ -206,7 +208,7 @@ const en: UiCopy = {
   productManualsSupport: "Choose a manual to read on screen.",
   userManual: "User Manual",
   waterIonizerUserManual: "Water Ionizer User Manual",
-  airPurifierUserManual: "Air Purifier M Size User Manual",
+  airPurifierUserManual: "Air Purifier User Manual",
   goUserManual: "GO User Manual",
   proUserManual: "PRO User Manual",
   closeManuals: "Close manuals",
@@ -264,6 +266,8 @@ const en: UiCopy = {
   connectionLost: "I couldn’t connect right now. Please try again, or choose a Quick Question.",
   productExplorer: "Product Explorer",
   productExplorerSupport: "Explore the technologies presented at this stand.",
+  flagshipProducts: "Flagship products",
+  otherProducts: "Other products",
   portfolioBack: "Back to portfolio",
   productVisualUnavailable: "Product visual coming soon",
   askAboutProduct: (guide) => `Ask ${guide}`,
@@ -369,7 +373,7 @@ const ru: UiCopy = {
   productManualsSupport: "Выберите руководство для просмотра на экране.",
   userManual: "Руководство пользователя",
   waterIonizerUserManual: "Руководство пользователя ионизатора воды",
-  airPurifierUserManual: "Руководство пользователя очистителя воздуха M Size",
+  airPurifierUserManual: "Руководство пользователя очистителя воздуха",
   goUserManual: "Руководство пользователя GO",
   proUserManual: "Руководство пользователя PRO",
   closeManuals: "Закрыть руководства",
@@ -427,6 +431,8 @@ const ru: UiCopy = {
   connectionLost: "Сейчас не удалось подключиться. Попробуйте ещё раз или выберите быстрый вопрос.",
   productExplorer: "Каталог продуктов",
   productExplorerSupport: "Познакомьтесь с технологиями, представленными на стенде.",
+  flagshipProducts: "Основные продукты",
+  otherProducts: "Другие продукты",
   portfolioBack: "Вернуться к портфолио",
   productVisualUnavailable: "Изображение скоро появится",
   askAboutProduct: (guide) => `Спросить ${guide === "Daniel" ? "Дэниела" : "Эмили"}`,
@@ -532,7 +538,7 @@ const zh: UiCopy = {
   productManualsSupport: "选择要在屏幕上查看的说明书。",
   userManual: "用户手册",
   waterIonizerUserManual: "水离子机用户手册",
-  airPurifierUserManual: "M Size 空气净化器用户手册",
+  airPurifierUserManual: "空气净化器用户手册",
   goUserManual: "GO 用户手册",
   proUserManual: "PRO 用户手册",
   closeManuals: "关闭说明书",
@@ -590,6 +596,8 @@ const zh: UiCopy = {
   connectionLost: "目前无法连接。请重试或选择快捷问题。",
   productExplorer: "产品一览",
   productExplorerSupport: "了解本展台展出的技术与产品。",
+  flagshipProducts: "旗舰产品",
+  otherProducts: "其他产品",
   portfolioBack: "返回产品一览",
   productVisualUnavailable: "产品图片即将提供",
   askAboutProduct: (guide) => `咨询 ${guide}`,
@@ -695,7 +703,7 @@ const yue: UiCopy = {
   productManualsSupport: "請揀一份說明書喺螢幕上閱覽。",
   userManual: "使用說明書",
   waterIonizerUserManual: "水離子機使用說明書",
-  airPurifierUserManual: "M Size 空氣淨化器使用說明書",
+  airPurifierUserManual: "空氣淨化器使用說明書",
   goUserManual: "GO 使用說明書",
   proUserManual: "PRO 使用說明書",
   closeManuals: "關閉說明書",
@@ -753,6 +761,8 @@ const yue: UiCopy = {
   connectionLost: "而家暫時連線唔到。請再試或者揀快速問題。",
   productExplorer: "產品一覽",
   productExplorerSupport: "了解呢個展台展出嘅技術同產品。",
+  flagshipProducts: "旗艦產品",
+  otherProducts: "其他產品",
   portfolioBack: "返回產品一覽",
   productVisualUnavailable: "產品圖片即將提供",
   askAboutProduct: (guide) => `問 ${guide}`,
@@ -858,7 +868,7 @@ const fr: UiCopy = {
   productManualsSupport: "Choisissez un manuel à consulter à l’écran.",
   userManual: "Manuel d’utilisation",
   waterIonizerUserManual: "Manuel d’utilisation de l’ioniseur d’eau",
-  airPurifierUserManual: "Manuel d’utilisation du purificateur d’air M Size",
+  airPurifierUserManual: "Manuel d’utilisation du purificateur d’air",
   goUserManual: "Manuel d’utilisation GO",
   proUserManual: "Manuel d’utilisation PRO",
   closeManuals: "Fermer les manuels",
@@ -916,6 +926,8 @@ const fr: UiCopy = {
   connectionLost: "Je ne peux pas me connecter pour le moment. Réessayez ou choisissez une question rapide.",
   productExplorer: "Découvrir les produits",
   productExplorerSupport: "Découvrez les technologies présentées sur ce stand.",
+  flagshipProducts: "Produits phares",
+  otherProducts: "Autres produits",
   portfolioBack: "Retour au portfolio",
   productVisualUnavailable: "Visuel du produit à venir",
   askAboutProduct: (guide) => `Demander à ${guide}`,

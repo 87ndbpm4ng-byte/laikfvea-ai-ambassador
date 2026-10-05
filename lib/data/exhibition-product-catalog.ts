@@ -67,11 +67,11 @@ export const exhibitionProductCatalog: Readonly<
       "Gardez les ouvertures d’air dégagées. Le préfiltre est l’élément à remplacer périodiquement; l’élément en verre est conçu pour durer.",
     ),
     images: [
-      { src: "/products/air-purifier-m-size/hero-white-isolated.png", alt: text("White Air Purifier M Size", "Белый очиститель воздуха M Size", "白色 M Size 空气净化器", "白色 M Size 空氣淨化器", "Purificateur d’air M Size blanc") },
-      { src: "/products/air-purifier-m-size/desk-use.png", alt: text("Air Purifier M Size on a desk", "Очиститель воздуха M Size на столе", "桌面上的 M Size 空气净化器", "枱面上嘅 M Size 空氣淨化器", "Purificateur d’air M Size sur un bureau") },
-      { src: "/products/air-purifier-m-size/hero.png", alt: text("Air Purifier M Size", "Очиститель воздуха M Size", "M Size 空气净化器", "M Size 空氣淨化器", "Purificateur d’air M Size") },
-      { src: "/products/air-purifier-m-size/bedroom-use.png", alt: text("Air Purifier M Size in a bedroom", "Очиститель воздуха M Size в спальне", "卧室中的 M Size 空气净化器", "睡房中嘅 M Size 空氣淨化器", "Purificateur d’air M Size dans une chambre") },
-      { src: "/products/air-purifier-m-size/controls.png", alt: text("Air Purifier M Size controls", "Панель управления очистителя воздуха M Size", "M Size 空气净化器控制面板", "M Size 空氣淨化器控制面板", "Commandes du Purificateur d’air M Size") },
+      { src: "/products/air-purifier-m-size/hero-white-isolated.png", alt: text("White Air Purifier", "Белый очиститель воздуха", "白色空气净化器", "白色空氣淨化器", "Purificateur d’air blanc") },
+      { src: "/products/air-purifier-m-size/desk-use.png", alt: text("Air Purifier on a desk", "Очиститель воздуха на столе", "桌面上的空气净化器", "枱面上嘅空氣淨化器", "Purificateur d’air sur un bureau") },
+      { src: "/products/air-purifier-m-size/hero.png", alt: text("Air Purifier", "Очиститель воздуха", "空气净化器", "空氣淨化器", "Purificateur d’air") },
+      { src: "/products/air-purifier-m-size/bedroom-use.png", alt: text("Air Purifier in a bedroom", "Очиститель воздуха в спальне", "卧室中的空气净化器", "睡房中嘅空氣淨化器", "Purificateur d’air dans une chambre") },
+      { src: "/products/air-purifier-m-size/controls.png", alt: text("Air Purifier controls", "Панель управления очистителя воздуха", "空气净化器控制面板", "空氣淨化器控制面板", "Commandes du purificateur d’air") },
     ],
   },
   "water-ionizer": {

@@ -27,7 +27,6 @@ import {
 } from "@/types/product";
 import {
   exhibitionProducts,
-  productCategoryNames,
 } from "@/lib/data/exhibition-products";
 
 const silentSpeechProvider: SpeechSynthesisProvider = {
@@ -176,7 +175,7 @@ test("product manuals are a local in-app utility and do not require an avatar se
   assert.match(chooser, /role="dialog"/);
   assert.match(chooser, /Product manuals/);
   assert.match(chooser, /Water Ionizer User Manual/);
-  assert.match(chooser, /Air Purifier M Size User Manual/);
+  assert.match(chooser, /Air Purifier User Manual/);
   assert.match(chooser, /GO User Manual/);
   assert.match(chooser, /PRO User Manual/);
   assert.equal((chooser.match(/product-manual-options/g) ?? []).length, 1);
@@ -269,7 +268,7 @@ test("approved product details open their own local manual and preserve the deta
   assert.match(directManual, /go-user-manual\.pdf/);
   assert.match(proManual, /Viewing: PRO User Manual/);
   assert.match(proManual, /pro-user-manual\.pdf/);
-  assert.match(purifierManual, /Viewing: Air Purifier M Size User Manual/);
+  assert.match(purifierManual, /Viewing: Air Purifier User Manual/);
   assert.match(purifierManual, /air-purifier-user-manual\.pdf/);
   assert.doesNotMatch(purifierManual, /liveavatar|session|ElevenLabs|OpenAI|retrieval/i);
   assert.doesNotMatch(directManual, /Back to manuals/);
@@ -1035,7 +1034,7 @@ test("conversation heading belongs to the dialogue column", () => {
   assert.ok(headingStart > dialogueStart);
 });
 
-test("the portfolio is registry-driven and presents the six final exhibition products with photography", () => {
+test("the portfolio presents two flagship products before four other products with shared image rendering", () => {
   const opened: string[] = [];
   const markup = renderToStaticMarkup(
     <ProductExplorerScreen
@@ -1045,8 +1044,9 @@ test("the portfolio is registry-driven and presents the six final exhibition pro
     />,
   );
 
-  assert.match(markup, /Functional Water/);
-  assert.match(markup, /Indoor Environment/);
+  assert.match(markup, /Flagship products/);
+  assert.match(markup, /Other products/);
+  assert.doesNotMatch(markup, /Functional Water|Indoor Environment/);
   for (const productId of EXHIBITION_PRODUCT_IDS) {
     assert.ok(
       markup.includes(
@@ -1056,6 +1056,19 @@ test("the portfolio is registry-driven and presents the six final exhibition pro
     );
   }
   assert.equal(markup.match(/class="product-card"/g)?.length, 6);
+  assert.equal(markup.match(/portfolio-group-flagship/g)?.length, 1);
+  assert.equal(markup.match(/portfolio-group-other/g)?.length, 1);
+  const flagshipStart = markup.indexOf('class="portfolio-group portfolio-group-flagship"');
+  const otherStart = markup.indexOf('class="portfolio-group portfolio-group-other"');
+  assert.ok(flagshipStart >= 0);
+  assert.ok(otherStart > flagshipStart);
+  const flagshipMarkup = markup.slice(flagshipStart, otherStart);
+  const otherMarkup = markup.slice(otherStart);
+  assert.ok(flagshipMarkup.indexOf("Air Purifier") < flagshipMarkup.indexOf("Water Ionizer"));
+  assert.doesNotMatch(flagshipMarkup, /Hydrogen Water Bottle PRO|Hydrogen Water Bottle GO|Air Humidifier/);
+  assert.ok(otherMarkup.indexOf("Hydrogen Water Bottle PRO") < otherMarkup.indexOf("Hydrogen Water Bottle GO"));
+  assert.ok(otherMarkup.indexOf("Hydrogen Water Bottle GO") < otherMarkup.indexOf("H₂ Generator Face &amp; Body"));
+  assert.ok(otherMarkup.indexOf("H₂ Generator Face &amp; Body") < otherMarkup.indexOf("Air Humidifier"));
   assert.match(markup, /products%2Fair-purifier-m-size%2Fhero-white-isolated\.png/);
   assert.match(markup, /products%2Fhydrogen-bottle-go%2Fhero\.png/);
   assert.match(markup, /products%2Fair-humidifier%2Fhero-dining-table\.png/);
@@ -1068,6 +1081,7 @@ test("the portfolio is registry-driven and presents the six final exhibition pro
   assert.doesNotMatch(markup, /Compare GO and PRO/);
   assert.doesNotMatch(markup, /Product visual coming soon/);
   assert.doesNotMatch(markup, /Water Mineralizer/);
+  assert.doesNotMatch(markup, /Air Purifier M Size/);
   assert.deepEqual(opened, []);
 });
 
@@ -1136,8 +1150,6 @@ test("portfolio identities and navigation remain localized in all five languages
         onBack={() => undefined}
       />,
     );
-    assert.match(portfolio, new RegExp(productCategoryNames["functional-water"][language]));
-    assert.match(portfolio, new RegExp(productCategoryNames["indoor-environment"][language]));
     assert.match(portfolio, new RegExp(exhibitionProducts["air-purifier"].displayNames[language]));
     assert.match(portfolio, new RegExp(exhibitionProducts["air-humidifier"].displayNames[language]));
 
@@ -1158,14 +1170,9 @@ test("portfolio identities and navigation remain localized in all five languages
 test("portfolio CSS provides intentional landscape, portrait and mobile grids", async () => {
   const css = await readFile(new URL("../../../app/globals.css", import.meta.url), "utf8");
   assert.match(css, /\.product-grid\s*\{[^}]*repeat\(4, minmax\(0, 1fr\)\)/s);
-  assert.match(
-    css,
-    /\.portfolio-group-indoor-environment \.product-card-visual\s*\{[^}]*height:\s*clamp\(11\.5rem, 13vw, 13rem\);[^}]*padding:\s*var\(--space-1\);/s,
-  );
-  assert.doesNotMatch(
-    css,
-    /\.portfolio-group-indoor-environment \.product-visual-photo img\s*\{[^}]*transform:/s,
-  );
+  assert.match(css, /\.portfolio-group-flagship \.product-grid\s*\{[^}]*repeat\(2, minmax\(0, 1fr\)\)/s);
+  assert.match(css, /\.portfolio-group-flagship \.product-card-visual\s*\{[^}]*height:\s*clamp\(14\.5rem, 19vw, 17rem\);/s);
+  assert.doesNotMatch(css, /\.portfolio-group-indoor-environment/);
   assert.match(
     css,
     /\.product-card-image-frame\s*\{[^}]*position:\s*relative;[^}]*width:\s*100%;[^}]*height:\s*100%;/s,

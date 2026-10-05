@@ -12,7 +12,7 @@ tags: [product, air-purifier, capsula-m-size, operation, pre-filter, uv, app, cl
 
 # Air Purifier User Manual
 
-This approved source applies only to the stable product identity `air-purifier`. The manual identifies the product as the **Grandwork Air Purifier**; the exhibition-facing identity remains **Air Purifier M Size**.
+This approved source applies only to the stable product identity `air-purifier`. The manual identifies the product as the **Grandwork Air Purifier**; the exhibition-facing identity is **Air Purifier**.
 
 ## Product identity and air path
 

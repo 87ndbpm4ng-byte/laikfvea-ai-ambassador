@@ -18,7 +18,6 @@ import { getProductManual } from "@/lib/data/product-manuals";
 import {
   exhibitionProductList,
   exhibitionProducts,
-  productCategoryNames,
 } from "@/lib/data/exhibition-products";
 import {
   getGeneralQuickQuestions,
@@ -36,7 +35,6 @@ import type { GuideId } from "@/types/guide";
 import type {
   BottleProductId,
   ExhibitionProductId,
-  ProductCategoryId,
   ProductId,
 } from "@/types/product";
 import type { SupportedLanguage } from "@/types/language";
@@ -748,9 +746,17 @@ export function ProductExplorerScreen({
   backLabel,
 }: ProductExplorerScreenProps) {
   const copy = getUiCopy(language);
-  const categories: readonly ProductCategoryId[] = [
-    "functional-water",
-    "indoor-environment",
+  const groups = [
+    {
+      id: "flagship",
+      label: copy.flagshipProducts,
+      productIds: ["air-purifier", "water-ionizer"],
+    },
+    {
+      id: "other",
+      label: copy.otherProducts,
+      productIds: ["advanced", "everyday", "face-body-generator", "air-humidifier"],
+    },
   ];
   return (
     <section
@@ -763,21 +769,19 @@ export function ProductExplorerScreen({
       </header>
 
       <div className="portfolio-groups">
-        {categories.map((categoryId) => {
-          const categoryProducts = exhibitionProductList.filter(
-            (product) => product.category === categoryId,
+        {groups.map((group) => {
+          const groupProducts = group.productIds.map((productId) =>
+            exhibitionProductList.find(({ id }) => id === productId)!,
           );
           return (
             <section
-              className={`portfolio-group portfolio-group-${categoryId}`}
-              key={categoryId}
-              aria-labelledby={`portfolio-${categoryId}`}
+              className={`portfolio-group portfolio-group-${group.id}`}
+              key={group.id}
+              aria-labelledby={`portfolio-${group.id}`}
             >
-              <h2 id={`portfolio-${categoryId}`}>
-                {productCategoryNames[categoryId][language]}
-              </h2>
+              <h2 id={`portfolio-${group.id}`}>{group.label}</h2>
               <div className="product-grid">
-                {categoryProducts.map((product) => (
+                {groupProducts.map((product) => (
                   <button
                     className="product-card"
                     type="button"
