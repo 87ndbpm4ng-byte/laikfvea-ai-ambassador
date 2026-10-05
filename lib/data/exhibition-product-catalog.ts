@@ -39,11 +39,11 @@ export const exhibitionProductCatalog: Readonly<
   "air-purifier": {
     id: "air-purifier",
     description: text(
-      "A compact indoor purifier with a photocatalytic glass element and UV-A activation.",
-      "Компактный очиститель воздуха для помещений с фотокаталитическим стеклянным элементом и УФ-А активацией.",
-      "采用光催化玻璃元件和 UV-A 活化技术的紧凑型室内空气净化器。",
-      "採用光催化玻璃元件同 UV-A 活化技術嘅輕巧室內空氣淨化器。",
-      "Un purificateur d’air intérieur compact avec élément en verre photocatalytique et activation UV-A.",
+      "A compact air-purification system powered by photocatalytic technology. Light activates the catalytic surface inside the device as air passes through it. A mobile app supports device control, monitoring and replacement reminders; exterior colours and private-label/OEM/ODM customization are available for suitable projects.",
+      "Компактная система очистки воздуха на основе фотокаталитической технологии. Свет активирует каталитическую поверхность внутри устройства, когда через него проходит воздух. Мобильное приложение поддерживает управление, мониторинг и напоминания о замене; для подходящих проектов доступны цвета корпуса и кастомизация Private Label/OEM/ODM.",
+      "一款采用光催化技术的紧凑型空气净化系统。空气通过设备时，光会激活内部的催化表面。移动应用可用于控制、监测和更换提醒；适合的项目可提供外观颜色及 Private Label/OEM/ODM 定制。",
+      "一款採用光催化技術嘅輕巧空氣淨化系統。空氣通過裝置時，光會啟動內部嘅催化表面。流動應用程式可用於控制、監察同更換提示；合適項目可提供外觀顏色及 Private Label/OEM/ODM 訂製。",
+      "Un système compact de purification de l’air utilisant une technologie photocatalytique. La lumière active la surface catalytique à l’intérieur de l’appareil lorsque l’air y circule. Une application mobile permet le contrôle, le suivi et les rappels de remplacement; des couleurs et une personnalisation private label/OEM/ODM sont disponibles pour les projets adaptés.",
     ),
     atAGlance: facts(
       ["Up to 20.25 m² coverage", "Night, Day and Boost modes", "Glass active element with a pre-filter"],
@@ -86,11 +86,11 @@ export const exhibitionProductCatalog: Readonly<
   "water-ionizer": {
     id: "water-ionizer",
     description: text(
-      "A portable countertop system that prepares four functional-water programs through controlled electrolysis.",
-      "Портативная настольная система, которая готовит четыре программы функциональной воды с помощью контролируемого электролиза.",
-      "一款通过受控电解制备四种功能水程序的便携式台面设备。",
-      "一款透過受控電解製備四種功能水程序嘅便攜式枱面設備。",
-      "Un système de comptoir portable qui prépare quatre programmes d’eau fonctionnelle par électrolyse contrôlée.",
+      "A multifunctional Water Ionizer that prepares alkaline, acidic, hydrogen and Silver Ion water in one device. Controlled electrolysis, hydrogen generation and a dedicated silver-electrode option support different water functions for daily drinking, food preparation and documented household applications. Its selectable pH range is 2.5–11.2.",
+      "Многофункциональный ионизатор воды, который готовит щелочную, кислую, водородную воду и воду с ионами серебра в одном устройстве. Контролируемый электролиз, генерация водорода и отдельный вариант с серебряным электродом поддерживают разные функции воды для ежедневного питья, приготовления пищи и документированных бытовых применений. Выбираемый диапазон pH: 2,5–11,2.",
+      "一台多功能水离子机，可在同一设备中制备碱性水、酸性水、氢水和银离子水。受控电解、制氢和专用银电极选项可支持日常饮用、食物准备及已记录的家庭用途。可选择的 pH 范围为 2.5–11.2。",
+      "一部多功能水離子機，可喺同一部裝置製備鹼性水、酸性水、氫水同銀離子水。受控電解、製氫同專用銀電極選項可支援日常飲用、食物準備及已記錄嘅家居用途。可選 pH 範圍係 2.5–11.2。",
+      "Un ioniseur d’eau multifonction qui prépare de l’eau alcaline, acide, hydrogénée et aux ions d’argent dans un seul appareil. L’électrolyse contrôlée, la génération d’hydrogène et une option d’électrode d’argent dédiée prennent en charge différentes fonctions de l’eau pour la boisson quotidienne, la préparation des aliments et des usages domestiques documentés. Sa plage de pH sélectionnable est de 2,5 à 11,2.",
     ),
     atAGlance: facts(
       ["Four water programs", "Up to 3.5 L per batch", "No permanent plumbing"],
@@ -123,11 +123,11 @@ export const exhibitionProductCatalog: Readonly<
   advanced: {
     id: "advanced",
     description: text(
-      "An advanced portable hydrogen-water bottle with high-concentration, inhalation and smart functions.",
-      "Продвинутая портативная бутылка для водородной воды с высокой концентрацией, ингаляцией и интеллектуальными функциями.",
-      "一款具备高浓度、吸入和智能功能的高级便携式氢水瓶。",
-      "一款具備高濃度、吸入同智能功能嘅高階便攜式氫水樽。",
-      "Une bouteille d’eau hydrogénée portable avancée avec fonctions haute concentration, inhalation et connectées.",
+      "A multifunctional portable bottle for preparing hydrogen-rich water in daily hydration routines. Choose a 3-minute quick hydrogen cycle or an 18-minute high-concentration cycle; the dedicated adapter and cannula support the documented inhalation function. It also includes mineralization, app-connected controls, USB-C charging and a storage compartment for travel, work, training and everyday use.",
+      "Многофункциональная портативная бутылка для приготовления водородной воды в повседневном режиме гидратации. Выберите быстрый 3-минутный цикл или 18-минутный цикл высокой концентрации; специальный адаптер и канюля поддерживают документированную функцию ингаляции. Также предусмотрены минерализация, управление через приложение, зарядка USB-C и отсек для хранения — для поездок, работы, тренировок и повседневного использования.",
+      "一款多功能便携水瓶，可在日常补水中制备富氢水。可选择 3 分钟快速制氢循环或 18 分钟高浓度循环；专用适配器和鼻导管支持已记录的吸入功能。它还配有矿化、应用程序控制、USB-C 充电和收纳仓，适合旅行、工作、训练和日常使用。",
+      "一款多功能便攜水樽，可喺日常補水中製備富氫水。可選擇 3 分鐘快速製氫循環或 18 分鐘高濃度循環；專用轉接器同鼻導管支援已記錄嘅吸入功能。佢仲配有礦化、應用程式控制、USB-C 充電同收納格，適合旅行、工作、訓練同日常使用。",
+      "Une bouteille portable multifonction pour préparer de l’eau enrichie en hydrogène dans les routines d’hydratation quotidiennes. Choisissez un cycle rapide de 3 minutes ou un cycle haute concentration de 18 minutes; l’adaptateur et la canule dédiés prennent en charge la fonction d’inhalation documentée. Elle comprend aussi la minéralisation, des commandes connectées à une application, une recharge USB-C et un compartiment de rangement pour les déplacements, le travail, l’entraînement et l’usage quotidien.",
     ),
     atAGlance: facts(
       ["350 mL capacity", "3-minute and 18-minute modes", "USB-C and wireless charging"],
@@ -159,11 +159,11 @@ export const exhibitionProductCatalog: Readonly<
   everyday: {
     id: "everyday",
     description: text(
-      "A simple portable bottle for preparing fresh hydrogen water in an everyday routine.",
-      "Простая портативная бутылка для приготовления свежей водородной воды в повседневной жизни.",
-      "一款简单便携的氢水瓶，适合日常制备新鲜氢水。",
-      "一款簡單便攜嘅氫水樽，適合日常製備新鮮氫水。",
-      "Une bouteille portable simple pour préparer de l’eau hydrogénée fraîche au quotidien.",
+      "A portable hydrogen-water bottle that uses electrolysis and a membrane system to prepare hydrogen-rich water. Its single approximately 5-minute cycle is designed for straightforward everyday use at home, at work, at the gym or while travelling. Colours, exterior design and branding can be customized for Private Label/OEM/ODM projects.",
+      "Портативная бутылка для водородной воды, использующая электролиз и мембранную систему для приготовления водородной воды. Один цикл примерно на 5 минут рассчитан на простое ежедневное использование дома, на работе, в спортзале или в поездках. Для проектов Private Label/OEM/ODM можно настроить цвета, внешний дизайн и брендинг.",
+      "一款采用电解和膜系统制备富氢水的便携氢水瓶。单一的约 5 分钟循环，适合在家、办公室、健身房或旅行中轻松日常使用。颜色、外观设计和品牌可为 Private Label/OEM/ODM 项目定制。",
+      "一款採用電解同膜系統製備富氫水嘅便攜氫水樽。單一約 5 分鐘循環，適合喺屋企、辦公室、健身室或旅行時輕鬆日常使用。顏色、外觀設計同品牌可為 Private Label/OEM/ODM 項目訂製。",
+      "Une bouteille d’eau hydrogénée portable qui utilise l’électrolyse et un système de membrane pour préparer de l’eau enrichie en hydrogène. Son unique cycle d’environ 5 minutes est conçu pour un usage quotidien simple à la maison, au travail, à la salle de sport ou en déplacement. Les couleurs, le design extérieur et le branding peuvent être personnalisés pour des projets Private Label/OEM/ODM.",
     ),
     atAGlance: facts(
       ["400 mL capacity", "Approximately 5-minute cycle", "One-button operation with USB-C charging"],
@@ -195,11 +195,11 @@ export const exhibitionProductCatalog: Readonly<
   "air-humidifier": {
     id: "air-humidifier",
     description: text(
-      "A compact ultrasonic humidifier with aroma and ambient-light functions.",
-      "Компактный ультразвуковой увлажнитель воздуха с функциями ароматизации и атмосферной подсветки.",
-      "一款带有香薰和氛围灯功能的紧凑型超声波加湿器。",
-      "一款配備香薰同氣氛燈功能嘅輕巧超聲波加濕器。",
-      "Un humidificateur ultrasonique compact avec fonctions d’aromathérapie et d’éclairage d’ambiance.",
+      "A multifunctional air humidifier and aroma diffuser designed to add comfort and atmosphere to indoor spaces. It combines ultrasonic humidification, aromatherapy and ambient lighting with touch control, multiple mist modes, adjustable lighting, timer settings and automatic shut-off. Exterior design and colours can be customized for Private Label/OEM/ODM projects.",
+      "Многофункциональный увлажнитель воздуха и аромадиффузор, созданный для комфорта и атмосферы в помещениях. Он сочетает ультразвуковое увлажнение, ароматизацию и атмосферную подсветку с сенсорным управлением, несколькими режимами тумана, регулируемой подсветкой, таймером и автоматическим отключением. Для проектов Private Label/OEM/ODM можно настроить внешний дизайн и цвета.",
+      "一款多功能空气加湿器和香薰扩香器，旨在为室内空间增添舒适感和氛围。它结合超声波加湿、香薰和氛围灯，配有触控、多种雾化模式、可调灯光、定时设置和自动关闭。外观设计和颜色可为 Private Label/OEM/ODM 项目定制。",
+      "一款多功能空氣加濕器同香薰擴香器，旨在為室內空間增添舒適感同氣氛。佢結合超聲波加濕、香薰同氣氛燈，配有觸控、多種噴霧模式、可調燈光、定時設定同自動關機。外觀設計同顏色可為 Private Label/OEM/ODM 項目訂製。",
+      "Un humidificateur d’air et diffuseur d’arômes multifonction, conçu pour apporter confort et ambiance aux espaces intérieurs. Il associe humidification ultrasonique, aromathérapie et éclairage d’ambiance avec commande tactile, plusieurs modes de brume, éclairage réglable, minuterie et arrêt automatique. Le design extérieur et les couleurs peuvent être personnalisés pour des projets Private Label/OEM/ODM.",
     ),
     atAGlance: facts(
       ["2.4 L tank", "Four mist settings", "2, 4 or 6-hour timer"],
@@ -234,11 +234,11 @@ export const exhibitionProductCatalog: Readonly<
   "face-body-generator": {
     id: "face-body-generator",
     description: text(
-      "A portable device that creates hydrogen-enriched ultrafine mist for face and body use.",
-      "Портативное устройство, создающее обогащённый водородом ультратонкий туман для лица и тела.",
-      "一款为面部和身体使用而产生富氢超细雾的便携式设备。",
-      "一款為面部同身體使用而產生富氫超細霧嘅便攜式設備。",
-      "Un appareil portable qui crée une brume ultrafine enrichie en hydrogène pour le visage et le corps.",
+      "A face-and-body care device that uses electrolysis and ultrasonic atomization to create a hydrogen-enriched fine mist for external use. It is designed for facial cleansing, skin rinsing and everyday body-care routines. It is not a medical nebulizer or treatment device.",
+      "Устройство для ухода за лицом и телом, использующее электролиз и ультразвуковое распыление для создания обогащённого водородом мелкого тумана для наружного применения. Оно предназначено для очищения лица, ополаскивания кожи и повседневного ухода за телом. Это не медицинский небулайзер и не устройство для лечения.",
+      "一款面部和身体护理设备，使用电解和超声波雾化技术产生富氢细雾，供外部使用。适用于面部清洁、皮肤冲洗和日常身体护理。它不是医疗雾化器或治疗设备。",
+      "一款面部同身體護理裝置，使用電解同超聲波霧化技術產生富氫細霧，供外部使用。適合面部清潔、皮膚沖洗同日常身體護理。佢唔係醫療霧化器或治療裝置。",
+      "Un appareil de soin du visage et du corps qui utilise l’électrolyse et l’atomisation ultrasonique pour créer une fine brume enrichie en hydrogène à usage externe. Il est conçu pour le nettoyage du visage, le rinçage de la peau et les routines de soin du corps. Ce n’est ni un nébuliseur médical ni un dispositif de traitement.",
     ),
     atAGlance: facts(
       ["15 mL reservoir", "Approximately 55-second cycle", "USB-C rechargeable"],

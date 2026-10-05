@@ -36,6 +36,21 @@ test("the final exhibition catalogue excludes the standalone Water Mineralizer",
   assert.equal("air-humidifier" in exhibitionProductCatalog, true);
 });
 
+test("product-detail descriptions retain approved exhibition positioning without outcome claims", () => {
+  assert.match(
+    getExhibitionProductCatalog("face-body-generator").description.en,
+    /not a medical nebulizer or treatment device/i,
+  );
+  assert.match(
+    getExhibitionProductCatalog("water-ionizer").description.en, /2\.5–11\.2/);
+  assert.match(getExhibitionProductCatalog("everyday").description.en, /5-minute/i);
+  assert.match(getExhibitionProductCatalog("advanced").description.en, /18-minute/i);
+  assert.doesNotMatch(
+    getExhibitionProductCatalog("air-purifier").description.en,
+    /virus|mold|steriliz|guaranteed/i,
+  );
+});
+
 test("Indoor Environment cards use the approved local hero assets", () => {
   const expectedHeroes = {
     "air-purifier": "/products/air-purifier-m-size/hero-white-isolated.png",

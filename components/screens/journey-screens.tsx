@@ -860,6 +860,7 @@ export function ProductDetailScreen({
             {productCategoryNames[product.category][language]}
           </p>
           <h1 id="product-detail-heading">{displayName}</h1>
+          <p className="detail-overview">{catalog.description[language]}</p>
           <p className="detail-question-prompt">{copy.productQuestionPrompt}</p>
 
           <div className="detail-lists">

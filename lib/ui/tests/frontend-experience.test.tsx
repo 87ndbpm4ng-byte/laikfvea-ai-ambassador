@@ -1114,6 +1114,10 @@ test("product details provide local galleries and concise catalogue context", ()
     assert.match(markup, /At a glance/);
     assert.match(markup, /How it works/);
     assert.match(markup, /Care/);
+    assert.match(
+      markup,
+      new RegExp(exhibitionProductCatalog[productId].description.en.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").slice(0, 48)),
+    );
     assert.match(markup, /product-gallery-thumbnail/);
     if (productId === "everyday" || productId === "advanced") {
       assert.match(markup, /Compare GO and PRO/);
