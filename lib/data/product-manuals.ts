@@ -1,4 +1,4 @@
-export type ProductManualId = "everyday" | "advanced";
+export type ProductManualId = "everyday" | "advanced" | "water-ionizer";
 
 export type ProductManual = {
   id: ProductManualId;
@@ -6,8 +6,9 @@ export type ProductManual = {
 };
 
 export const productManuals: readonly ProductManual[] = [
-  { id: "everyday", href: "/manuals/go-user-manual.pdf" },
+  { id: "water-ionizer", href: "/manuals/water-ionizer-user-manual.pdf" },
   { id: "advanced", href: "/manuals/pro-user-manual.pdf" },
+  { id: "everyday", href: "/manuals/go-user-manual.pdf" },
 ];
 
 export function getProductManual(productId: string): ProductManual | null {

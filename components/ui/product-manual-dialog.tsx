@@ -14,6 +14,7 @@ type ProductManualDialogProps = {
 
 function manualLabel(manual: ProductManual, language: SupportedLanguage) {
   const copy = getUiCopy(language);
+  if (manual.id === "water-ionizer") return copy.waterIonizerUserManual;
   return manual.id === "everyday" ? copy.goUserManual : copy.proUserManual;
 }
 

@@ -175,12 +175,15 @@ test("product manuals are a local in-app utility and do not require an avatar se
   assert.equal(closed, "");
   assert.match(chooser, /role="dialog"/);
   assert.match(chooser, /Product manuals/);
+  assert.match(chooser, /Water Ionizer User Manual/);
   assert.match(chooser, /GO User Manual/);
   assert.match(chooser, /PRO User Manual/);
+  assert.equal((chooser.match(/product-manual-options/g) ?? []).length, 1);
+  assert.doesNotMatch(chooser, /Air Humidifier|Air Purifier|Face &amp; Body Generator/);
   assert.doesNotMatch(chooser, /liveavatar|session|ElevenLabs|OpenAI/i);
 });
 
-test("a GO or PRO detail opens its approved manual directly and preserves the detail screen", () => {
+test("approved product details open their own local manual and preserve the detail screen", () => {
   const goDetail = renderToStaticMarkup(
     <ProductDetailScreen
       language="en"
@@ -201,6 +204,44 @@ test("a GO or PRO detail opens its approved manual directly and preserves the de
       onAskGuide={() => undefined}
     />,
   );
+  const ionizerDetail = renderToStaticMarkup(
+    <ProductDetailScreen
+      language="en"
+      productId="water-ionizer"
+      guideName="Daniel"
+      onBack={() => undefined}
+      onCompare={() => undefined}
+      onAskGuide={() => undefined}
+    />,
+  );
+  const purifierDetail = renderToStaticMarkup(
+    <ProductDetailScreen
+      language="en"
+      productId="air-purifier"
+      guideName="Daniel"
+      onBack={() => undefined}
+      onCompare={() => undefined}
+      onAskGuide={() => undefined}
+    />,
+  );
+  const faceBodyDetail = renderToStaticMarkup(
+    <ProductDetailScreen
+      language="en"
+      productId="face-body-generator"
+      guideName="Daniel"
+      onBack={() => undefined}
+      onCompare={() => undefined}
+      onAskGuide={() => undefined}
+    />,
+  );
+  const proManual = renderToStaticMarkup(
+    <ProductManualDialog
+      isOpen
+      language="en"
+      manual={{ id: "advanced", href: "/manuals/pro-user-manual.pdf" }}
+      onClose={() => undefined}
+    />,
+  );
   const directManual = renderToStaticMarkup(
     <ProductManualDialog
       isOpen
@@ -211,11 +252,27 @@ test("a GO or PRO detail opens its approved manual directly and preserves the de
   );
 
   assert.match(goDetail, /User Manual/);
+  assert.match(ionizerDetail, /User Manual/);
   assert.doesNotMatch(humidifierDetail, /User Manual/);
+  assert.doesNotMatch(purifierDetail, /User Manual/);
+  assert.doesNotMatch(faceBodyDetail, /User Manual/);
   assert.match(directManual, /Viewing: GO User Manual/);
   assert.match(directManual, /go-user-manual\.pdf/);
+  assert.match(proManual, /Viewing: PRO User Manual/);
+  assert.match(proManual, /pro-user-manual\.pdf/);
   assert.doesNotMatch(directManual, /Back to manuals/);
   assert.doesNotMatch(directManual, /liveavatar|session|ElevenLabs|OpenAI/i);
+});
+
+test("Water Ionizer manual uses the approved local PDF without an AI provider", () => {
+  const manual = { id: "water-ionizer" as const, href: "/manuals/water-ionizer-user-manual.pdf" };
+  const dialog = renderToStaticMarkup(
+    <ProductManualDialog isOpen language="en" manual={manual} onClose={() => undefined} />,
+  );
+
+  assert.match(dialog, /Viewing: Water Ionizer User Manual/);
+  assert.match(dialog, /water-ionizer-user-manual\.pdf/);
+  assert.doesNotMatch(dialog, /liveavatar|session|ElevenLabs|OpenAI|retrieval/i);
 });
 
 test("the conversation presents product manuals as a secondary utility action", () => {

@@ -49,6 +49,7 @@ type UiCopy = {
   productManuals: string;
   productManualsSupport: string;
   userManual: string;
+  waterIonizerUserManual: string;
   goUserManual: string;
   proUserManual: string;
   closeManuals: string;
@@ -203,6 +204,7 @@ const en: UiCopy = {
   productManuals: "Product manuals",
   productManualsSupport: "Choose a manual to read on screen.",
   userManual: "User Manual",
+  waterIonizerUserManual: "Water Ionizer User Manual",
   goUserManual: "GO User Manual",
   proUserManual: "PRO User Manual",
   closeManuals: "Close manuals",
@@ -364,6 +366,7 @@ const ru: UiCopy = {
   productManuals: "Руководства по продуктам",
   productManualsSupport: "Выберите руководство для просмотра на экране.",
   userManual: "Руководство пользователя",
+  waterIonizerUserManual: "Руководство пользователя ионизатора воды",
   goUserManual: "Руководство пользователя GO",
   proUserManual: "Руководство пользователя PRO",
   closeManuals: "Закрыть руководства",
@@ -525,6 +528,7 @@ const zh: UiCopy = {
   productManuals: "产品说明书",
   productManualsSupport: "选择要在屏幕上查看的说明书。",
   userManual: "用户手册",
+  waterIonizerUserManual: "水离子机用户手册",
   goUserManual: "GO 用户手册",
   proUserManual: "PRO 用户手册",
   closeManuals: "关闭说明书",
@@ -686,6 +690,7 @@ const yue: UiCopy = {
   productManuals: "產品說明書",
   productManualsSupport: "請揀一份說明書喺螢幕上閱覽。",
   userManual: "使用說明書",
+  waterIonizerUserManual: "水離子機使用說明書",
   goUserManual: "GO 使用說明書",
   proUserManual: "PRO 使用說明書",
   closeManuals: "關閉說明書",
@@ -847,6 +852,7 @@ const fr: UiCopy = {
   productManuals: "Manuels produits",
   productManualsSupport: "Choisissez un manuel à consulter à l’écran.",
   userManual: "Manuel d’utilisation",
+  waterIonizerUserManual: "Manuel d’utilisation de l’ioniseur d’eau",
   goUserManual: "Manuel d’utilisation GO",
   proUserManual: "Manuel d’utilisation PRO",
   closeManuals: "Fermer les manuels",
