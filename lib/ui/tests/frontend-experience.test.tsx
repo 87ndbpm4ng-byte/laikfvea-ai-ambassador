@@ -1071,11 +1071,11 @@ test("the portfolio presents two flagship products before four other products wi
   assert.ok(otherMarkup.indexOf("H₂ Generator Face &amp; Body") < otherMarkup.indexOf("Air Humidifier"));
   assert.match(markup, /products%2Fair-purifier-m-size%2Fhero-white-isolated\.png/);
   assert.match(markup, /products%2Fhydrogen-bottle-go%2Fhero\.png/);
-  assert.match(markup, /products%2Fair-humidifier%2Fhero-dining-table\.png/);
+  assert.match(markup, /products%2Fair-humidifier%2Fhero-white-isolated\.png/);
   const airPurifierImage = markup.match(/<img[^>]*air-purifier-m-size%2Fhero-white-isolated[^>]*>/)?.[0] ?? "";
-  const airHumidifierImage = markup.match(/<img[^>]*air-humidifier%2Fhero-dining-table[^>]*>/)?.[0] ?? "";
+  const airHumidifierImage = markup.match(/<img[^>]*air-humidifier%2Fhero-white-isolated[^>]*>/)?.[0] ?? "";
   assert.match(airPurifierImage, /products%2Fair-purifier-m-size%2Fhero-white-isolated\.png/);
-  assert.match(airHumidifierImage, /products%2Fair-humidifier%2Fhero-dining-table\.png/);
+  assert.match(airHumidifierImage, /products%2Fair-humidifier%2Fhero-white-isolated\.png/);
   assert.match(airPurifierImage, /data-nimg="fill"/);
   assert.match(airHumidifierImage, /data-nimg="fill"/);
   assert.doesNotMatch(markup, /Compare GO and PRO/);

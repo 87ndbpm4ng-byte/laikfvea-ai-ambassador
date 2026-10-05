@@ -18,6 +18,7 @@ import { getProductManual } from "@/lib/data/product-manuals";
 import {
   exhibitionProductList,
   exhibitionProducts,
+  productCategoryNames,
 } from "@/lib/data/exhibition-products";
 import {
   getGeneralQuickQuestions,
