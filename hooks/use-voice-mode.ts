@@ -328,6 +328,11 @@ export function useVoiceMode({
     if (!pendingGuideMessage) return;
 
     lastSpokenMessageRef.current = pendingGuideMessage.id;
+    // The server response is now visible and the conversation request has
+    // completed. Release the Talk control before synthesis starts so a kiosk
+    // visitor can immediately interrupt or ask the next question. Playback
+    // still owns the speaking state through onStart/onEnd.
+    setInputState("idle");
     logVoiceDiagnostic("speech-trigger", {
       questionSource: pendingGuideMessage.source ?? "unknown",
       speechTriggerCalled: true,
@@ -374,7 +379,7 @@ export function useVoiceMode({
       highlightTimerRef.current = setInterval(updateHighlight, 150);
     };
 
-    synthesis.speak(normalizeSpeechText(pendingGuideMessage.content), guideId, {
+    synthesis.speak(normalizeSpeechText(pendingGuideMessage.content, language), guideId, {
       latency: pendingGuideMessage.latency,
       onTiming: (nextTiming) => {
         clearSpokenHighlight();

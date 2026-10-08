@@ -32,8 +32,18 @@ export class PresentationManager {
       return null;
     }
 
-    const content = currentTurn.map((message) => message.content).join("\n");
+    // Presentation selection is driven by the visitor's current request and
+    // its server-resolved product context. Guide answers are deliberately not
+    // scanned for keywords: a Water Ionizer answer may mention hydrogen while
+    // explaining several available modes, which must not silently select the
+    // hydrogen-process visual for a general-use question.
+    const visitorMessage = currentTurn.findLast((message) => message.role === "visitor");
+    const content = visitorMessage?.content ?? "";
+    const relatedProduct = currentTurn.findLast(
+      (message) => message.relatedProduct,
+    )?.relatedProduct;
     const matchedRule = presentationRules.find((candidate) =>
+      (!candidate.products || !relatedProduct || candidate.products.includes(relatedProduct)) &&
       candidate.matches.some((pattern) => pattern.test(content)),
     );
 
@@ -45,10 +55,6 @@ export class PresentationManager {
         duration: matchedRule.duration,
       };
     }
-
-    const relatedProduct = currentTurn.findLast(
-      (message) => message.relatedProduct,
-    )?.relatedProduct;
 
     if (relatedProduct === "everyday") {
       return {

@@ -64,6 +64,42 @@ type AlignedPcmPayload = {
   } | null;
 };
 
+// LiveAvatar normally resolves when AVATAR_SPEAK_ENDED arrives. A kiosk must
+// also recover when that provider event is delayed or dropped after the audio
+// has finished locally. The deadline is derived from measured PCM duration and
+// is only a bounded lifecycle fallback; it does not estimate speech timing.
+const PLAYBACK_COMPLETION_GRACE_MS = 750;
+
+async function waitForPlaybackCompletion(
+  playback: Promise<void>,
+  durationMs: number,
+) {
+  const deadlineMs = Math.max(
+    500,
+    Math.min(2_500, Math.round(durationMs + PLAYBACK_COMPLETION_GRACE_MS)),
+  );
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  let completed = false;
+  try {
+    // The provider promise may reject after the deadline because a late
+    // interruption event arrives. Attach a sink so that stale completion
+    // cannot become an unhandled rejection.
+    void playback.catch(() => undefined);
+    const guardedPlayback = playback.then(() => {
+      completed = true;
+    });
+    await Promise.race([
+      guardedPlayback,
+      new Promise<void>((resolve) => {
+        timeout = setTimeout(resolve, deadlineMs);
+      }),
+    ]);
+    return { deadlineMs, timedOut: !completed };
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
 export class LiveAvatarSpeechSynthesisProvider
   implements SpeechSynthesisProvider
 {
@@ -279,7 +315,7 @@ export class LiveAvatarSpeechSynthesisProvider
         repeatAudioCalled: true,
       });
       let playbackStartedAt = 0;
-      await this.avatar.speakAudio(arrayBufferToBase64(audio), {
+      const playback = this.avatar.speakAudio(arrayBufferToBase64(audio), {
         diagnosticId,
         turnId,
         latencyTurnId: latency?.turnId,
@@ -290,8 +326,20 @@ export class LiveAvatarSpeechSynthesisProvider
             currentTimeMs: () => performance.now() - playbackStartedAt,
           });
           callbacks.onStart();
-        },
-      });
+          },
+        });
+
+      const completion = await waitForPlaybackCompletion(
+        playback,
+        analysis.durationMs,
+      );
+      if (completion.timedOut && requestId === this.sequence && !controller.signal.aborted) {
+        logVoiceDiagnostic("liveavatar-playback-completion-guard", {
+          selectedProvider: "liveavatar",
+          completionDeadlineMs: completion.deadlineMs,
+          durationMs: analysis.durationMs,
+        });
+      }
 
       if (requestId === this.sequence) callbacks.onEnd();
     } catch (error) {
@@ -397,7 +445,21 @@ export class LiveAvatarSpeechSynthesisProvider
           pcmByteLength: deliveredBytes,
         });
       }
-      await completion;
+      const completionResult = await waitForPlaybackCompletion(
+        completion,
+        (deliveredBytes / 48_000) * 1000,
+      );
+      if (
+        completionResult.timedOut &&
+        requestId === this.sequence &&
+        !controller.signal.aborted
+      ) {
+        logVoiceDiagnostic("liveavatar-stream-completion-guard", {
+          selectedProvider: "liveavatar",
+          completionDeadlineMs: completionResult.deadlineMs,
+          durationMs: Math.round((deliveredBytes / 48_000) * 1000),
+        });
+      }
       if (requestId === this.sequence) callbacks.onEnd();
     } catch (error) {
       await reader.cancel().catch(() => undefined);

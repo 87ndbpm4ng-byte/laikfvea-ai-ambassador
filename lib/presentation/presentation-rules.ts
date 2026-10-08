@@ -2,15 +2,18 @@ import type {
   Presentation,
   PresentationAssetId,
 } from "@/lib/presentation/presentation-types";
+import type { ProductId } from "@/types/product";
 
 export type PresentationRule = Presentation & {
   matches: readonly RegExp[];
+  products?: readonly ProductId[];
 };
 
 function rule(
   asset: PresentationAssetId,
   type: Presentation["type"],
   matches: readonly RegExp[],
+  products?: readonly ProductId[],
 ): PresentationRule {
   return {
     asset,
@@ -18,6 +21,7 @@ function rule(
     placement: "conversation-support",
     duration: "until-topic-change",
     matches,
+    products,
   };
 }
 
@@ -69,7 +73,7 @@ export const presentationRules: readonly PresentationRule[] = [
     /\bPEM\b/,
     /\belectrode(?:s)?\b/i,
     /\bmembrane module\b/i,
-  ]),
+  ], ["water-ionizer", "advanced", "face-body-generator"]),
   rule("hydrogen-water", "infographic", [
     /\bhydrogen water\b/i,
     /\bdissolved hydrogen\b/i,

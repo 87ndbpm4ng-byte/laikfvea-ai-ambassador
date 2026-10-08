@@ -130,6 +130,17 @@ test("prompt builder source includes private session context and ambiguity rules
   assert.match(promptBuilder, /Never mention session state/i);
 });
 
+test("Water Ionizer broad-use guidance distinguishes modes before procedures", async () => {
+  const source = await readFile(
+    path.join(process.cwd(), "lib/orchestrator/prompt-builder.ts"),
+    "utf8",
+  );
+
+  assert.match(source, /Water Ionizer mode guidance/);
+  assert.match(source, /alkaline\/acidic water, hydrogen-water/);
+  assert.match(source, /do not silently answer with one mode's procedure/);
+});
+
 test("prompt builder carries source authority without exposing it", async () => {
   const promptBuilder = await readFile(
     path.join(process.cwd(), "lib/orchestrator/prompt-builder.ts"),

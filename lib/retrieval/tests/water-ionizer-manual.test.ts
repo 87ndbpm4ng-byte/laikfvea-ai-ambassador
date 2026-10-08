@@ -71,6 +71,15 @@ test("real exhibition questions retrieve approved Water Ionizer evidence", async
   }
 });
 
+test("general Water Ionizer use keeps the documented operating modes available", async () => {
+  const { result } = await search("How do I use the Water Ionizer?");
+  assert.equal(result.insufficientKnowledge, false);
+  assert.ok(result.matchedChunks.every(({ chunk }) => chunk.product === "water-ionizer"));
+  const headings = result.matchedChunks.map(({ chunk }) => chunk.heading).join(" ");
+  assert.match(headings, /alkaline and acidic/i);
+  assert.match(headings, /hydrogen-water/i);
+});
+
 test("pH levels remain differentiated and do not collapse into generic alkaline water", async () => {
   const { result } = await search("What pH levels does the Water Ionizer produce?");
   const context = result.matchedChunks.map(({ chunk }) => chunk.text).join("\n");

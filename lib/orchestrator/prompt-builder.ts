@@ -58,6 +58,22 @@ function createResponseDirectives(context: OrchestratorContext) {
   ];
 }
 
+function createModeGuidance(activeProduct: string | null, userMessage: string): string[] {
+  const message = userMessage.trim();
+  if (
+    activeProduct !== "water-ionizer" ||
+    !/^how\s+do\s+i\s+use\s+(?:the\s+)?water\s+ionizer\??$/i.test(message)
+  ) {
+    return [];
+  }
+
+  return [
+    "Water Ionizer mode guidance: the approved manual documents alkaline/acidic water, hydrogen-water, and (for the standard model only) silver-water modes.",
+    "For this broad use question, do not silently answer with one mode's procedure. Briefly distinguish the documented modes, give only the supported high-level operation, and ask which mode the visitor wants if step-by-step instructions are needed.",
+    "Do not present silver-water drinking, medical, antimicrobial, or bodily-use claims; the approved boundary excludes those recommendations.",
+  ];
+}
+
 /**
  * Assembles a structured prompt package after conversation strategy has been
  * decided. Supplemental context is an optional provider-neutral insertion
@@ -191,6 +207,10 @@ export class PromptBuilder {
     return [
       "Construct the response using the following conversation direction.",
       ...prompt.responseDirectives,
+      ...createModeGuidance(
+        prompt.sessionContext.activeProduct,
+        prompt.userMessage,
+      ),
       ...conversationContext,
       ...grounding,
       ...noApprovedKnowledge,

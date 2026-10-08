@@ -125,6 +125,10 @@ export class BrowserSpeechRecognitionProvider
       callbacks.onInterimTranscript(interimTranscript.trim());
 
       if (finalTranscript.trim()) {
+        // Explicitly close the one-shot recognition instance before handing
+        // the transcript to the conversation pipeline. Safari can otherwise
+        // keep the completed recognizer active and reject the next start().
+        recognition.stop();
         callbacks.onFinalTranscript(finalTranscript.trim());
       }
     };
@@ -133,7 +137,10 @@ export class BrowserSpeechRecognitionProvider
       // product navigation and a new question. It is not a visitor-facing error.
       if (event.error !== "aborted") callbacks.onError(recognitionError(event.error));
     };
-    recognition.onend = callbacks.onEnd;
+    recognition.onend = () => {
+      if (this.recognition === recognition) this.recognition = null;
+      callbacks.onEnd();
+    };
     this.recognition = recognition;
 
     try {

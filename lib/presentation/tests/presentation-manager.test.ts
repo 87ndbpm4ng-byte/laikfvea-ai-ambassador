@@ -2,11 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { presentationManager } from "@/lib/presentation/presentation-manager";
 import type { ConversationMessage } from "@/types/conversation";
+import type { ProductId } from "@/types/product";
 
 function message(
   content: string,
   role: "visitor" | "guide" = "visitor",
-  relatedProduct?: "everyday" | "advanced",
+  relatedProduct?: ProductId,
 ): ConversationMessage {
   return {
     id: `${role}-${content}`,
@@ -109,4 +110,31 @@ test("unknown topics and an empty conversation return no presentation", () => {
     null,
   );
   assert.equal(presentationManager.resolve({ messages: [] }), null);
+});
+
+test("does not let a general Water Ionizer answer select a hydrogen visual", () => {
+  const visual = presentationManager.resolve({ messages: [
+    message("How do I use the Water Ionizer?", "visitor", "water-ionizer"),
+    message(
+      "For hydrogen water, remove the inner cup and press START/STOP. The ionizer also documents alkaline and acidic modes.",
+      "guide",
+      "water-ionizer",
+    ),
+  ] });
+
+  assert.equal(visual, null);
+});
+
+test("allows the hydrogen-process visual only for an explicitly relevant product request", () => {
+  const visual = presentationManager.resolve({ messages: [
+    message("How does electrolysis work for the Water Ionizer?", "visitor", "water-ionizer"),
+  ] });
+
+  assert.equal(visual?.asset, "hydrogen-process");
+  assert.equal(
+    presentationManager.resolve({ messages: [
+      message("How does electrolysis work for the Air Purifier?", "visitor", "air-purifier"),
+    ] }),
+    null,
+  );
 });

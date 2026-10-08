@@ -46,3 +46,15 @@ test("speech normalization preserves French diacritics and technical notation", 
   const normalized = normalizeSpeechText(source);
   assert.equal(normalized, "L’eau hydrogénée utilise un port USB-C à 5 W, sans altérer la sécurité.");
 });
+
+test("Russian speech normalization expands technical units without changing display text", () => {
+  assert.equal(
+    normalizeSpeechText("pH 7.2, объём 1 L и 250 mL, UV-C 365 nm, 5 W, 12 V, 60 Hz, 20 m², 22 °C, 500 ppb, H₂.", "ru"),
+    "пэ-аш 7.2, объём 1 литр и 250 миллилитров, ультрафиолет 365 нанометров, 5 ватт, 12 вольт, 60 герц, 20 квадратных метров, 22 градусов Цельсия, 500 частей на миллиард, водород.",
+  );
+});
+
+test("Russian pronunciation normalization does not alter product names or non-Russian speech", () => {
+  assert.equal(normalizeSpeechText("Capsula M Size, pH and 500 mL", "en"), "Capsula M Size, pH and 500 mL");
+  assert.equal(normalizeSpeechText("Air Purifier", "ru"), "Air Purifier");
+});

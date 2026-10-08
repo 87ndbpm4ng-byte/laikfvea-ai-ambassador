@@ -174,3 +174,39 @@ test("intentional recognition aborts do not surface an error", () => {
     });
   }
 });
+
+test("a completed recognition instance is released before the next Talk turn", () => {
+  const recognizers: Array<{ onresult?: (event: unknown) => void; onend?: () => void; stop: () => void; abort: () => void }> = [];
+  class Recognition {
+    continuous = false;
+    interimResults = true;
+    lang = "";
+    maxAlternatives = 1;
+    onresult?: (event: unknown) => void;
+    onerror?: (event: { error: string }) => void;
+    onend?: () => void;
+    start() { recognizers.push(this); }
+    stop() { this.onend?.(); }
+    abort() { this.onend?.(); }
+  }
+  const originalWindow = globalThis.window;
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    value: { SpeechRecognition: Recognition },
+  });
+  try {
+    const provider = new BrowserSpeechRecognitionProvider("ru-RU");
+    const callbacks = { onInterimTranscript() {}, onFinalTranscript() {}, onEnd() {}, onError: assert.fail };
+    provider.start(callbacks);
+    recognizers[0].onresult?.({ resultIndex: 0, results: [{ 0: { transcript: "проверка" }, isFinal: true }] });
+    provider.start(callbacks);
+    recognizers[1].onresult?.({ resultIndex: 0, results: [{ 0: { transcript: "вторая проверка" }, isFinal: true }] });
+    provider.start(callbacks);
+    assert.equal(recognizers.length, 3);
+  } finally {
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: originalWindow,
+    });
+  }
+});

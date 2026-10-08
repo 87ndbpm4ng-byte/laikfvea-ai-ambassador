@@ -793,7 +793,7 @@ test("typed, voice and Quick Topic questions share one submission boundary", asy
   );
   assert.match(
     voiceSource,
-    /synthesis\.speak\(normalizeSpeechText\(pendingGuideMessage\.content\), guideId/,
+    /synthesis\.speak\(normalizeSpeechText\(pendingGuideMessage\.content, language\), guideId/,
   );
   assert.doesNotMatch(
     voiceSource,
@@ -982,6 +982,10 @@ test("exhibition answers stay prominent and spoken highlighting does not alter f
   assert.match(voiceSource, /let playbackClock: SpeechPlaybackClock \| null = null;/);
   assert.match(voiceSource, /onTiming: \(nextTiming\)[\s\S]*?startSpokenHighlight\(\);/);
   assert.match(voiceSource, /onPlaybackClock: \(clock: SpeechPlaybackClock\)[\s\S]*?startSpokenHighlight\(\);/);
+  assert.match(
+    voiceSource,
+    /lastSpokenMessageRef\.current = pendingGuideMessage\.id;[\s\S]*?setInputState\("idle"\);[\s\S]*?synthesis\.speak\(/,
+  );
 });
 
 test("the full-bleed kiosk invitation is pinned to the visual center", async () => {

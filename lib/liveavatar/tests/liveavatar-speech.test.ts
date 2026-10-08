@@ -25,6 +25,7 @@ class FakeAvatar implements DanielAvatarOutput {
   connectResult: boolean | null = null;
   audio: string[] = [];
   failSpeech = false;
+  hangSpeech = false;
   failInterrupt = false;
   failStreaming = false;
   connectCount = 0;
@@ -70,6 +71,9 @@ class FakeAvatar implements DanielAvatarOutput {
     if (this.failSpeech) throw new Error("avatar failed");
     this.audio.push(audioBase64);
     metadata?.onPlaybackStarted?.();
+    if (this.hangSpeech) {
+      await new Promise<void>(() => undefined);
+    }
   }
   async beginAudioStream(
     eventId: string,
@@ -174,6 +178,47 @@ test("Daniel uses ElevenLabs PCM through LiveAvatar when connected", async () =>
   assert.equal(fallback.spoken.length, 0);
   assert.equal(callbacks.starts, 1);
   assert.equal(callbacks.ends, 1);
+});
+
+test("missing LiveAvatar playback completion recovers the voice lifecycle", async () => {
+  callbacks.reset();
+  const avatar = new FakeAvatar();
+  avatar.hangSpeech = true;
+  const fallback = new FakeFallback();
+  const provider = new LiveAvatarSpeechSynthesisProvider({
+    avatar,
+    fallback,
+    fetcher: async () =>
+      new Response(Uint8Array.from([1, 2, 3]), { status: 200 }),
+  });
+
+  provider.speak("Completion event may be dropped", "daniel", callbacks.value());
+  await new Promise((resolve) => setTimeout(resolve, 900));
+
+  assert.equal(callbacks.starts, 1);
+  assert.equal(callbacks.ends, 1);
+  assert.equal(fallback.spoken.length, 0);
+});
+
+test("Emily also recovers when LiveAvatar playback completion is missing", async () => {
+  callbacks.reset();
+  const avatar = new FakeAvatar();
+  avatar.hangSpeech = true;
+  const fallback = new FakeFallback();
+  const provider = new LiveAvatarSpeechSynthesisProvider({
+    avatar,
+    fallback,
+    guideId: "emily",
+    fetcher: async () =>
+      new Response(Uint8Array.from([1, 2, 3]), { status: 200 }),
+  });
+
+  provider.speak("Emily completion event may be dropped", "emily", callbacks.value());
+  await new Promise((resolve) => setTimeout(resolve, 900));
+
+  assert.equal(callbacks.starts, 1);
+  assert.equal(callbacks.ends, 1);
+  assert.equal(fallback.spoken.length, 0);
 });
 
 test("Daniel Cantonese sends zh-HK through the same buffered LiveAvatar path", async () => {
