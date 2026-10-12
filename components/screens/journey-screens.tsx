@@ -94,50 +94,35 @@ export function AttractScreen({
   );
 }
 
-export function JourneyChoiceScreen({
+export type ConversationInputMode = "voice" | "text";
+
+export function ConversationModeScreen({
   language,
-  onSpeak,
-  onExplore,
+  onSelect,
   onBack,
 }: {
   language: SupportedLanguage;
-  onSpeak: () => void;
-  onExplore: () => void;
+  onSelect: (mode: ConversationInputMode) => void;
   onBack: () => void;
 }) {
   const copy = getUiCopy(language);
-
   return (
-    <section
-      className="screen-content journey-choice-content"
-      aria-labelledby="journey-choice-heading"
-    >
+    <section className="screen-content journey-choice-content" aria-labelledby="input-mode-heading">
       <button className="back-action" type="button" onClick={onBack}>
         {copy.back}
       </button>
       <header className="journey-choice-header">
-        <h1 id="journey-choice-heading">{copy.journeyChoiceHeading}</h1>
+        <h1 id="input-mode-heading">{copy.inputModeHeading}</h1>
+        <p>{copy.inputModeSupport}</p>
       </header>
-      <div
-        className="journey-choice-grid"
-        role="group"
-        aria-label={copy.journeyChoiceHeading}
-      >
-        <button
-          className="journey-choice-card journey-choice-card--assistant"
-          type="button"
-          onClick={onSpeak}
-        >
-          <strong>{copy.speakToAiAmbassador}</strong>
+      <div className="journey-choice-grid" role="group" aria-label={copy.inputModeHeading}>
+        <button className="journey-choice-card journey-choice-card--assistant" type="button" onClick={() => onSelect("voice")}>
+          <strong>{copy.voiceMode}</strong>
           <span>{copy.speakToAiAmbassadorSupport}</span>
         </button>
-        <button
-          className="journey-choice-card journey-choice-card--products"
-          type="button"
-          onClick={onExplore}
-        >
-          <strong>{copy.exploreProductsChoice}</strong>
-          <span>{copy.exploreProductsChoiceSupport}</span>
+        <button className="journey-choice-card journey-choice-card--products" type="button" onClick={() => onSelect("text")}>
+          <strong>{copy.textMode}</strong>
+          <span>{copy.productQuestionPrompt}</span>
         </button>
       </div>
     </section>
@@ -222,6 +207,8 @@ type ConversationScreenProps = {
   audioActivationProvider?: SpeechSynthesisProvider;
   voiceActivationPromise?: Promise<boolean> | null;
   liveAvatarService?: LiveAvatarOutput;
+  inputMode: ConversationInputMode;
+  onInputModeChange: (mode: ConversationInputMode) => void;
 };
 
 type ConversationTurn = {
@@ -261,6 +248,8 @@ export function ConversationScreen({
   audioActivationProvider,
   voiceActivationPromise,
   liveAvatarService,
+  inputMode,
+  onInputModeChange,
 }: ConversationScreenProps) {
   const guide = guides[guideId];
   const copy = getUiCopy(language);
@@ -311,9 +300,13 @@ export function ConversationScreen({
     synthesisProvider,
     audioActivationProvider,
     activationPromise: voiceActivationPromise,
-    enabledByDefault: true,
+    enabledByDefault: inputMode === "voice",
     language,
   });
+  const setVoiceEnabled = voice.setEnabled;
+  useEffect(() => {
+    setVoiceEnabled(inputMode === "voice");
+  }, [inputMode, setVoiceEnabled]);
   const idleTimeout = useLiveAvatarIdleTimeout({
     service: liveAvatarService,
     active: true,
@@ -677,6 +670,24 @@ export function ConversationScreen({
         </button>
 
         <div className="conversation-specialist conversation-interaction-area">
+          <div className="conversation-mode-switch" role="group" aria-label={copy.inputModeHeading}>
+            <button
+              className="secondary-action"
+              type="button"
+              aria-pressed={inputMode === "voice"}
+              onClick={() => onInputModeChange("voice")}
+            >
+              {copy.voiceMode}
+            </button>
+            <button
+              className="secondary-action"
+              type="button"
+              aria-pressed={inputMode === "text"}
+              onClick={() => onInputModeChange("text")}
+            >
+              {copy.textMode}
+            </button>
+          </div>
           <VoiceControls
             inputState={voice.inputState}
             outputState={voice.outputState}
@@ -740,6 +751,7 @@ export function ConversationScreen({
 type ProductExplorerScreenProps = {
   language: SupportedLanguage;
   onOpenProduct: (product: ExhibitionProductId) => void;
+  onAskGeneral: () => void;
   onBack: () => void;
   backLabel?: string;
 };
@@ -747,6 +759,7 @@ type ProductExplorerScreenProps = {
 export function ProductExplorerScreen({
   language,
   onOpenProduct,
+  onAskGeneral,
   onBack,
   backLabel,
 }: ProductExplorerScreenProps) {
@@ -813,6 +826,9 @@ export function ProductExplorerScreen({
       </div>
 
       <div className="screen-actions">
+        <button className="secondary-action" type="button" onClick={onAskGeneral}>
+          {copy.askGeneralQuestion}
+        </button>
         <button className="secondary-action" type="button" onClick={onBack}>
           {backLabel ?? copy.backToConversation}
         </button>
@@ -824,7 +840,6 @@ export function ProductExplorerScreen({
 type ProductDetailScreenProps = {
   language: SupportedLanguage;
   productId: ExhibitionProductId;
-  guideName: string;
   onBack: () => void;
   onCompare: () => void;
   onAskGuide: () => void;
@@ -833,7 +848,6 @@ type ProductDetailScreenProps = {
 export function ProductDetailScreen({
   language,
   productId,
-  guideName,
   onBack,
   onCompare,
   onAskGuide,
@@ -890,7 +904,7 @@ export function ProductDetailScreen({
 
       <div className="screen-actions">
         <PrimaryButton onClick={onAskGuide}>
-          {copy.askAboutProduct(guideName, displayName)}
+          {copy.askAiAgent}
         </PrimaryButton>
         {manual ? (
           <button
@@ -906,6 +920,9 @@ export function ProductDetailScreen({
             {copy.compareGoPro}
           </button>
         ) : null}
+        <button className="secondary-action" type="button" onClick={onBack}>
+          {copy.portfolioBack}
+        </button>
       </div>
       <ProductManualDialog
         isOpen={isManualOpen}

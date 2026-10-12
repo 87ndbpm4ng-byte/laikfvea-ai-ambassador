@@ -6,7 +6,7 @@ import Home from "@/app/page";
 import {
   AttractScreen,
   ConversationScreen,
-  JourneyChoiceScreen,
+  ConversationModeScreen,
   ProductDetailScreen,
   ProductExplorerScreen,
   SpecialistSelectionScreen,
@@ -145,21 +145,18 @@ test("the kiosk attract screen localizes its neutral invitation in all five lang
   }
 });
 
-test("the choice screen keeps the AI journey and local product browsing separate", () => {
+test("the mode screen keeps voice and text entry local and provider-free", () => {
   const markup = renderToStaticMarkup(
-    <JourneyChoiceScreen
+    <ConversationModeScreen
       language="en"
-      onSpeak={() => undefined}
-      onExplore={() => undefined}
+      onSelect={() => undefined}
       onBack={() => undefined}
     />,
   );
 
-  assert.match(markup, /What would you like to do/);
-  assert.match(markup, /Speak to AI Ambassador/);
-  assert.match(markup, /Talk with Daniel or Emily and ask questions/);
-  assert.match(markup, /Explore Products/);
-  assert.match(markup, /Browse all six exhibition products, photos and manuals/);
+  assert.match(markup, /How would you like to ask/);
+  assert.match(markup, /Voice/);
+  assert.match(markup, /Text/);
   assert.equal((markup.match(/class="journey-choice-card /g) ?? []).length, 2);
   assert.doesNotMatch(markup, /liveavatar|ElevenLabs|OpenAI|conversation API/i);
 });
@@ -265,25 +262,26 @@ test("approved product details open their own local manual and preserve the deta
   assert.match(purifierDetail, /User Manual/);
   assert.doesNotMatch(humidifierDetail, /User Manual/);
   assert.doesNotMatch(faceBodyDetail, /User Manual/);
-  assert.match(directManual, /Viewing: GO User Manual/);
-  assert.match(directManual, /go-user-manual\.pdf/);
-  assert.match(proManual, /Viewing: PRO User Manual/);
-  assert.match(proManual, /pro-user-manual\.pdf/);
-  assert.match(purifierManual, /Viewing: Air Purifier User Manual/);
-  assert.match(purifierManual, /air-purifier-user-manual\.pdf/);
+  assert.match(directManual, /Request User Manual/);
+  assert.match(directManual, /Your email address/);
+  assert.match(proManual, /Request User Manual/);
+  assert.match(purifierManual, /Request User Manual/);
+  assert.doesNotMatch(directManual, /go-user-manual\.pdf/);
+  assert.doesNotMatch(purifierManual, /air-purifier-user-manual\.pdf/);
   assert.doesNotMatch(purifierManual, /liveavatar|session|ElevenLabs|OpenAI|retrieval/i);
   assert.doesNotMatch(directManual, /Back to manuals/);
   assert.doesNotMatch(directManual, /liveavatar|session|ElevenLabs|OpenAI/i);
 });
 
-test("Water Ionizer manual uses the approved local PDF without an AI provider", () => {
+test("Water Ionizer manual opens its request form without an AI provider", () => {
   const manual = { id: "water-ionizer" as const, href: "/manuals/water-ionizer-user-manual.pdf" };
   const dialog = renderToStaticMarkup(
     <ProductManualDialog isOpen language="en" manual={manual} onClose={() => undefined} />,
   );
 
-  assert.match(dialog, /Viewing: Water Ionizer User Manual/);
-  assert.match(dialog, /water-ionizer-user-manual\.pdf/);
+  assert.match(dialog, /Request User Manual/);
+  assert.match(dialog, /for Water Ionizer/);
+  assert.doesNotMatch(dialog, /water-ionizer-user-manual\.pdf/);
   assert.doesNotMatch(dialog, /liveavatar|session|ElevenLabs|OpenAI|retrieval/i);
 });
 
@@ -845,14 +843,16 @@ test("choice-led product browsing is local and defers the existing AI setup unti
     "utf8",
   );
 
-  assert.match(pageSource, /onBegin=\{\(\) => setScreen\("choice"\)\}/);
-  assert.match(pageSource, /<JourneyChoiceScreen/);
-  assert.match(pageSource, /enterProductExplorer\("choice"\)/);
-  assert.match(pageSource, /setExplorerOrigin\(origin\)/);
+  assert.match(pageSource, /onBegin=\{\(\) => setScreen\("language"\)\}/);
+  assert.match(pageSource, /setScreen\("products"\)/);
+  assert.match(pageSource, /ConversationModeScreen/);
+  assert.doesNotMatch(pageSource, /JourneyChoiceScreen|screen === "choice"/);
+  assert.match(pageSource, /setScreen\(deferredAiIntentRef\.current \? "mode" : "products"\)/);
+  assert.match(pageSource, /function askGeneralQuestion[\s\S]*?conversation\.clearHistory\(\)/);
+  assert.match(screenSource, /onAskGeneral: \(\) => void/);
   assert.match(pageSource, /deferredAiIntentRef\.current = \{[\s\S]*?kind: "product"/);
   assert.match(pageSource, /deferredAiIntentRef\.current = null/);
   assert.match(pageSource, /createAskAboutProductQuestion\(intent\.productId, selectedLanguage\)/);
-  assert.match(pageSource, /explorerOrigin === "choice"/);
   assert.match(screenSource, /getProductManual\(productId\)/);
   assert.match(screenSource, /manual=\{manual\}/);
   assert.doesNotMatch(
@@ -1098,6 +1098,7 @@ test("the portfolio presents two flagship products before four other products wi
     <ProductExplorerScreen
       language="en"
       onOpenProduct={(productId) => opened.push(productId)}
+      onAskGeneral={() => undefined}
       onBack={() => undefined}
     />,
   );
@@ -1149,7 +1150,6 @@ test("product details provide local galleries and concise catalogue context", ()
       <ProductDetailScreen
         language="en"
         productId={productId}
-        guideName="Daniel"
         onBack={() => undefined}
         onCompare={() => undefined}
         onAskGuide={() => undefined}
@@ -1163,7 +1163,7 @@ test("product details provide local galleries and concise catalogue context", ()
       productId,
     );
     assert.match(markup, /Back to portfolio/);
-    assert.match(markup, /Ask Daniel/);
+    assert.match(markup, /Ask AI Agent/);
     assert.match(
       markup,
       /Ask about how it works, specifications, use or maintenance/,
@@ -1193,7 +1193,6 @@ test("Indoor Environment detail galleries start with their catalogue hero images
       <ProductDetailScreen
         language="en"
         productId={productId}
-        guideName="Daniel"
         onBack={() => undefined}
         onCompare={() => undefined}
         onAskGuide={() => undefined}
@@ -1208,7 +1207,6 @@ test("Air Purifier detail renders each registered gallery image with scrollable 
     <ProductDetailScreen
       language="en"
       productId="air-purifier"
-      guideName="Daniel"
       onBack={() => undefined}
       onCompare={() => undefined}
       onAskGuide={() => undefined}
@@ -1231,6 +1229,7 @@ test("portfolio identities and navigation remain localized in all five languages
       <ProductExplorerScreen
         language={language}
         onOpenProduct={() => undefined}
+        onAskGeneral={() => undefined}
         onBack={() => undefined}
       />,
     );
@@ -1241,7 +1240,6 @@ test("portfolio identities and navigation remain localized in all five languages
       <ProductDetailScreen
         language={language}
         productId="air-purifier"
-        guideName="Daniel"
         onBack={() => undefined}
         onCompare={() => undefined}
         onAskGuide={() => undefined}

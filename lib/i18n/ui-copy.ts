@@ -17,6 +17,12 @@ type UiCopy = {
   exploreProductsChoiceSupport: string;
   languageHeading: string;
   languagesAria: string;
+  inputModeHeading: string;
+  inputModeSupport: string;
+  voiceMode: string;
+  textMode: string;
+  askGeneralQuestion: string;
+  askAiAgent: string;
   back: string;
   guidedConversation: string;
   specialistsHeading: string;
@@ -55,6 +61,13 @@ type UiCopy = {
   proUserManual: string;
   closeManuals: string;
   backToManuals: string;
+  requestManualTitle: string;
+  requestManualSupport: (name: string) => string;
+  manualEmailLabel: string;
+  manualConsent: string;
+  requestManual: string;
+  manualRequestSuccess: string;
+  manualRequestError: string;
   viewingManual: (name: string) => string;
   endConversationConfirmationTitle: string;
   endConversationConfirmationBody: string;
@@ -156,6 +169,12 @@ const en: UiCopy = {
   exploreProductsChoiceSupport: "Browse all six exhibition products, photos and manuals.",
   languageHeading: "Choose your language",
   languagesAria: "Languages",
+  inputModeHeading: "How would you like to ask?",
+  inputModeSupport: "Choose voice or text, then select your AI specialist.",
+  voiceMode: "Voice",
+  textMode: "Text",
+  askGeneralQuestion: "Ask a general question",
+  askAiAgent: "Ask AI Agent",
   back: "Back",
   guidedConversation: "A guided product conversation",
   specialistsHeading: "Meet your AI specialists",
@@ -213,6 +232,13 @@ const en: UiCopy = {
   proUserManual: "PRO User Manual",
   closeManuals: "Close manuals",
   backToManuals: "Back to manuals",
+  requestManualTitle: "Request User Manual",
+  requestManualSupport: (name) => `Enter your email address and our team will send you the user manual for ${name}.`,
+  manualEmailLabel: "Your email address",
+  manualConsent: "I agree to my email address being used to respond to this manual request.",
+  requestManual: "Request Manual",
+  manualRequestSuccess: "Thank you! Your request has been received. Our team will send you the manual.",
+  manualRequestError: "We couldn't save your request. Please try again.",
   viewingManual: (name) => `Viewing: ${name}`,
   endConversationConfirmationTitle: "End this conversation?",
   endConversationConfirmationBody: "Your questions and answers will be cleared from this kiosk.",
@@ -324,6 +350,12 @@ const ru: UiCopy = {
   exploreProductsChoiceSupport: "Просмотрите шесть выставочных продуктов, фотографии и руководства.",
   languageHeading: "Выберите язык",
   languagesAria: "Языки",
+  inputModeHeading: "Как вы хотите задать вопрос?",
+  inputModeSupport: "Выберите голос или текст, затем специалиста.",
+  voiceMode: "Голос",
+  textMode: "Текст",
+  askGeneralQuestion: "Задать общий вопрос",
+  askAiAgent: "Спросить AI-агента",
   back: "Назад",
   guidedConversation: "Персональная консультация о продуктах",
   specialistsHeading: "Познакомьтесь с AI-специалистами",
@@ -378,6 +410,13 @@ const ru: UiCopy = {
   proUserManual: "Руководство пользователя PRO",
   closeManuals: "Закрыть руководства",
   backToManuals: "К выбору руководств",
+  requestManualTitle: "Запросить руководство",
+  requestManualSupport: (name) => `Введите email, и наша команда отправит вам руководство пользователя для продукта «${name}».`,
+  manualEmailLabel: "Ваш email",
+  manualConsent: "Я согласен(на) использовать мой email для ответа на этот запрос.",
+  requestManual: "Запросить руководство",
+  manualRequestSuccess: "Спасибо! Ваш запрос получен. Наша команда отправит вам руководство.",
+  manualRequestError: "Не удалось сохранить запрос. Попробуйте ещё раз.",
   viewingManual: (name) => `Просмотр: ${name}`,
   endConversationConfirmationTitle: "Завершить разговор?",
   endConversationConfirmationBody: "Ваши вопросы и ответы будут удалены с этого киоска.",
@@ -489,6 +528,12 @@ const zh: UiCopy = {
   exploreProductsChoiceSupport: "浏览全部六款展品、图片和说明书。",
   languageHeading: "请选择语言",
   languagesAria: "语言",
+  inputModeHeading: "您想如何提问？",
+  inputModeSupport: "选择语音或文字，然后选择 AI 专家。",
+  voiceMode: "语音",
+  textMode: "文字",
+  askGeneralQuestion: "提出一般问题",
+  askAiAgent: "询问 AI 专家",
   back: "返回",
   guidedConversation: "产品智能讲解",
   specialistsHeading: "认识您的 AI 专家",
@@ -543,6 +588,13 @@ const zh: UiCopy = {
   proUserManual: "PRO 用户手册",
   closeManuals: "关闭说明书",
   backToManuals: "返回说明书列表",
+  requestManualTitle: "申请用户手册",
+  requestManualSupport: (name) => `请输入您的电子邮箱，我们的团队会通过电邮发送${name}用户手册。`,
+  manualEmailLabel: "您的电子邮箱",
+  manualConsent: "我同意使用我的电子邮箱来回复这项手册请求。",
+  requestManual: "申请手册",
+  manualRequestSuccess: "谢谢！我们已收到您的请求，团队会通过电邮发送手册。",
+  manualRequestError: "无法保存请求，请重试。",
   viewingManual: (name) => `正在查看：${name}`,
   endConversationConfirmationTitle: "结束这次对话？",
   endConversationConfirmationBody: "您的问题和回答将从这台展台设备中清除。",
@@ -654,6 +706,12 @@ const yue: UiCopy = {
   exploreProductsChoiceSupport: "瀏覽全部六款展覽產品、相片同說明書。",
   languageHeading: "請選擇語言",
   languagesAria: "語言",
+  inputModeHeading: "您想點樣提問？",
+  inputModeSupport: "選擇語音或文字，再選擇 AI 專家。",
+  voiceMode: "語音",
+  textMode: "文字",
+  askGeneralQuestion: "問一條一般問題",
+  askAiAgent: "問 AI 專家",
   back: "返回",
   guidedConversation: "產品智能講解",
   specialistsHeading: "認識您的 AI 專家",
@@ -708,6 +766,13 @@ const yue: UiCopy = {
   proUserManual: "PRO 使用說明書",
   closeManuals: "關閉說明書",
   backToManuals: "返回說明書列表",
+  requestManualTitle: "申請使用說明書",
+  requestManualSupport: (name) => `請輸入你嘅電郵，我哋團隊會用電郵寄出 ${name} 使用說明書。`,
+  manualEmailLabel: "你嘅電郵地址",
+  manualConsent: "我同意使用我嘅電郵地址來回覆呢個說明書申請。",
+  requestManual: "申請說明書",
+  manualRequestSuccess: "多謝！我哋已收到你嘅申請，團隊會用電郵寄出說明書。",
+  manualRequestError: "未能保存申請，請再試一次。",
   viewingManual: (name) => `正在睇：${name}`,
   endConversationConfirmationTitle: "結束今次對話？",
   endConversationConfirmationBody: "你嘅問題同答案會喺呢部展覽裝置清除。",
@@ -819,6 +884,12 @@ const fr: UiCopy = {
   exploreProductsChoiceSupport: "Parcourez les six produits présentés, leurs photos et leurs manuels.",
   languageHeading: "Choisissez votre langue",
   languagesAria: "Langues",
+  inputModeHeading: "Comment souhaitez-vous poser votre question ?",
+  inputModeSupport: "Choisissez la voix ou le texte, puis votre spécialiste IA.",
+  voiceMode: "Voix",
+  textMode: "Texte",
+  askGeneralQuestion: "Poser une question générale",
+  askAiAgent: "Demander à l’agent IA",
   back: "Retour",
   guidedConversation: "Une présentation personnalisée des produits",
   specialistsHeading: "Rencontrez nos spécialistes IA",
@@ -873,6 +944,13 @@ const fr: UiCopy = {
   proUserManual: "Manuel d’utilisation PRO",
   closeManuals: "Fermer les manuels",
   backToManuals: "Retour aux manuels",
+  requestManualTitle: "Demander le manuel",
+  requestManualSupport: (name) => `Saisissez votre adresse e-mail et notre équipe vous enverra le manuel d’utilisation de ${name}.`,
+  manualEmailLabel: "Votre adresse e-mail",
+  manualConsent: "J’accepte que mon adresse e-mail soit utilisée pour répondre à cette demande de manuel.",
+  requestManual: "Demander le manuel",
+  manualRequestSuccess: "Merci ! Votre demande a été reçue. Notre équipe vous enverra le manuel.",
+  manualRequestError: "Votre demande n’a pas pu être enregistrée. Réessayez.",
   viewingManual: (name) => `Consultation : ${name}`,
   endConversationConfirmationTitle: "Terminer cette conversation ?",
   endConversationConfirmationBody: "Vos questions et réponses seront effacées de cette borne.",

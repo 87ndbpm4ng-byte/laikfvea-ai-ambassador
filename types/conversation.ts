@@ -93,9 +93,9 @@ export type SuggestedQuestion = {
 
 export type JourneyScreen =
   | "attract"
-  | "choice"
   | "idle"
   | "language"
+  | "mode"
   | "conversation"
   | "products"
   | "product-detail"

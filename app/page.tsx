@@ -5,11 +5,12 @@ import { ScreenContainer } from "@/components/layout/screen-container";
 import {
   AttractScreen,
   ConversationScreen,
-  JourneyChoiceScreen,
+  ConversationModeScreen,
   ProductComparisonScreen,
   ProductDetailScreen,
   ProductExplorerScreen,
   SpecialistSelectionScreen,
+  type ConversationInputMode,
 } from "@/components/screens/journey-screens";
 import { useConversation } from "@/hooks/use-conversation";
 import { guides } from "@/lib/data/guides";
@@ -34,13 +35,16 @@ type ExplorerOrigin = "choice" | "conversation";
 
 type DeferredAiIntent =
   | { kind: "product"; productId: ExhibitionProductId }
-  | { kind: "comparison" };
+  | { kind: "comparison" }
+  | { kind: "general" };
 
 export default function Home() {
   const [screen, setScreen] = useState<JourneyScreen>("attract");
   const [selectedLanguage, setSelectedLanguage] =
     useState<SupportedLanguage | null>(null);
   const [selectedGuideId, setSelectedGuideId] = useState<GuideId | null>(null);
+  const [inputMode, setInputMode] = useState<ConversationInputMode>("voice");
+  const [modeProductId, setModeProductId] = useState<ExhibitionProductId | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<ExhibitionProductId>("everyday");
   const [explorerOrigin, setExplorerOrigin] =
     useState<ExplorerOrigin>("choice");
@@ -105,28 +109,20 @@ export default function Home() {
     setScreen("product-detail");
   }
 
-  async function submitProductQuestion() {
-    prepareSpecialistInteraction();
-    await conversation.submitQuestion({
-      content: createAskAboutProductQuestion(selectedProduct, activeLanguage),
-      source: "product",
-      relatedProduct: selectedProduct,
-    });
-    setScreen("conversation");
+  function askAboutProduct() {
+    conversation.cancelPending();
+    deferredAiIntentRef.current = { kind: "product", productId: selectedProduct };
+    setModeProductId(selectedProduct);
+    setScreen(selectedLanguage ? "mode" : "language");
   }
 
-  function askAboutProduct() {
-    if (!selectedLanguage || !selectedGuideId) {
-      conversation.cancelPending();
-      deferredAiIntentRef.current = {
-        kind: "product",
-        productId: selectedProduct,
-      };
-      setScreen("language");
-      return;
-    }
-
-    void submitProductQuestion();
+  function askGeneralQuestion() {
+    conversation.cancelPending();
+    conversation.clearHistory();
+    deferredAiIntentRef.current = { kind: "general" };
+    setModeProductId(null);
+    setSelectedProduct("everyday");
+    setScreen(selectedLanguage ? "mode" : "language");
   }
 
   async function submitComparisonQuestion() {
@@ -168,6 +164,7 @@ export default function Home() {
     clearConversationHistory();
     setSelectedLanguage(null);
     setSelectedGuideId(null);
+    setInputMode("voice");
     setSelectedProduct("everyday");
     setExplorerOrigin("choice");
     deferredAiIntentRef.current = null;
@@ -225,16 +222,26 @@ export default function Home() {
     const intent = deferredAiIntentRef.current;
     deferredAiIntentRef.current = null;
 
-    if (intent.kind === "product") {
-      conversation.selectProduct(intent.productId);
-      setSelectedProduct(intent.productId);
-      const activation = activateVoiceSession(speechSynthesis[selectedGuideId]);
-      setVoiceActivation(activation);
-      void conversation.submitQuestion({
+      if (intent.kind === "product") {
+        conversation.selectProduct(intent.productId);
+        setSelectedProduct(intent.productId);
+        if (inputMode === "voice") {
+          const activation = activateVoiceSession(speechSynthesis[selectedGuideId]);
+          setVoiceActivation(activation);
+        }
+        void conversation.submitQuestion({
         content: createAskAboutProductQuestion(intent.productId, selectedLanguage),
         source: "product",
         relatedProduct: intent.productId,
       });
+        return;
+      }
+
+    if (intent.kind === "general") {
+      if (inputMode === "voice") {
+        const activation = activateVoiceSession(speechSynthesis[selectedGuideId]);
+        setVoiceActivation(activation);
+      }
       return;
     }
 
@@ -257,6 +264,7 @@ export default function Home() {
     selectedLanguage,
     speechSynthesis,
     screen,
+    inputMode,
   ]);
 
   function enterProductExplorer(origin: ExplorerOrigin) {
@@ -282,25 +290,7 @@ export default function Home() {
         {screen === "attract" ? (
           <AttractScreen
             language={activeLanguage}
-            onBegin={() => setScreen("choice")}
-          />
-        ) : screen === "choice" ? (
-          <JourneyChoiceScreen
-            language={activeLanguage}
-            onBack={() => {
-              deferredAiIntentRef.current = null;
-              setSelectedProduct("everyday");
-              setScreen("attract");
-            }}
-            onSpeak={() => {
-              deferredAiIntentRef.current = null;
-              setSelectedProduct("everyday");
-              setScreen("language");
-            }}
-            onExplore={() => {
-              deferredAiIntentRef.current = null;
-              enterProductExplorer("choice");
-            }}
+            onBegin={() => setScreen("language")}
           />
         ) : screen === "language" ? (
           <section
@@ -313,7 +303,7 @@ export default function Home() {
               onClick={() => {
                 deferredAiIntentRef.current = null;
                 setSelectedProduct("everyday");
-                setScreen("choice");
+                setScreen("attract");
               }}
             >
               {copy.back}
@@ -332,7 +322,7 @@ export default function Home() {
                     key={language.code}
                     onClick={() => {
                       setSelectedLanguage(language.code);
-                      setScreen("idle");
+                      setScreen(deferredAiIntentRef.current ? "mode" : "products");
                     }}
                     lang={language.code}
                   >
@@ -342,6 +332,15 @@ export default function Home() {
               </div>
             </div>
           </section>
+        ) : screen === "mode" ? (
+          <ConversationModeScreen
+            language={activeLanguage}
+            onBack={() => setScreen(modeProductId ? "product-detail" : "products")}
+            onSelect={(mode) => {
+              setInputMode(mode);
+              setScreen("idle");
+            }}
+          />
         ) : screen === "idle" ? (
           <SpecialistSelectionScreen
             language={activeLanguage}
@@ -367,11 +366,14 @@ export default function Home() {
             audioActivationProvider={speechSynthesis[selectedGuideId]}
             voiceActivationPromise={voiceActivation}
             liveAvatarService={liveAvatarServices[selectedGuideId]}
+            inputMode={inputMode}
+            onInputModeChange={setInputMode}
           />
         ) : screen === "products" ? (
           <ProductExplorerScreen
             language={activeLanguage}
             onOpenProduct={openProduct}
+            onAskGeneral={askGeneralQuestion}
             backLabel={
               explorerOrigin === "choice" ? copy.back : copy.backToConversation
             }
@@ -379,7 +381,7 @@ export default function Home() {
               if (explorerOrigin === "choice") {
                 deferredAiIntentRef.current = null;
                 setSelectedProduct("everyday");
-                setScreen("choice");
+                setScreen("language");
                 return;
               }
               setScreen("conversation");
@@ -389,7 +391,6 @@ export default function Home() {
           <ProductDetailScreen
             language={activeLanguage}
             productId={selectedProduct}
-            guideName={copy.guideDisplayName[selectedGuideId ?? "daniel"]}
             onBack={() => setScreen("products")}
             onCompare={() => setScreen("comparison")}
             onAskGuide={askAboutProduct}

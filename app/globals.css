@@ -5197,6 +5197,86 @@ h1 {
   flex: 1;
 }
 
+.product-manual-request {
+  display: grid;
+  min-height: 0;
+  padding: clamp(var(--space-6), 5vw, var(--space-10));
+  align-content: center;
+  gap: var(--space-5);
+  overflow: auto;
+}
+
+.product-manual-request form {
+  display: grid;
+  width: min(100%, 38rem);
+  gap: var(--space-4);
+}
+
+.product-manual-request h3,
+.product-manual-request p {
+  margin: 0;
+}
+
+.product-manual-request form > p {
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+}
+
+.product-manual-request label {
+  display: grid;
+  gap: var(--space-2);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.product-manual-request input[type="email"] {
+  min-height: 3.5rem;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+  font: inherit;
+}
+
+.product-manual-consent {
+  display: flex !important;
+  align-items: flex-start;
+  gap: var(--space-3) !important;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+.product-manual-consent input {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.1rem;
+  flex: 0 0 auto;
+}
+
+.product-manual-request form > button {
+  min-height: 3.5rem;
+  border: 1px solid var(--color-text-primary);
+  border-radius: var(--radius-control);
+  background: var(--color-text-primary);
+  color: var(--color-bg-canvas);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+}
+
+.product-manual-request form > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.product-manual-request-success {
+  max-width: 38rem;
+  color: var(--color-text-primary);
+  font-size: 1.125rem;
+  line-height: 1.55;
+}
+
 @media (orientation: landscape) and (min-width: 64rem) {
   .conversation-content {
     width: min(100%, 88rem);

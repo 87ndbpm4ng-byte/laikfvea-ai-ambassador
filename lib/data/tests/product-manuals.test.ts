@@ -8,10 +8,10 @@ test("the visitor manual registry contains only the four approved exhibition man
   assert.deepEqual(
     productManuals,
     [
-      { id: "water-ionizer", href: "/manuals/water-ionizer-user-manual.pdf" },
-      { id: "air-purifier", href: "/manuals/air-purifier-user-manual.pdf" },
-      { id: "advanced", href: "/manuals/pro-user-manual.pdf" },
-      { id: "everyday", href: "/manuals/go-user-manual.pdf" },
+      { id: "water-ionizer", href: "/manuals/water-ionizer-user-manual.pdf", filename: "water-ionizer-user-manual.pdf" },
+      { id: "air-purifier", href: "/manuals/air-purifier-user-manual.pdf", filename: "air-purifier-user-manual.pdf" },
+      { id: "advanced", href: "/manuals/pro-user-manual.pdf", filename: "pro-user-manual.pdf" },
+      { id: "everyday", href: "/manuals/go-user-manual.pdf", filename: "go-user-manual.pdf" },
     ],
   );
 

@@ -113,25 +113,29 @@ test("product Explorer grouping labels exist in every supported language", () =>
   }
 });
 
-test("the choice-screen and product-manual actions are localized in every supported language", () => {
+test("the mode-screen and product-manual actions are localized in every supported language", () => {
   for (const language of ["en", "ru", "zh", "yue", "fr"] as const) {
     const copy = getUiCopy(language);
     const text = [
-      copy.journeyChoiceHeading,
-      copy.speakToAiAmbassador,
       copy.speakToAiAmbassadorSupport,
-      copy.exploreProductsChoice,
-      copy.exploreProductsChoiceSupport,
+      copy.inputModeHeading,
+      copy.inputModeSupport,
+      copy.voiceMode,
+      copy.textMode,
+      copy.askGeneralQuestion,
+      copy.askAiAgent,
       copy.userManual,
     ].join(" ");
 
-    assert.ok(copy.journeyChoiceHeading.length >= 5, language);
-    assert.ok(copy.speakToAiAmbassador.length > 5, language);
-    assert.ok(copy.exploreProductsChoice.length >= 4, language);
+    assert.ok(copy.inputModeHeading.length >= 4, language);
+    assert.ok(copy.voiceMode.length >= 2, language);
+    assert.ok(copy.textMode.length >= 2, language);
+    assert.ok(copy.askGeneralQuestion.length >= 4, language);
+    assert.ok(copy.askAiAgent.length >= 5, language);
     assert.doesNotMatch(text, /LiveAvatar|ElevenLabs|OpenAI|token|API/i);
   }
 
-  assert.match(getUiCopy("yue").journeyChoiceHeading, /咩/);
+  assert.match(getUiCopy("yue").inputModeHeading, /提問/);
   assert.match(getUiCopy("yue").userManual, /說明書/);
   assert.doesNotMatch(
     `${getUiCopy("yue").journeyChoiceHeading} ${getUiCopy("yue").userManual}`,
