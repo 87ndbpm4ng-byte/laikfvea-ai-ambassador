@@ -86,6 +86,19 @@ test("Indoor Environment cards use the approved local hero assets", () => {
   );
 });
 
+test("Water Ionizer uses all ten numbered photographs in gallery order", () => {
+  const images = getExhibitionProductCatalog("water-ionizer").images;
+  const expected = Array.from({ length: 10 }, (_, index) => `/products/water-ionizer/${index + 1}.png`);
+
+  assert.deepEqual(images.map(({ src }) => src), expected);
+  assert.equal(new Set(images.map(({ src }) => src)).size, images.length, "gallery paths are unique");
+  assert.equal(images[0]?.src, "/products/water-ionizer/1.png", "catalogue hero is photograph 1");
+
+  for (const asset of expected) {
+    assert.equal(existsSync(path.join(process.cwd(), "public", asset)), true, `${asset} exists`);
+  }
+});
+
 test("Air Purifier keeps its white hero and registers every supplied gallery image once", () => {
   const images = getExhibitionProductCatalog("air-purifier").images;
   const importedSuppliedAssets = [
