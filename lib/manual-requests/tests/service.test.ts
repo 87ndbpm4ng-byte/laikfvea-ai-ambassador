@@ -68,7 +68,7 @@ test("invalid email, missing consent and unapproved products are rejected", asyn
     (error: unknown) => error instanceof ManualRequestError && error.code === "CONSENT_REQUIRED",
   );
   await assert.rejects(
-    submitManualRequest({ email: "visitor@example.com", consent: true, productId: "air-humidifier", language: "en" }),
+    submitManualRequest({ email: "visitor@example.com", consent: true, productId: "face-body-generator", language: "en" }),
     (error: unknown) => error instanceof ManualRequestError && error.code === "MANUAL_NOT_APPROVED",
   );
 });

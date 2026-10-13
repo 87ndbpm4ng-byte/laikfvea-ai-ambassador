@@ -176,8 +176,9 @@ test("product manuals are a local in-app utility and do not require an avatar se
   assert.match(chooser, /Air Purifier User Manual/);
   assert.match(chooser, /GO User Manual/);
   assert.match(chooser, /PRO User Manual/);
+  assert.match(chooser, /Air Humidifier User Manual/);
   assert.equal((chooser.match(/product-manual-options/g) ?? []).length, 1);
-  assert.doesNotMatch(chooser, /Air Humidifier|Face &amp; Body Generator/);
+  assert.doesNotMatch(chooser, /Face &amp; Body Generator/);
   assert.doesNotMatch(chooser, /liveavatar|session|ElevenLabs|OpenAI/i);
 });
 
@@ -260,7 +261,7 @@ test("approved product details open their own local manual and preserve the deta
   assert.match(goDetail, /User Manual/);
   assert.match(ionizerDetail, /User Manual/);
   assert.match(purifierDetail, /User Manual/);
-  assert.doesNotMatch(humidifierDetail, /User Manual/);
+  assert.match(humidifierDetail, /User Manual/);
   assert.doesNotMatch(faceBodyDetail, /User Manual/);
   assert.match(directManual, /Request User Manual/);
   assert.match(directManual, /Your email address/);

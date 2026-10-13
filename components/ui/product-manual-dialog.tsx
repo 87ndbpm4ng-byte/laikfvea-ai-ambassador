@@ -18,6 +18,7 @@ function manualLabel(manual: ProductManual, language: SupportedLanguage) {
   const copy = getUiCopy(language);
   if (manual.id === "water-ionizer") return copy.waterIonizerUserManual;
   if (manual.id === "air-purifier") return copy.airPurifierUserManual;
+  if (manual.id === "air-humidifier") return copy.airHumidifierUserManual;
   return manual.id === "everyday" ? copy.goUserManual : copy.proUserManual;
 }
 

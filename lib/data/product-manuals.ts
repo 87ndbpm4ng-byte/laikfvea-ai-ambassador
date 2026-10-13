@@ -1,4 +1,4 @@
-export type ProductManualId = "everyday" | "advanced" | "water-ionizer" | "air-purifier";
+export type ProductManualId = "everyday" | "advanced" | "water-ionizer" | "air-purifier" | "air-humidifier";
 
 export type ProductManual = {
   id: ProductManualId;
@@ -11,6 +11,7 @@ export const productManuals: readonly ProductManual[] = [
   { id: "air-purifier", href: "/manuals/air-purifier-user-manual.pdf", filename: "air-purifier-user-manual.pdf" },
   { id: "advanced", href: "/manuals/pro-user-manual.pdf", filename: "pro-user-manual.pdf" },
   { id: "everyday", href: "/manuals/go-user-manual.pdf", filename: "go-user-manual.pdf" },
+  { id: "air-humidifier", href: "/manuals/air-humidifier-user-manual.pdf", filename: "air-humidifier-user-manual.pdf" },
 ];
 
 export function getProductManual(productId: string): ProductManual | null {

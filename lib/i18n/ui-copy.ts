@@ -57,6 +57,7 @@ type UiCopy = {
   userManual: string;
   waterIonizerUserManual: string;
   airPurifierUserManual: string;
+  airHumidifierUserManual: string;
   goUserManual: string;
   proUserManual: string;
   closeManuals: string;
@@ -228,6 +229,7 @@ const en: UiCopy = {
   userManual: "User Manual",
   waterIonizerUserManual: "Water Ionizer User Manual",
   airPurifierUserManual: "Air Purifier User Manual",
+  airHumidifierUserManual: "Air Humidifier User Manual",
   goUserManual: "GO User Manual",
   proUserManual: "PRO User Manual",
   closeManuals: "Close manuals",
@@ -406,6 +408,7 @@ const ru: UiCopy = {
   userManual: "Руководство пользователя",
   waterIonizerUserManual: "Руководство пользователя ионизатора воды",
   airPurifierUserManual: "Руководство пользователя очистителя воздуха",
+  airHumidifierUserManual: "Руководство пользователя увлажнителя воздуха",
   goUserManual: "Руководство пользователя GO",
   proUserManual: "Руководство пользователя PRO",
   closeManuals: "Закрыть руководства",
@@ -584,6 +587,7 @@ const zh: UiCopy = {
   userManual: "用户手册",
   waterIonizerUserManual: "水离子机用户手册",
   airPurifierUserManual: "空气净化器用户手册",
+  airHumidifierUserManual: "空气加湿器用户手册",
   goUserManual: "GO 用户手册",
   proUserManual: "PRO 用户手册",
   closeManuals: "关闭说明书",
@@ -762,6 +766,7 @@ const yue: UiCopy = {
   userManual: "使用說明書",
   waterIonizerUserManual: "水離子機使用說明書",
   airPurifierUserManual: "空氣淨化器使用說明書",
+  airHumidifierUserManual: "空氣加濕器使用說明書",
   goUserManual: "GO 使用說明書",
   proUserManual: "PRO 使用說明書",
   closeManuals: "關閉說明書",
@@ -940,6 +945,7 @@ const fr: UiCopy = {
   userManual: "Manuel d’utilisation",
   waterIonizerUserManual: "Manuel d’utilisation de l’ioniseur d’eau",
   airPurifierUserManual: "Manuel d’utilisation du purificateur d’air",
+  airHumidifierUserManual: "Manuel d’utilisation de l’humidificateur d’air",
   goUserManual: "Manuel d’utilisation GO",
   proUserManual: "Manuel d’utilisation PRO",
   closeManuals: "Fermer les manuels",
